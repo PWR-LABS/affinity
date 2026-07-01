@@ -1,0 +1,71 @@
+{
+  "_comment": "Deterministic fixture for `npm run eval:network-bridge`. Synthetic scenario (no real people): 3 doctors split across two competing health systems — Chen (ophthalmology, the CRITICAL one: an active condition under ongoing specialist care) at Cedar Valley Health [CVH], Reed (PCP) + Nair (hematology, a ~once-a-year formality, NOT a dealbreaker) at Harbor Point Health [HPH] — matched against 4 representative plans. PLANPPO01 (broad) bridges both systems; PLANHPH01 and PLANCVH01 each keep one system and drop the other; PLANNAR01 keeps neither. Every provider/plan pair is a clean two-source AGREE (API coverage flag == issuer-MRF plan listing, fetched the same day), so statuses are high-confidence covered/not_covered with nothing flagged to confirm — the bridge classification, critical-gap detection, and ranking are what this gate checks. Ranking puts the bridge first, then the single-system plan that KEEPS the critical ophthalmologist (CVH) above the one that loses her (HPH). NPIs below are synthetic placeholders, not real providers.",
+  "fetchedAt": "2026-06-17T12:00:00.000Z",
+  "profile": {
+    "doctors": [
+      { "npi": "1000000017", "label": "Maya Chen, MD (ophthalmology)" },
+      { "npi": "1000000025", "label": "James Reed, MD (PCP)" },
+      { "npi": "1000000033", "label": "Priya Nair, MD (hematology)" }
+    ],
+    "medications": []
+  },
+  "systemTags": [
+    { "npi": "1000000017", "system": "CVH", "label": "Chen — Cedar Valley Health (ophthalmology; active condition under specialist care)", "critical": true },
+    { "npi": "1000000025", "system": "HPH", "label": "Reed — Harbor Point Health (PCP)" },
+    { "npi": "1000000033", "system": "HPH", "label": "Nair — Harbor Point Health (hematology; ~1 visit/yr formality)" }
+  ],
+  "mrfProviders": [
+    { "npi": "1000000017", "name": { "first": "Maya", "last": "Chen" }, "plans": [{ "plan_id": "PLANPPO01" }, { "plan_id": "PLANCVH01" }], "last_updated_on": "2026-06-17" },
+    { "npi": "1000000025", "name": { "first": "James", "last": "Reed" }, "plans": [{ "plan_id": "PLANPPO01" }, { "plan_id": "PLANHPH01" }], "last_updated_on": "2026-06-17" },
+    { "npi": "1000000033", "name": { "first": "Priya", "last": "Nair" }, "plans": [{ "plan_id": "PLANPPO01" }, { "plan_id": "PLANHPH01" }], "last_updated_on": "2026-06-17" }
+  ],
+  "mrfDrugs": [],
+  "plans": [
+    {
+      "planId": "PLANPPO01",
+      "planLabel": "Broad PPO (both systems)",
+      "apiProviders": [
+        { "npi": "1000000017", "coverage": "Covered" },
+        { "npi": "1000000025", "coverage": "Covered" },
+        { "npi": "1000000033", "coverage": "Covered" }
+      ],
+      "apiDrugs": [],
+      "expected": { "bridgeStatus": "bridges_all", "systemsKept": ["CVH", "HPH"], "systemsLost": [], "criticalGapKeys": [] }
+    },
+    {
+      "planId": "PLANHPH01",
+      "planLabel": "HPH-anchored HMO",
+      "apiProviders": [
+        { "npi": "1000000017", "coverage": "NotCovered" },
+        { "npi": "1000000025", "coverage": "Covered" },
+        { "npi": "1000000033", "coverage": "Covered" }
+      ],
+      "apiDrugs": [],
+      "expected": { "bridgeStatus": "single_system", "systemsKept": ["HPH"], "systemsLost": ["CVH"], "criticalGapKeys": ["1000000017"] }
+    },
+    {
+      "planId": "PLANCVH01",
+      "planLabel": "CVH-anchored HMO",
+      "apiProviders": [
+        { "npi": "1000000017", "coverage": "Covered" },
+        { "npi": "1000000025", "coverage": "NotCovered" },
+        { "npi": "1000000033", "coverage": "NotCovered" }
+      ],
+      "apiDrugs": [],
+      "expected": { "bridgeStatus": "single_system", "systemsKept": ["CVH"], "systemsLost": ["HPH"], "criticalGapKeys": [] }
+    },
+    {
+      "planId": "PLANNAR01",
+      "planLabel": "Narrow HMO (neither)",
+      "apiProviders": [
+        { "npi": "1000000017", "coverage": "NotCovered" },
+        { "npi": "1000000025", "coverage": "NotCovered" },
+        { "npi": "1000000033", "coverage": "NotCovered" }
+      ],
+      "apiDrugs": [],
+      "expected": { "bridgeStatus": "none", "systemsKept": [], "systemsLost": ["CVH", "HPH"], "criticalGapKeys": ["1000000017"] }
+    }
+  ],
+  "expectedRanking": ["PLANPPO01", "PLANCVH01", "PLANHPH01", "PLANNAR01"],
+  "expectedAnyBridges": true
+}

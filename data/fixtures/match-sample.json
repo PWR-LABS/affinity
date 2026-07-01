@@ -1,0 +1,72 @@
+{
+  "_comment": "Deterministic fixture for `npm run eval:match`. A household (3 doctors, 2 meds) matched against two plans of one issuer. MRF is issuer-global (one record per NPI/RxCUI listing all plans it participates in) — the realistic shape; the API coverage is per-plan. Plan 1 (broad) covers more at higher confidence than Plan 2 (narrow), so it must rank first. Across the two plans every coverage status appears: covered, covered_unverified, not_covered, not_covered_unverified, disputed, unknown. last_updated_on == fetch date so AGREE reconciles to 0.8 (clean 'covered', no confirmation).",
+  "fetchedAt": "2026-06-17T12:00:00.000Z",
+  "profile": {
+    "doctors": [
+      { "npi": "1111111111", "label": "Dr. A Okafor" },
+      { "npi": "2222222222", "label": "Dr. B Park" },
+      { "npi": "3333333333", "label": "Dr. C Velez" }
+    ],
+    "medications": [
+      { "rxcui": "617310", "label": "Atorvastatin 20mg" },
+      { "rxcui": "310965", "label": "Ibuprofen 800mg" }
+    ]
+  },
+  "mrfProviders": [
+    { "npi": "1111111111", "name": { "first": "A", "last": "Okafor" }, "plans": [{ "plan_id": "PLAN0001" }, { "plan_id": "PLAN0002" }], "last_updated_on": "2026-06-17" },
+    { "npi": "2222222222", "name": { "first": "B", "last": "Park" }, "plans": [{ "plan_id": "PLAN0001" }], "last_updated_on": "2026-06-17" },
+    { "npi": "3333333333", "name": { "first": "C", "last": "Velez" }, "plans": [{ "plan_id": "PLAN8888" }], "last_updated_on": "2026-06-17" }
+  ],
+  "mrfDrugs": [
+    { "rxnorm_id": "617310", "drug_name": "Atorvastatin Calcium 20 MG", "plans": [{ "plan_id": "PLAN0001", "drug_tier": "GENERIC" }, { "plan_id": "PLAN0002", "drug_tier": "GENERIC" }], "last_updated_on": "2026-06-17" }
+  ],
+  "plans": [
+    {
+      "planId": "PLAN0001",
+      "planLabel": "Plan 1 (broad network)",
+      "apiProviders": [
+        { "npi": "1111111111", "coverage": "Covered" },
+        { "npi": "2222222222", "coverage": "Covered" },
+        { "npi": "3333333333", "coverage": "Covered" }
+      ],
+      "apiDrugs": [
+        { "rxcui": "617310", "coverage": "Covered", "drug_tier": "GENERIC" },
+        { "rxcui": "310965", "coverage": "Covered", "drug_tier": "GENERIC" }
+      ],
+      "expected": {
+        "doctorsCovered": 2,
+        "doctorsDisputed": 1,
+        "doctorsNotCovered": 0,
+        "doctorsUnknown": 0,
+        "drugsOnFormulary": 2,
+        "drugsDisputed": 0,
+        "drugsNotCovered": 0,
+        "drugsUnknown": 0,
+        "confirmKeys": ["3333333333", "310965"]
+      }
+    },
+    {
+      "planId": "PLAN0002",
+      "planLabel": "Plan 2 (narrow network)",
+      "apiProviders": [
+        { "npi": "1111111111", "coverage": "Covered" },
+        { "npi": "2222222222", "coverage": "NotCovered" }
+      ],
+      "apiDrugs": [
+        { "rxcui": "617310", "coverage": "Covered", "drug_tier": "GENERIC" }
+      ],
+      "expected": {
+        "doctorsCovered": 1,
+        "doctorsDisputed": 0,
+        "doctorsNotCovered": 2,
+        "doctorsUnknown": 0,
+        "drugsOnFormulary": 1,
+        "drugsDisputed": 0,
+        "drugsNotCovered": 0,
+        "drugsUnknown": 1,
+        "confirmKeys": ["3333333333", "310965"]
+      }
+    }
+  ],
+  "expectedRanking": ["PLAN0001", "PLAN0002"]
+}

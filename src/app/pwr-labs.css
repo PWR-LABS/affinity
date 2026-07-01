@@ -1,0 +1,864 @@
+/* =============================================================================
+   [PWR] LABS — desktop UI foundation  (v1)
+   -----------------------------------------------------------------------------
+   Canonical design language for [PWR] LABS desktop apps (Tauri + Vite + vanilla
+   TS). Reference implementation: the [PWR] LABS desktop apps.
+   Keeper: nucleus — see docs/PWR_LABS_DESKTOP_DESIGN_LANGUAGE.md.
+
+   HOW TO CONSUME
+   1. Copy this file into your app (e.g. desktop/src/pwr-labs-desktop.css) and
+      import it FIRST, before your product-specific stylesheet.
+   2. Set ONE knob — your product's portfolio accent — in your own CSS:
+          :root { --brand: #2383e2; }   (golgi blue; use YOUR product's hex)
+   3. Build product UI on top using these tokens and the .app-* primitives.
+
+   Optional:
+   - Light theme: render <html data-theme="light">.
+   - Flat look: delete the "OPTIONAL LUSH LAYER" block at the bottom.
+
+   Calm, low-contrast Material surfaces. Accent = interaction + brand. Prefer
+   text-color accents and light borders over heavy fills.
+   ========================================================================= */
+
+/* ---- Tokens ------------------------------------------------------------- */
+:root {
+  color-scheme: dark;
+
+  /* The one per-product knob: set --brand to your portfolio accent hex.
+     (Notion named-color tokens — blue #2383e2, affinity green #2d9c4a,
+      ribosome yellow #dfab10, chaperone pink #b42858, [PWR] LABS purple #7956da.) */
+  --brand: #2383e2;
+
+  /* Interaction accent. Defaults to a calm Google-blue; override to track
+     --brand if you want the brand color to drive interaction too. */
+  --accent: #8ab4f8;
+  --accent-on: #202124;
+  --danger: #f87171;
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+
+  /* Surfaces — calm, low-contrast app shell. */
+  --bg: #202124;
+  --surface: #292a2d;
+  --surface-2: #35363a;
+  --surface-elevated: #3c4043;
+  --border: #5f6368;
+  --divider: rgba(255, 255, 255, 0.08);
+  --text: #e8eaed;
+  --muted: #9aa0a6;
+
+  --radius: 8px;
+  --radius-pill: 999px;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.15);
+  --shadow-2: 0 1px 3px rgba(0, 0, 0, 0.35), 0 4px 8px rgba(0, 0, 0, 0.2);
+
+  --app-banner-min: 3.85rem;     /* topbar height + brand corner height */
+  --app-sidebar-width: 150px;    /* fixed nav column; max ~175px per spec */
+  --control-height: 2.1rem;
+  --panel-gap: 0.75rem;
+
+  --font-family: "Roboto", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --surface-2: #f1f3f4;
+  --surface-elevated: #ffffff;
+  --border: #dadce0;
+  --divider: rgba(60, 64, 67, 0.12);
+  --text: #202124;
+  --muted: #5f6368;
+  --accent: #1a73e8;
+  --accent-on: #ffffff;
+  --shadow-1: 0 1px 2px rgba(60, 64, 67, 0.12), 0 1px 3px rgba(60, 64, 67, 0.08);
+  --shadow-2: 0 1px 3px rgba(60, 64, 67, 0.15), 0 4px 8px rgba(60, 64, 67, 0.1);
+}
+
+/* ---- Reset -------------------------------------------------------------- */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-family), "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* ---- App shell: sidebar | (topbar / content) --------------------------- */
+.app-shell {
+  display: flex;
+  min-height: 100dvh;
+  width: 100%;
+  background: var(--bg);
+}
+
+.app-shell-sidebar-col {
+  width: var(--app-sidebar-width);
+  flex-shrink: 0;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  border-right: 1px solid var(--divider);
+  background: var(--bg);
+}
+
+.app-sidebar-head {
+  display: grid;
+  place-items: center;
+  padding: 0.5rem;
+  height: var(--app-banner-min);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--divider);
+}
+
+/* Wordmark: name + brackets in text color; only the period carries --brand —
+   e.g. [golgi.] reads white with a blue dot. The dot is the identity.
+   Markup: [<bracket> name<word> .<dot> ]<bracket>  */
+.app-brand-mark {
+  display: block;
+  line-height: 1.2;
+  text-decoration: none;
+}
+.app-brand-title {
+  display: block;
+  font-size: 1.6rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+.app-brand-bracket,
+.app-brand-word {
+  color: var(--text);
+}
+/* Breathing room inside the brackets: [ name. ] rather than [name.] */
+.app-brand-word { margin-left: 0.1em; }
+.app-brand-dot {
+  color: var(--brand);
+  font-weight: 700;
+  margin-right: 0.1em;
+}
+.app-brand-mark:hover .app-brand-dot {
+  color: color-mix(in srgb, var(--brand) 80%, white);
+}
+
+.app-brand-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.64rem;
+  line-height: 1;
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid var(--divider);
+}
+.app-brand-sub {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.app-shell-version {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* ---- Sidebar nav: pill rails, active accent ---------------------------- */
+.app-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.35rem 1rem;
+  flex: 1;
+  overflow-y: auto;
+}
+.app-nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 0.35rem 0.5rem 0.4rem;
+}
+.app-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+  padding: 0.42rem 0.45rem 0.42rem 0.4rem;
+  margin-left: 0.2rem;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+}
+.app-nav-link:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.app-nav-link[data-active="1"],
+.app-nav-link.is-active,
+.app-nav-link[aria-current="page"] {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border-left-color: var(--accent);
+}
+
+/* ---- Main column: topbar + content ------------------------------------- */
+.app-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: var(--app-banner-min);
+  padding: 0 0.75rem;
+  border-bottom: 1px solid var(--divider);
+  background: var(--bg);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+.app-topbar-note {
+  margin: 0;
+  min-width: 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+.app-topbar-note code {
+  font-size: 0.7rem;
+  color: var(--text);
+  background: var(--surface-2);
+  padding: 0.05em 0.2em;
+  border-radius: 3px;
+}
+
+.app-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 1rem 1.25rem;
+}
+
+/* Running-job strip (under topbar) */
+@keyframes app-job-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.app-job-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid var(--divider);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  font-size: 0.78rem;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.app-job-strip-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: app-job-pulse 1.2s ease-in-out infinite;
+}
+
+/* ---- Status chip + dot (topbar) ---------------------------------------- */
+.app-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.app-status-chip:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.app-status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+}
+.app-status-chip[data-state="online"] .app-status-dot {
+  background: #34d399;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #34d399 35%, transparent);
+}
+.app-status-chip[data-state="offline"] .app-status-dot {
+  background: var(--danger);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 35%, transparent);
+}
+.app-status-chip[data-state="checking"] .app-status-dot {
+  background: var(--accent);
+}
+
+/* ---- Page header + panels ---------------------------------------------- */
+.page-header {
+  margin: 0 0 1rem;
+  max-width: 52rem;
+}
+/* Toolbar variant: title block on the left, actions on the right, divider under. */
+.page-header--toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  max-width: none;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--divider);
+}
+.page-header-main { min-width: 0; flex: 1 1 16rem; }
+.page-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.page-meta { margin-top: 0.45rem; font-size: 0.75rem; color: var(--muted); }
+.page-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.375rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: 1.25;
+}
+.page-subtitle {
+  margin: 0;
+  max-width: 44rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.page-subtitle a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.page-panel {
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  padding: 1rem 1.15rem;
+}
+
+/* Collapsible output / log drawer */
+.output-drawer {
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+.output-drawer-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  user-select: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+.output-drawer-summary::-webkit-details-marker { display: none; }
+.output-drawer-summary::before {
+  content: "▸";
+  margin-right: 0.45rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.output-drawer[open] > .output-drawer-summary::before { content: "▾"; }
+.output-drawer[open] > .output-drawer-summary { border-bottom: 1px solid var(--divider); }
+.output-drawer-body {
+  padding: 0.65rem 0.85rem 0.85rem;
+  max-height: min(40vh, 320px);
+  overflow: auto;
+}
+
+/* Layout helpers */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  align-items: center;
+}
+.field-row { margin-top: 0.5rem; }
+label.inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  color: var(--text);
+  cursor: pointer;
+  margin: 0;
+  font-weight: 400;
+}
+label.inline input { width: auto; margin: 0; }
+
+/* ---- Buttons: one tactile system --------------------------------------- */
+button {
+  appearance: none;
+  border: 1px solid transparent;
+  background: var(--surface-2);
+  color: var(--text);
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 1rem;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.06s ease;
+}
+button:hover:not(:disabled) { background: var(--surface-elevated); }
+button:active:not(:disabled) { transform: translateY(0.5px) scale(0.99); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button.primary {
+  color: var(--accent-on);
+  background: var(--accent);
+  box-shadow: var(--shadow-1);
+}
+button.primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: var(--shadow-2);
+}
+button.primary-lg { padding: 0.6rem 1.35rem; font-size: 0.875rem; }
+
+button.btn-outlined {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--accent);
+}
+button.btn-outlined:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+
+button.btn-text {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent);
+  padding-left: 0.65rem;
+  padding-right: 0.65rem;
+}
+button.btn-text:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+a:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---- Settings: accent picker swatches ----------------------------------
+   A row of color swatches in Settings. Each swatch sets its own colour via
+   --accent-swatch. CONVENTION: include the app's own accent as a preset whose
+   swatch is `--accent-swatch: var(--brand)`, mark it data-active="1" by default,
+   and label it "[product.] default" (e.g. green → "[affinity.] default"). The
+   user can still pick another; persist the choice (e.g. localStorage) and apply
+   it by setting --accent on :root. */
+.accent-presets { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.accent-preset {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  background-color: var(--accent-swatch, var(--surface-2));
+  background-image: none;
+}
+.accent-preset:hover { filter: brightness(1.1); }
+.accent-preset[data-active="1"] {
+  box-shadow: 0 0 0 2px var(--text);
+  border-color: var(--text);
+}
+.accent-preset-label { font-size: 0.75rem; color: var(--muted); }
+
+/* ---- Inputs / selects --------------------------------------------------- */
+input[type="text"],
+input[type="search"],
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: var(--control-height);
+  padding: 0.5rem 0.6rem;
+  border-radius: calc(var(--radius) - 4px);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input:disabled,
+select:disabled,
+textarea:disabled { opacity: 0.55; }
+
+/* ---- Tables: sticky header, calm rows, clear selection ----------------- */
+.app-table-wrap { scrollbar-gutter: stable; overflow: auto; }
+.app-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+.app-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.42rem 0.55rem;
+  background: color-mix(in srgb, var(--surface-2) 94%, var(--bg));
+  box-shadow: inset 0 -1px 0 var(--divider);
+}
+.app-table tbody td {
+  padding: 0.42rem 0.55rem;
+  border-bottom: 1px solid var(--divider);
+  vertical-align: middle;
+}
+.app-table tbody tr { transition: background 0.12s ease; }
+.app-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.app-table tbody tr.is-selected,
+.app-table tbody tr.is-selected:hover {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: inset 2.5px 0 0 var(--accent);
+}
+
+/* ---- Toasts ------------------------------------------------------------- */
+.app-toast {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: min(24rem, calc(100vw - 2rem));
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.38);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  z-index: 99999;
+  white-space: pre-wrap;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface-elevated) 92%, var(--bg));
+  animation: app-toast-in 0.22s cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+.app-toast[hidden] { display: none !important; }
+.app-toast[data-kind="success"] { border-left-color: #34d399; }
+.app-toast[data-kind="error"] { border-left-color: var(--danger); }
+.app-toast[data-kind="running"] { border-left-color: var(--accent); }
+@keyframes app-toast-in {
+  from { transform: translateY(-0.4rem); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+/* ---- Confirm dialog ----------------------------------------------------- */
+.app-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 100000;
+}
+.app-confirm-panel {
+  width: min(28rem, calc(100vw - 2rem));
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-2);
+  padding: 1.15rem 1.25rem;
+}
+.app-confirm-panel .row { justify-content: flex-end; }
+
+/* ---- Scrollbars: thin and quiet ---------------------------------------- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 38%, transparent);
+  border-radius: var(--radius-pill);
+  border: 2.5px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted) 60%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-toast { animation: none; }
+}
+
+/* ---- Search bar (Google-inspired pill) + suggestion chips -------------- */
+.search-bar { width: 100%; }
+.search-bar-shell {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 2.75rem;
+  padding: 0.35rem 0.45rem 0.35rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.search-bar-shell:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.08), 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.search-bar-lg .search-bar-shell { min-height: 3.25rem; padding: 0.5rem 0.55rem 0.5rem 1.15rem; }
+.search-bar-icon { width: 1.15rem; height: 1.15rem; flex-shrink: 0; color: var(--muted); }
+.search-bar-input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  outline: none;
+}
+.search-bar-input::placeholder { color: color-mix(in srgb, var(--muted) 85%, transparent); }
+.search-bar-submit {
+  flex-shrink: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--accent-on);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.45rem 1rem;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.search-bar-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+.search-bar-submit:not(:disabled):hover { opacity: 0.92; }
+
+.search-suggestions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.search-chip {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.search-chip:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+/* ---- Typeahead / autocomplete dropdown --------------------------------- */
+.typeahead { position: relative; width: 100%; }
+.typeahead-menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0.35rem 0;
+  list-style: none;
+  border: 1px solid var(--divider);
+  border-radius: var(--radius);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-1);
+  max-height: 16rem;
+  overflow-y: auto;
+}
+.typeahead-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0.5rem 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+.typeahead-item:hover,
+.typeahead-item--active { background: color-mix(in srgb, var(--accent) 12%, var(--surface-2)); }
+.typeahead-item--muted { color: var(--muted); cursor: default; font-size: 0.8125rem; }
+.typeahead-item-label { font-weight: 500; }
+.typeahead-item-sub { font-size: 0.75rem; color: var(--muted); }
+.typeahead-spinner {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  border: 2px solid color-mix(in srgb, var(--muted) 40%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: typeahead-spin 0.7s linear infinite;
+}
+@keyframes typeahead-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .typeahead-spinner { animation-duration: 1.6s; }
+}
+
+/* =============================================================================
+   OPTIONAL LUSH LAYER — glass / gloss material pass
+   -----------------------------------------------------------------------------
+   This is [golgi.]'s current look. Everything derives from the tokens above via
+   color-mix, so any --brand / palette gets depth automatically. Delete this
+   whole block for a flat Material shell. Rule: interactions never change box
+   size (only background / shadow / opacity / transform animate).
+   ========================================================================= */
+:root {
+  --ease-flow: cubic-bezier(0.22, 0.9, 0.24, 1);
+  --gloss-hi: color-mix(in srgb, #ffffff 9%, transparent);
+  --gloss-hi-strong: color-mix(in srgb, #ffffff 16%, transparent);
+  --gloss-lo: color-mix(in srgb, #000000 22%, transparent);
+  --glass-bg: color-mix(in srgb, var(--surface) 70%, transparent);
+  --surface-2-grad: linear-gradient(180deg, color-mix(in srgb, var(--surface-2) 90%, #ffffff 10%), var(--surface-2));
+  --accent-grad: linear-gradient(180deg, color-mix(in srgb, var(--accent) 86%, #ffffff 14%), var(--accent));
+  --surface-grad: linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, #ffffff 8%), var(--surface));
+  --accent-glow: 0 2px 14px color-mix(in srgb, var(--accent) 40%, transparent);
+  --shadow-lush: 0 1px 0 var(--gloss-hi) inset, 0 1px 2px rgba(0, 0, 0, 0.18), 0 8px 24px -8px rgba(0, 0, 0, 0.32);
+  --shadow-float: 0 1px 0 var(--gloss-hi-strong) inset, 0 12px 40px -12px rgba(0, 0, 0, 0.5);
+}
+html[data-theme="light"] {
+  --gloss-hi: color-mix(in srgb, #ffffff 75%, transparent);
+  --gloss-hi-strong: #ffffff;
+  --gloss-lo: color-mix(in srgb, #000000 8%, transparent);
+  --accent-glow: 0 2px 14px color-mix(in srgb, var(--accent) 28%, transparent);
+  --shadow-lush: 0 1px 0 var(--gloss-hi) inset, 0 1px 2px rgba(60, 64, 67, 0.12), 0 8px 24px -10px rgba(60, 64, 67, 0.22);
+  --shadow-float: 0 1px 0 var(--gloss-hi-strong) inset, 0 12px 40px -14px rgba(60, 64, 67, 0.28);
+}
+
+/* Ambient backdrop instead of flat fill */
+.app-shell {
+  background:
+    radial-gradient(120% 80% at 50% -10%, color-mix(in srgb, var(--accent) 6%, transparent), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg) 94%, #ffffff 6%), var(--bg) 42%);
+}
+/* Glass chrome */
+.app-topbar {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: 0 1px 0 var(--gloss-hi) inset;
+}
+/* Glossy buttons */
+button:not(.primary):not(.btn-text):not(.accent-preset) {
+  background-image: var(--surface-2-grad);
+  box-shadow: 0 1px 0 var(--gloss-hi) inset, 0 1px 2px rgba(0, 0, 0, 0.16);
+}
+button.primary {
+  background-image: var(--accent-grad);
+  box-shadow: 0 1px 0 var(--gloss-hi-strong) inset, 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+button.primary:hover:not(:disabled) {
+  filter: none;
+  box-shadow: 0 1px 0 var(--gloss-hi-strong) inset, var(--accent-glow);
+}
+/* Inset inputs */
+input[type="text"],
+input[type="search"],
+input[type="number"],
+select,
+textarea {
+  background-image: linear-gradient(180deg, var(--gloss-lo), transparent 40%);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.14), var(--focus-ring);
+}
+/* Glass panels + sheen table header + glowing selection */
+.page-panel { background-image: var(--surface-grad); box-shadow: var(--shadow-lush); }
+.app-table thead th { box-shadow: inset 0 -1px 0 var(--divider), inset 0 1px 0 var(--gloss-hi); }
+.app-table tbody tr.is-selected,
+.app-table tbody tr.is-selected:hover {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 20%, transparent), color-mix(in srgb, var(--accent) 12%, transparent));
+  box-shadow: inset 3px 0 0 var(--accent), 0 0 18px -6px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.app-toast {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  backdrop-filter: blur(22px) saturate(1.5);
+  box-shadow: var(--shadow-float);
+}
+/* Page entrance */
+.page-frame:not([hidden]) { animation: page-flow-in 0.28s var(--ease-flow); }
+@keyframes page-flow-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-frame:not([hidden]) { animation: none; }
+}

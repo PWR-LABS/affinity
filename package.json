@@ -1,0 +1,63 @@
+{
+  "name": "affinity",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Free, neutral ACA marketplace plan selection with network-truth verification — find the plan that actually covers your doctors and medications, at its true annual cost.",
+  "license": "MIT",
+  "author": "Christopher Nmai",
+  "homepage": "https://affinity.pwr-labs.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PWR-LABS/affinity.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "clean": "node -e \"const fs=require('fs');for(const p of['.next','.turbo']){try{fs.rmSync(p,{recursive:true,force:true})}catch{}}\"",
+    "dev": "next dev --turbopack",
+    "dev:webpack": "next dev",
+    "build": "prisma generate && next build",
+    "postbuild": "node -e \"const fs=require('fs');for(const p of['.next/standalone/.env','.next/standalone/.env.local','.next/standalone/data/cache']){try{fs.rmSync(p,{recursive:true,force:true})}catch{}}\"",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "bash scripts/run-prisma.sh migrate deploy",
+    "db:migrate:dev": "bash scripts/run-prisma.sh migrate dev",
+    "db:push": "bash scripts/run-prisma.sh db push",
+    "db:studio": "bash scripts/run-prisma.sh studio",
+    "db:up": "docker compose up -d",
+    "eval:api-mrf-diff": "tsx scripts/eval-api-mrf-diff.ts",
+    "eval:match": "tsx scripts/eval-match.ts",
+    "eval:cost": "tsx scripts/eval-cost.ts",
+    "eval:verify": "tsx scripts/eval-verify.ts",
+    "eval:network-bridge": "tsx scripts/eval-network-bridge.ts",
+    "eval:live-dryrun": "tsx scripts/eval-live-dryrun.ts",
+    "eval:ui-smoke": "tsx scripts/eval-ui-smoke.ts",
+    "poc:live": "bash -c 'set -a; [ -f .env ] && . ./.env; set +a; tsx scripts/poc-live.ts'",
+    "eval:m0-smoke": "tsx scripts/eval-m0-smoke.ts",
+    "eval:production-readiness": "tsx scripts/eval-production-readiness.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.6.0",
+    "next": "^15.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.4",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "eslint": "^9.24.0",
+    "eslint-config-next": "^15.3.0",
+    "prisma": "^6.6.0",
+    "tailwindcss": "^4.1.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
+}

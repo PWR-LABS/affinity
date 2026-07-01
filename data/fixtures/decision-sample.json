@@ -1,0 +1,88 @@
+{
+  "_comment": "Demo decision board for the M4 web shell (no API key needed). One household ($25k, 1 person, 3 doctors, 2 meds) against three plans of one issuer. Tells the whole story: ranked by TRUE cost (Silver-with-CSR wins; Bronze has the lowest premium but the highest true cost), with varying network-confidence (Silver + Gold each carry a conflict; Bronze leaves doctors one-sided). MRF is issuer-global; API coverage is per-plan.",
+  "isLive": false,
+  "fetchedAt": "2026-06-17T12:00:00.000Z",
+  "asOf": "2026-06-17T12:00:00.000Z",
+  "profile": {
+    "zip": "43215",
+    "householdIncomeUsd": 25000,
+    "householdSize": 1,
+    "doctors": [
+      { "npi": "1111111111", "label": "Dr. A Okafor (PCP)" },
+      { "npi": "2222222222", "label": "Dr. B Park (cardiology)" },
+      { "npi": "3333333333", "label": "Dr. C Velez (rheumatology)" }
+    ],
+    "medications": [
+      { "rxcui": "617310", "label": "Atorvastatin 20mg" },
+      { "rxcui": "310965", "label": "Ibuprofen 800mg" }
+    ]
+  },
+  "benchmarkMonthlyPremiumUsd": 500,
+  "utilization": { "expectedAllowedMedicalUsd": 6000 },
+  "drug": {
+    "tierMonthlyCopayUsd": { "GENERIC": 10, "PREFERRED_BRAND": 45, "SPECIALTY": 250 },
+    "unknownTierMonthlyCopayUsd": 60,
+    "fillsByRxcui": { "617310": 1, "310965": 1 }
+  },
+  "mrfProviders": [
+    { "npi": "1111111111", "name": { "first": "A", "last": "Okafor" }, "plans": [{ "plan_id": "SILVER1" }, { "plan_id": "GOLD1" }, { "plan_id": "BRONZE1" }], "last_updated_on": "2026-06-17" },
+    { "npi": "2222222222", "name": { "first": "B", "last": "Park" }, "plans": [{ "plan_id": "SILVER1" }, { "plan_id": "GOLD1" }], "last_updated_on": "2026-06-17" },
+    { "npi": "3333333333", "name": { "first": "C", "last": "Velez" }, "plans": [{ "plan_id": "GOLD1" }], "last_updated_on": "2026-06-17" }
+  ],
+  "mrfDrugs": [
+    { "rxnorm_id": "617310", "drug_name": "Atorvastatin Calcium 20 MG", "plans": [{ "plan_id": "SILVER1", "drug_tier": "GENERIC" }, { "plan_id": "GOLD1", "drug_tier": "GENERIC" }, { "plan_id": "BRONZE1", "drug_tier": "GENERIC" }], "last_updated_on": "2026-06-17" },
+    { "rxnorm_id": "310965", "drug_name": "Ibuprofen 800 MG", "plans": [{ "plan_id": "SILVER1", "drug_tier": "GENERIC" }], "last_updated_on": "2026-06-17" }
+  ],
+  "plans": [
+    {
+      "planId": "SILVER1",
+      "planLabel": "BlueSelect Silver 70",
+      "metalLevel": "Silver",
+      "premiumUsdMonthly": 480,
+      "deductibleUsd": 4000,
+      "oopMaxUsd": 8000,
+      "coinsuranceRate": 0.3,
+      "apiProviders": [
+        { "npi": "1111111111", "coverage": "Covered" },
+        { "npi": "2222222222", "coverage": "Covered" },
+        { "npi": "3333333333", "coverage": "Covered" }
+      ],
+      "apiDrugs": [
+        { "rxcui": "617310", "coverage": "Covered", "drug_tier": "GENERIC" },
+        { "rxcui": "310965", "coverage": "Covered", "drug_tier": "GENERIC" }
+      ]
+    },
+    {
+      "planId": "GOLD1",
+      "planLabel": "BlueSelect Gold 80",
+      "metalLevel": "Gold",
+      "premiumUsdMonthly": 600,
+      "deductibleUsd": 1500,
+      "oopMaxUsd": 6000,
+      "coinsuranceRate": 0.2,
+      "apiProviders": [
+        { "npi": "1111111111", "coverage": "Covered" },
+        { "npi": "2222222222", "coverage": "Covered" },
+        { "npi": "3333333333", "coverage": "Covered" }
+      ],
+      "apiDrugs": [
+        { "rxcui": "617310", "coverage": "Covered", "drug_tier": "GENERIC" },
+        { "rxcui": "310965", "coverage": "Covered", "drug_tier": "GENERIC" }
+      ]
+    },
+    {
+      "planId": "BRONZE1",
+      "planLabel": "ValueBronze 60",
+      "metalLevel": "Bronze",
+      "premiumUsdMonthly": 350,
+      "deductibleUsd": 7000,
+      "oopMaxUsd": 9000,
+      "coinsuranceRate": 0.4,
+      "apiProviders": [
+        { "npi": "1111111111", "coverage": "Covered" },
+        { "npi": "2222222222", "coverage": "NotCovered" }
+      ],
+      "apiDrugs": [{ "rxcui": "617310", "coverage": "Covered", "drug_tier": "GENERIC" }]
+    }
+  ]
+}

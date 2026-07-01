@@ -1,0 +1,71 @@
+{
+  "_comment": "Deterministic fixture for `npm run eval:api-mrf-diff` before MARKETPLACE_API_KEY lands. Shapes mirror the real Marketplace API (apiProviders/apiDrugs) and issuer MRF (mrfProviders/mrfDrugs). The probe list drives the reconciliation; it deliberately exercises every verdict: AGREE, CONFLICT, API_ONLY, MRF_ONLY, BOTH_UNKNOWN.",
+  "planId": "12345XX0010001",
+  "planYear": 2026,
+  "issuerName": "Sample Health Plan of the Operator's State",
+  "fetchedAt": "2026-06-17T12:00:00.000Z",
+  "apiProviders": [
+    { "npi": "1111111111", "name": "Jane Okafor, MD", "coverage": "Covered", "network_tier": "PREFERRED" },
+    { "npi": "2222222222", "name": "Lee Park, MD", "coverage": "Covered" },
+    { "npi": "3333333333", "name": "Maria Velez, DO", "coverage": "Covered" },
+    { "npi": "6666666666", "name": "Sam Reed, MD", "coverage": "NotCovered" }
+  ],
+  "apiDrugs": [
+    { "rxcui": "617310", "name": "Atorvastatin Calcium 20 MG", "coverage": "Covered", "drug_tier": "GENERIC" },
+    { "rxcui": "310965", "name": "Ibuprofen 800 MG", "coverage": "Covered", "drug_tier": "GENERIC" },
+    { "rxcui": "999999", "name": "Specialty Infusion XYZ", "coverage": "Covered", "drug_tier": "SPECIALTY" }
+  ],
+  "mrfProviders": [
+    {
+      "npi": "1111111111",
+      "name": { "first": "Jane", "last": "Okafor" },
+      "plans": [{ "plan_id": "12345XX0010001", "network_tier": "PREFERRED" }],
+      "last_updated_on": "2026-05-20"
+    },
+    {
+      "npi": "2222222222",
+      "name": { "first": "Lee", "last": "Park" },
+      "plans": [{ "plan_id": "12345XX0019999", "network_tier": "STANDARD" }],
+      "last_updated_on": "2026-05-20"
+    },
+    {
+      "npi": "4444444444",
+      "name": { "first": "Nadia", "last": "Hassan" },
+      "plans": [{ "plan_id": "12345XX0010001", "network_tier": "STANDARD" }],
+      "last_updated_on": "2026-05-20"
+    },
+    {
+      "npi": "6666666666",
+      "name": { "first": "Sam", "last": "Reed" },
+      "plans": [{ "plan_id": "12345XX0019999", "network_tier": "STANDARD" }],
+      "last_updated_on": "2026-05-20"
+    }
+  ],
+  "mrfDrugs": [
+    {
+      "rxnorm_id": "617310",
+      "drug_name": "Atorvastatin Calcium 20 MG",
+      "plans": [{ "plan_id": "12345XX0010001", "drug_tier": "GENERIC", "prior_authorization": false }],
+      "last_updated_on": "2026-05-20"
+    },
+    {
+      "rxnorm_id": "310965",
+      "drug_name": "Ibuprofen 800 MG",
+      "plans": [{ "plan_id": "12345XX0019999", "drug_tier": "GENERIC", "prior_authorization": false }],
+      "last_updated_on": "2026-05-20"
+    }
+  ],
+  "probe": {
+    "providers": ["1111111111", "2222222222", "3333333333", "4444444444", "5555555555", "6666666666"],
+    "drugs": ["617310", "310965", "999999"]
+  },
+  "expected": {
+    "total": 9,
+    "agree": 3,
+    "conflict": 2,
+    "apiOnly": 2,
+    "mrfOnly": 1,
+    "bothUnknown": 1,
+    "agreementRateAmongComparable": 0.6
+  }
+}

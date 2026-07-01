@@ -1,0 +1,178 @@
+// [affinity.] schema — M0 Profile ↔ Plan spine with coverage-claim provenance.
+//
+// Doctrine guardrails baked into v1:
+//   - Profile (a household) and Plan (an ACA QHP) are the primary objects.
+//   - There is NO bare "in-network" / "on-formulary" boolean anywhere. Every coverage assertion
+//     is a `CoverageClaim` that carries source + freshness + confidence, and "unknown" (null) is a
+//     first-class, honest answer. Conflicts between sources are recorded, not flattened away.
+//   - True cost, not premium: Plan keeps cost-sharing fields so ranking can be on expected annual
+//     cost (the cost engine lands in M2); `premium` alone is never the rank key.
+//   - PII discipline: identifiers are cuids, never household data. Income/age live in columns, never
+//     in any id or external key.
+//   - Provenance is mandatory on every datum sourced from the Marketplace API or an issuer MRF.
+//
+// Cost engine (M2), verification scoring (M3), and crowd/secret-shopper sources (M5) extend the
+// CoverageClaim/Plan models; the provenance columns they need already exist here.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A household shopping for ACA coverage: where they live, who they see, what they take.
+/// The unit the whole product reasons about. No name/SSN/DOB — only what rating + matching need.
+model Profile {
+  id     String @id @default(cuid())
+  /// Optional human label the operator gives a saved profile ("me", "mom"); never identifying PII.
+  label  String?
+
+  // --- Geography → rating area (drives plan availability + subsidy) ---
+  zip        String
+  countyFips String?
+  state      String?
+
+  // --- Household economics (drives PTC/CSR subsidy estimate in M2) ---
+  /// Annual household income in whole dollars (MAGI). Nullable until the user provides it.
+  householdIncomeUsd Int?
+  householdSize      Int?
+  /// Ages of each household member — needed for age-rated premiums. Not DOBs.
+  memberAges         Int[]
+
+  doctors     ProviderRef[]
+  medications MedicationRef[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// A doctor/facility the household needs covered. NPI is the join key against networks.
+model ProviderRef {
+  id        String  @id @default(cuid())
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  /// National Provider Identifier — the stable key we match against issuer networks.
+  npi       String
+  name      String?
+  specialty String?
+
+  createdAt DateTime @default(now())
+
+  @@index([profileId])
+  @@index([npi])
+}
+
+/// A medication the household takes. RxCUI (RxNorm) is the join key against formularies.
+model MedicationRef {
+  id        String  @id @default(cuid())
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  /// RxNorm concept id — the stable key we match against issuer formularies. Nullable until resolved.
+  rxcui  String?
+  name   String
+  dosage String?
+
+  createdAt DateTime @default(now())
+
+  @@index([profileId])
+  @@index([rxcui])
+}
+
+/// An ACA Qualified Health Plan for a rating area / plan year.
+/// Cost-sharing fields exist so M2 can rank on expected annual cost — premium is never the sole key.
+model Plan {
+  id String @id @default(cuid())
+
+  /// Marketplace plan id (14-char HIOS id) for a given year — the external key.
+  externalId   String
+  year         Int
+  issuerName   String
+  marketingName String
+  /// Bronze | Silver | Gold | Platinum | Catastrophic
+  metalLevel   String
+  /// HMO | PPO | EPO | POS | Indemnity (nullable until known)
+  planType     String?
+  ratingAreaId String?
+
+  // --- Cost-sharing (whole dollars / percents; the M2 true-cost engine reads these) ---
+  /// Sticker monthly premium for the rating context (pre-subsidy). NOT the rank key on its own.
+  premiumUsdMonthly      Int?
+  deductibleUsd          Int?
+  oopMaxUsd              Int?
+  primaryCareCopayUsd    Int?
+  coinsuranceRate        Float?
+
+  // --- Provenance (mandatory) ---
+  /// Where this plan record came from, e.g. "marketplace-api".
+  source    String
+  sourceUrl String?
+  fetchedAt DateTime
+
+  coverageClaims CoverageClaim[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([externalId, year])
+  @@index([ratingAreaId, year])
+}
+
+/// A SINGLE coverage assertion — "provider NPI X is in-network on plan Y" or "drug RxCUI Z is on
+/// formulary at tier T". The doctrine object: never a bare boolean.
+///   - `inNetwork` / `onFormulary` are nullable: null means "we don't know", which we say out loud.
+///   - `source`, `fetchedAt`, `confidence` are required — no claim without provenance.
+///   - `sourceLastUpdated` is the freshness the SOURCE reports (distinct from when we fetched).
+///   - `agreesWith` / `conflictsWith` capture API↔MRF reconciliation (the M3 network-truth layer).
+model CoverageClaim {
+  id     String @id @default(cuid())
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  kind         CoverageKind
+  /// NPI (for PROVIDER) or RxCUI (for DRUG) — the subject the claim is about.
+  subjectKey   String
+  subjectLabel String?
+
+  // --- The claim (nullable = honestly unknown) ---
+  inNetwork     Boolean?
+  onFormulary   Boolean?
+  formularyTier String?
+
+  // --- Provenance (the non-negotiable) ---
+  source            CoverageSource
+  sourceUrl         String?
+  fetchedAt         DateTime
+  /// Freshness as reported by the source itself (e.g. MRF `last_updated_on`).
+  sourceLastUpdated DateTime?
+  /// 0..1 — how much to trust this claim before reconciliation.
+  confidence        Float
+
+  // --- Reconciliation (M3 network-truth layer) ---
+  /// Source tags whose answer concurs with this claim.
+  agreesWith    CoverageSource[]
+  /// Source tags whose answer contradicts this claim (a flagged conflict).
+  conflictsWith CoverageSource[]
+
+  createdAt DateTime @default(now())
+
+  @@index([planId, kind, subjectKey])
+}
+
+enum CoverageKind {
+  PROVIDER
+  DRUG
+}
+
+/// Provenance origin for a coverage claim. The two M0 sources are the Marketplace API and the raw
+/// issuer machine-readable files; crowd + secret-shopper verification arrive in M5.
+enum CoverageSource {
+  MARKETPLACE_API
+  ISSUER_MRF
+  CROWD
+  SECRET_SHOPPER
+}

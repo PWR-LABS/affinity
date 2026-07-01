@@ -1,0 +1,37 @@
+# Render Blueprint for [affinity.] — web service (no desktop build).
+# Deploy: push to GitHub, then Render → New → Blueprint, point at this repo.
+# Custom domain (affinity.pwr-labs.ai) is added in the service's Settings → Custom Domains,
+# then a CNAME on pwr-labs.ai → the Render hostname.
+#
+# The web shell renders the demo decision board with NO secrets — it deploys green out of the box.
+# Wire the keys below (Dashboard, sync: false) to switch from demo to live data.
+
+services:
+  - type: web
+    name: affinity
+    runtime: node
+    plan: starter
+    region: ohio # co-located with the other [PWR] LABS services.
+    # --include=dev so build tools (prisma CLI, next, tailwind, typescript) install even though
+    # Render sets NODE_ENV=production (which would otherwise skip devDependencies).
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # --- Marketplace API: flips the board from demo to live data. Set in the dashboard. ---
+      - key: MARKETPLACE_API_KEY
+        sync: false # developer.cms.gov/marketplace-api (free, 60-day rotation)
+      - key: MARKETPLACE_API_BASE
+        value: https://marketplace.api.healthcare.gov/api/v1
+      # --- Optional: persist saved profiles. Add a managed Postgres + set DATABASE_URL to enable.
+      #     The health route + the shell degrade gracefully without it.
+      - key: DATABASE_URL
+        sync: false
+      # --- Runtime LLM explainer: flag OFF by default (ships in M5). Flip + add a key to enable. ---
+      - key: AFFINITY_LLM_ENABLED
+        value: "0"
+      - key: ANTHROPIC_API_KEY
+        sync: false

@@ -1,0 +1,23 @@
+# Local Postgres for [affinity.] dev. `npm run db:up` → `npm run db:migrate:dev`.
+# The health route + evals degrade gracefully without this (DB checks "skipped").
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: affinity-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: affinity
+    ports:
+      - "5432:5432"
+    volumes:
+      - affinity_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d affinity"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  affinity_pgdata:

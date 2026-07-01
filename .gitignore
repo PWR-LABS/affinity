@@ -1,0 +1,27 @@
+.env
+.env.local
+.env*.local
+.env.production
+*.log
+.DS_Store
+.venv/
+node_modules/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+tmp/
+.cache/
+
+__pycache__/
+*.pyc
+
+# Local plan/provider/formulary data caches (large, regenerable from CMS sources)
+data/cache/
+uploads/
+
+# Claude Code machine-local settings (.claude/launch.json is shared and committed)
+.claude/settings.local.json
+
+# Internal-only docs kept out of the public tree (commercial strategy, etc.)
+docs/_internal/
