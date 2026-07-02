@@ -1,10 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Space_Grotesk } from "next/font/google";
+import Script from "next/script";
 
 import { SiteShell } from "@/components/SiteShell";
 
 import "./globals.css";
+
+// Optional Google Analytics — renders nothing unless NEXT_PUBLIC_GA_MEASUREMENT_ID is set at
+// build time, so forks and self-hosts ship analytics-free by default. Pageview counting only;
+// no health/income data is ever in a URL, so nothing sensitive can reach the tag.
+const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 // Display face — the [PWR] LABS canon wordmark typeface. Body copy stays on the clean system stack.
 const spaceGrotesk = Space_Grotesk({
@@ -53,6 +59,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={spaceGrotesk.variable}>
       <body>
         <SiteShell>{children}</SiteShell>
+        {gaId ? (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${gaId}');`}
+            </Script>
+          </>
+        ) : null}
       </body>
     </html>
   );
