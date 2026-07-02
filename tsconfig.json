@@ -17,5 +17,6 @@
     "paths": { "@/*": ["./src/*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  // tools/ is a standalone tsx toolchain (tools/tic-ingest) with its own tests — not part of the app build.
+  "exclude": ["node_modules", "tools"]
 }

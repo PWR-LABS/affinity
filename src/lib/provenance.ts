@@ -10,7 +10,7 @@
  */
 
 /** Origin of a coverage datum. Mirrors the Prisma `CoverageSource` enum. */
-export type SourceTag = "MARKETPLACE_API" | "ISSUER_MRF" | "CROWD" | "SECRET_SHOPPER";
+export type SourceTag = "MARKETPLACE_API" | "ISSUER_MRF" | "ISSUER_TIC_MRF" | "CROWD" | "SECRET_SHOPPER";
 
 /** Tri-state answer. `unknown` is a first-class, honest result — never coerce it to `no`. */
 export type Tristate = "yes" | "no" | "unknown";
@@ -47,6 +47,9 @@ export interface CoverageAnswer {
 export const BASE_CONFIDENCE: Record<SourceTag, number> = {
   // The issuer MRF is the closest thing to "the issuer's own word" but is documented to be buggy.
   ISSUER_MRF: 0.6,
+  // The Transparency-in-Coverage in-network file: the same "issuer's own word" class for
+  // commercial/employer plans (federally mandated, monthly). Same trust tier as the QHP MRF.
+  ISSUER_TIC_MRF: 0.6,
   // The Marketplace API derives from issuer data and lags; treat as corroborating, not gospel.
   MARKETPLACE_API: 0.55,
   // Crowd + secret-shopper land in M5; a real-world confirmation outranks a file.
@@ -139,6 +142,8 @@ function sourceLabel(s: SourceTag): string {
       return "the Marketplace API";
     case "ISSUER_MRF":
       return "the issuer's machine-readable file";
+    case "ISSUER_TIC_MRF":
+      return "the issuer's Transparency-in-Coverage file";
     case "CROWD":
       return "crowd reports";
     case "SECRET_SHOPPER":

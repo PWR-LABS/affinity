@@ -2,7 +2,7 @@
   "name": "affinity",
   "version": "0.1.0",
   "private": true,
-  "description": "Free, neutral ACA marketplace plan selection with network-truth verification — find the plan that actually covers your doctors and medications, at its true annual cost.",
+  "description": "Free, neutral ACA marketplace plan selection with network-truth verification \u2014 find the plan that actually covers your doctors and medications, at its true annual cost.",
   "license": "MIT",
   "author": "Christopher Nmai",
   "homepage": "https://affinity.pwr-labs.ai",
@@ -39,7 +39,8 @@
     "eval:ui-smoke": "tsx scripts/eval-ui-smoke.ts",
     "poc:live": "bash -c 'set -a; [ -f .env ] && . ./.env; set +a; tsx scripts/poc-live.ts'",
     "eval:m0-smoke": "tsx scripts/eval-m0-smoke.ts",
-    "eval:production-readiness": "tsx scripts/eval-production-readiness.ts"
+    "eval:production-readiness": "tsx scripts/eval-production-readiness.ts",
+    "tic:load": "tsx scripts/tic-load.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",

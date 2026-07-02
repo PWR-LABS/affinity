@@ -169,10 +169,65 @@ enum CoverageKind {
 }
 
 /// Provenance origin for a coverage claim. The two M0 sources are the Marketplace API and the raw
-/// issuer machine-readable files; crowd + secret-shopper verification arrive in M5.
+/// issuer machine-readable files; ISSUER_TIC_MRF is the commercial Transparency-in-Coverage
+/// in-network file; crowd + secret-shopper verification arrive in M5.
 enum CoverageSource {
   MARKETPLACE_API
   ISSUER_MRF
+  ISSUER_TIC_MRF
   CROWD
   SECRET_SHOPPER
+}
+
+// ---------------------------------------------------------------------------
+// Commercial TiC network-membership index (S4 of the commercial pilot).
+// The THIN index: we never store negotiated rates, and we never materialize an
+// (npi × plan) cross product. A TicFile serves many plans (TicPlanLink, from the
+// issuer's table of contents) and lists many providers (TicMembership, from the
+// in-network file). "Is NPI x in-network on plan y?" = join through the file.
+// ---------------------------------------------------------------------------
+
+/// One issuer Transparency-in-Coverage in-network file (a shard) we've indexed.
+model TicFile {
+  id              String    @id @default(cuid())
+  url             String    @unique
+  reportingEntity String
+  /// The file's own `last_updated_on` — freshness as the SOURCE reports it.
+  sourceLastUpdated DateTime?
+  /// Structural mode the extractor detected ("v1" reference-style | "v2" inline).
+  schemaMode      String?
+  /// When our pipeline pulled + extracted the file.
+  fetchedAt       DateTime
+  memberships     TicMembership[]
+  planLinks       TicPlanLink[]
+
+  @@index([reportingEntity])
+}
+
+/// Provider ↔ file membership: NPI appears in this in-network file under this TIN.
+model TicMembership {
+  id       String  @id @default(cuid())
+  fileId   String
+  file     TicFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  npi      String
+  tinType  String
+  tinValue String
+
+  @@unique([fileId, npi, tinValue])
+  @@index([npi])
+}
+
+/// File ↔ reporting plan (from the issuer's table of contents): which plans this file reports for.
+model TicPlanLink {
+  id             String  @id @default(cuid())
+  fileId         String
+  file           TicFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  planName       String
+  /// "EIN" (employer group) or "HIOS" (individual/marketplace) — how planId is keyed.
+  planIdType     String
+  planId         String
+  planMarketType String?
+
+  @@index([planIdType, planId])
+  @@index([fileId])
 }
