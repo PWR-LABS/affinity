@@ -68,3 +68,22 @@ income / providers / medications are set locally in `.env` and never committed.
   `prefers-reduced-motion` guard; verified structure (one h1/page, labeled inputs, no positive tabindex).
 - **Brand** — the [PWR] LABS family bracket-dot mark as favicon + iOS icon, and the bracketed `[affinity.]`
   wordmark in the header, share card, and page title.
+
+## Commercial pilot — the TiC network-truth layer (2026-07-02)
+
+- **Ingest toolchain** (`tools/tic-ingest/`, built by Codex to spec, independently verified): streaming
+  table-of-contents manifest, constant-memory in-network extractor (v2 inline + v1 reference fallback,
+  rates discarded entirely), NPPES metro allowlist. Real pilot: Medical Mutual of Ohio — 61 files, 5 GB
+  gz → **630K provider↔plan memberships** extracted and loaded.
+- **S4 — thin index.** `ISSUER_TIC_MRF` source tag; `TicFile`/`TicMembership`/`TicPlanLink` (membership
+  joins through the file — no npi×plan explosion, no rates stored); idempotent `tic:load`; first Prisma
+  migration applied to a real Postgres.
+- **S5 — N-way reconciliation.** `reconcileMany()`: agreement across k independent sources compounds
+  toward a hard 0.95 cap; any conflict collapses confidence, stays consensus-unknown (a majority never
+  silently wins), and is stamped onto every answer. The M0 two-way form is now a view over the same
+  core. TiC adapter emits doctrine-shaped answers (listed→yes · indexed-but-absent→no · unindexed→honest
+  unknown). New `eval:tic-reconcile`; readiness bundle now 10 gates.
+- **S6 — `/verify` (beta).** Verify a doctor on an employer plan: plan-name search over the indexed
+  links + direct EIN entry (W-2 box b), doctrine-rendered result with source, freshness, and a visible
+  confidence meter. Honest limits on-page: one source, doctors-only for commercial, confirm before
+  relying. Off the main nav until the index is provisioned in production.
