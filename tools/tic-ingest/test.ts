@@ -139,6 +139,89 @@ test("large repeated gzip completes under a 256 MB old-space ceiling", { timeout
   assert.equal((await readNdjson(outPath)).length, 3);
 });
 
+test("nppes fixture produces byte-identical allowlist outputs", async () => {
+  const work = await makeTempDir("nppes-fixtures-");
+  const outPath = join(work, "allowlist.txt");
+  const metaPath = join(work, "allowlist.meta.csv");
+
+  const result = await runTsx([
+    "nppes-allowlist.ts",
+    "--in",
+    "fixtures/nppes-sample.csv",
+    "--state",
+    "OH",
+    "--zip-prefixes",
+    "440,441",
+    "--out",
+    outPath,
+  ]);
+  const summary = parseSummary(result.stderr);
+
+  assert.equal(summary.rows_scanned, 15);
+  assert.equal(summary.matched, 8);
+  assert.equal(summary.deactivated_skipped, 1);
+  await assertSameFile(join(toolRoot, "fixtures/expected-allowlist.txt"), outPath);
+  await assertSameFile(join(toolRoot, "fixtures/expected-allowlist.meta.csv"), metaPath);
+});
+
+test("nppes entity and taxonomy filters are applied together", async () => {
+  const work = await makeTempDir("nppes-filters-");
+  const outPath = join(work, "allowlist.txt");
+
+  await runTsx([
+    "nppes-allowlist.ts",
+    "--in",
+    "fixtures/nppes-sample.csv",
+    "--state",
+    "OH",
+    "--zip-prefixes",
+    "440,441",
+    "--entity-type",
+    "1",
+    "--taxonomy-prefixes",
+    "207R",
+    "--out",
+    outPath,
+  ]);
+
+  assert.deepEqual(await readLines(outPath), ["1000000007", "1000000010"]);
+});
+
+test("large repeated NPPES CSV completes under a 128 MB old-space ceiling", { timeout: 600_000 }, async () => {
+  const work = await makeTempDir("nppes-memory-");
+  try {
+    const bigPath = join(work, "npidata-pfile.csv");
+    const outPath = join(work, "allowlist.txt");
+    const targetBytes = Number(process.env.NPPES_MEMORY_BYTES ?? String(2 * 1024 * 1024 * 1024));
+    await writeRepeatedNppesCsv(bigPath, targetBytes);
+    const stat = await fs.stat(bigPath);
+    assert.ok(stat.size >= targetBytes, `expected generated CSV >= ${targetBytes} bytes; got ${stat.size}`);
+
+    const result = await runNode(
+      [
+        "--max-old-space-size=128",
+        tsxBin,
+        "nppes-allowlist.ts",
+        "--in",
+        bigPath,
+        "--state",
+        "OH",
+        "--zip-prefixes",
+        "440,441",
+        "--out",
+        outPath,
+      ],
+      { timeoutMs: 600_000 },
+    );
+    const summary = parseSummary(result.stderr);
+    assert.ok(Number(summary.rows_scanned) > 0);
+    assert.ok(Number(summary.matched) > 0);
+    assert.deepEqual(await readLines(outPath), ["2000000001", "2000000002"]);
+  } finally {
+    await fs.rm(work, { recursive: true, force: true });
+  }
+});
+
 async function writeRepeatedV2Fixture(path: string, totalEntries: number): Promise<void> {
   await fs.mkdir(dirname(path), { recursive: true });
   const fixture = JSON.parse(await fs.readFile(join(toolRoot, "fixtures/tic-in-network-v2-sample.json"), "utf8"));
@@ -171,6 +254,36 @@ async function writeRepeatedV2Fixture(path: string, totalEntries: number): Promi
   await once(output, "finish");
 }
 
+async function writeRepeatedNppesCsv(path: string, targetBytes: number): Promise<void> {
+  await fs.mkdir(dirname(path), { recursive: true });
+  const output = createWriteStream(path);
+  let written = 0;
+
+  const write = async (chunk: string) => {
+    written += Buffer.byteLength(chunk);
+    if (!output.write(chunk)) await once(output, "drain");
+  };
+
+  const header =
+    "NPI,Entity Type Code,Provider Organization Name (Legal Business Name),Provider Last Name (Legal Name),Provider First Name,Provider Business Practice Location Address City Name,Provider Business Practice Location Address State Name,Provider Business Practice Location Address Postal Code,Healthcare Provider Taxonomy Code_1,NPI Deactivation Date,NPI Reactivation Date\n";
+  const rows = [
+    "2000000001,1,,Memory,Mina,Cleveland,OH,440010000,207Q00000X,,",
+    "2000000002,2,Memory Clinic,,,Cleveland,OH,441010000,261Q00000X,,",
+    "2000000003,1,,Closed,Cory,Cleveland,OH,440010000,207Q00000X,2025-01-01,",
+  ].join("\n");
+  const rowBlock = `${rows}\n`;
+  let chunk = "";
+  while (Buffer.byteLength(chunk) < 1024 * 1024) chunk += rowBlock;
+
+  await write(header);
+  while (written < targetBytes) {
+    await write(chunk);
+  }
+
+  output.end();
+  await once(output, "finish");
+}
+
 async function assertSameFile(expected: string, actual: string): Promise<void> {
   assert.equal(await fs.readFile(actual, "utf8"), await fs.readFile(expected, "utf8"));
 }
@@ -186,6 +299,11 @@ async function readNdjson(path: string): Promise<Record<string, unknown>[]> {
     .split("\n")
     .filter(Boolean)
     .map((line) => JSON.parse(line));
+}
+
+async function readLines(path: string): Promise<string[]> {
+  const text = await fs.readFile(path, "utf8");
+  return text.trim().split("\n").filter(Boolean);
 }
 
 function parseSummary(stderr: string): Record<string, unknown> {

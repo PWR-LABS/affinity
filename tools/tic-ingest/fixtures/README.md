@@ -7,6 +7,9 @@ executed from the tool root exactly as:
 tsx tic-extract.ts --in fixtures/tic-in-network-v2-sample.json --out out-v2.ndjson   # diff vs fixtures/expected-v2.ndjson
 tsx tic-extract.ts --in fixtures/tic-in-network-v1-sample.json --out out-v1.ndjson   # diff vs fixtures/expected-v1.ndjson
 tsx toc-manifest.ts --in fixtures/toc-sample.json --out out-manifest.csv             # diff vs fixtures/expected-manifest.csv
+tsx nppes-allowlist.ts --in fixtures/nppes-sample.csv --state OH --zip-prefixes 440,441 --out out-allowlist.txt
+                                                                                     # diff out-allowlist.txt vs fixtures/expected-allowlist.txt
+                                                                                     # diff out-allowlist.meta.csv vs fixtures/expected-allowlist.meta.csv
 ```
 
 Manifest sort: by `file_url`, then `plan_id`. Rows for structures with only an `allowed_amount_file`
@@ -18,4 +21,5 @@ The v2 fixture intentionally contains: an `npi: [0]` sentinel group (dropped), a
 across two `in_network` items (deduped). The v1 fixture contains a solo provider whose `tin.type` is
 `"npi"` and whose NPI equals `tin.value` — that one is **kept**.
 
-SPEC-3's NPPES fixture is built by the implementer (synthetic values only) per the spec.
+The SPEC-3 NPPES fixture uses synthetic values only and the canonical CMS data-dictionary column names
+referenced by `SPEC-3-nppes-allowlist.md`.

@@ -1,0 +1,16 @@
+NPI,Entity Type Code,Provider Organization Name (Legal Business Name),Provider Last Name (Legal Name),Provider First Name,Provider Business Practice Location Address City Name,Provider Business Practice Location Address State Name,Provider Business Practice Location Address Postal Code,Healthcare Provider Taxonomy Code_1,NPI Deactivation Date,NPI Reactivation Date
+1000000001,1,,Alpha,Alice,Lakewood,OH,440011234,207Q00000X,,
+1000000002,2,"Acme, Health Group",,,Cleveland,OH,44113-2222,261Q00000X,,
+1000000003,1,,Outside,Olive,Brunswick,OH,442120000,207Q00000X,,
+1000000004,1,,State,Sam,Erie,PA,440010000,207Q00000X,,
+1000000005,2,Closed Clinic,,,Cleveland,OH,440010000,261Q00000X,2025-01-01,
+1000000006,1,,Renew,Rita,Avon,OH,440110000,363L00000X,2024-01-01,2024-02-01
+1000000007,1,,"Able, Jr.",Ada,Cleveland,OH,441140000,207R00000X,,
+1000000008,2,North Coast Clinic,,,Elyria,OH,440350000,208D00000X,,
+1000000008,2,North Coast Clinic Duplicate,,,Elyria,OH,440350001,208D00000X,,
+1000000009,1,,Other,Owen,Lexington,KY,441020000,207Q00000X,,
+1000000010,1,,Ten,Taylor,Cleveland,OH,441020000,207R00000X,,
+1000000011,2,Westside Lab,,,Westlake,OH,439990000,291U00000X,,
+1000000012,1,,Dental,Devon,Lorain,OH,440900000,1223G0001X,,
+100000013,1,,Invalid,Ivy,Cleveland,OH,440010000,207Q00000X,,
+1000000014,2,Far Away Imaging,,,Columbus,OH,430850000,261Q00000X,,
