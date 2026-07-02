@@ -40,7 +40,8 @@
     "poc:live": "bash -c 'set -a; [ -f .env ] && . ./.env; set +a; tsx scripts/poc-live.ts'",
     "eval:m0-smoke": "tsx scripts/eval-m0-smoke.ts",
     "eval:production-readiness": "tsx scripts/eval-production-readiness.ts",
-    "tic:load": "tsx scripts/tic-load.ts"
+    "tic:load": "tsx scripts/tic-load.ts",
+    "eval:tic-reconcile": "tsx scripts/eval-tic-reconcile.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",

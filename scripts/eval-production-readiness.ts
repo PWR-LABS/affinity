@@ -17,6 +17,8 @@ const GATES = [
   "eval:verify",
   "eval:live-dryrun",
   "eval:ui-smoke",
+  "eval:network-bridge",
+  "eval:tic-reconcile",
 ];
 
 function run(script: string): boolean {
