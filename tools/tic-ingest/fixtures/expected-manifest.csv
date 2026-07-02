@@ -1,0 +1,5 @@
+file_url,file_description,plan_name,plan_id_type,plan_id,plan_market_type,reporting_entity
+https://example.com/mrf/2026-06_sample_HMO-OH_in-network.json.gz,in-network OH HMO,Sample HMO Bronze,HIOS,12345OH0020001,individual,Sample Health Plan
+https://example.com/mrf/2026-06_sample_PPO-OH_in-network.json.gz,in-network OH PPO,Sample HMO Bronze,HIOS,12345OH0020001,individual,Sample Health Plan
+https://example.com/mrf/2026-06_sample_PPO-OH_in-network.json.gz,in-network OH PPO,"Sample PPO Gold, Large Group",EIN,121234567,group,Sample Health Plan
+https://example.com/mrf/2026-06_sample_PPO-OH_in-network.json.gz,in-network OH PPO,Sample PPO Silver,HIOS,12345OH0010001,individual,Sample Health Plan

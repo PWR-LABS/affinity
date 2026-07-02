@@ -1,0 +1,30 @@
+{
+  "reporting_entity_name": "Sample Health Plan",
+  "reporting_entity_type": "health insurance issuer",
+  "reporting_structure": [
+    {
+      "reporting_plans": [
+        { "plan_name": "Sample PPO Gold, Large Group", "plan_id_type": "EIN", "plan_id": "121234567", "plan_market_type": "group" },
+        { "plan_name": "Sample PPO Silver", "plan_id_type": "HIOS", "plan_id": "12345OH0010001", "plan_market_type": "individual" }
+      ],
+      "in_network_files": [
+        { "description": "in-network OH PPO", "location": "https://example.com/mrf/2026-06_sample_PPO-OH_in-network.json.gz" }
+      ]
+    },
+    {
+      "reporting_plans": [
+        { "plan_name": "Sample HMO Bronze", "plan_id_type": "HIOS", "plan_id": "12345OH0020001", "plan_market_type": "individual" }
+      ],
+      "in_network_files": [
+        { "description": "in-network OH PPO", "location": "https://example.com/mrf/2026-06_sample_PPO-OH_in-network.json.gz" },
+        { "description": "in-network OH HMO", "location": "https://example.com/mrf/2026-06_sample_HMO-OH_in-network.json.gz" }
+      ]
+    },
+    {
+      "reporting_plans": [
+        { "plan_name": "Sample \"Legacy, Retiree\" Plan", "plan_id_type": "EIN", "plan_id": "129876543", "plan_market_type": "group" }
+      ],
+      "allowed_amount_file": { "description": "allowed amounts", "location": "https://example.com/mrf/allowed.json.gz" }
+    }
+  ]
+}

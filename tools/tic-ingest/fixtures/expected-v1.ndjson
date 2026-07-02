@@ -1,0 +1,3 @@
+{"npi":"1487654329","tin_type":"ein","tin_value":"999888777","file_url":"fixtures/tic-in-network-v1-sample.json","reporting_entity":"Legacy Sample Plan","last_updated_on":"2026-05-15","schema":"v1"}
+{"npi":"1487654329","tin_type":"npi","tin_value":"1558362104","file_url":"fixtures/tic-in-network-v1-sample.json","reporting_entity":"Legacy Sample Plan","last_updated_on":"2026-05-15","schema":"v1"}
+{"npi":"1558362104","tin_type":"npi","tin_value":"1558362104","file_url":"fixtures/tic-in-network-v1-sample.json","reporting_entity":"Legacy Sample Plan","last_updated_on":"2026-05-15","schema":"v1"}

@@ -1,0 +1,37 @@
+{
+  "reporting_entity_name": "Legacy Sample Plan",
+  "reporting_entity_type": "health insurance issuer",
+  "last_updated_on": "2026-05-15",
+  "version": "1.0.0",
+  "provider_references": [
+    {
+      "provider_group_id": 1,
+      "provider_groups": [
+        { "npi": [1487654329], "tin": { "type": "ein", "value": "999888777" } }
+      ]
+    },
+    {
+      "provider_group_id": 2,
+      "provider_groups": [
+        { "npi": [1487654329, 1558362104], "tin": { "type": "npi", "value": "1558362104" } }
+      ]
+    }
+  ],
+  "in_network": [
+    {
+      "negotiation_arrangement": "ffs",
+      "name": "Office visit, established patient",
+      "billing_code_type": "CPT",
+      "billing_code_type_version": "2026",
+      "billing_code": "99213",
+      "negotiated_rates": [
+        {
+          "provider_references": [1, 2],
+          "negotiated_prices": [
+            { "negotiated_type": "negotiated", "negotiated_rate": 92.0, "expiration_date": "9999-12-31", "service_code": ["11"], "billing_class": "professional" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+{"npi":"1093712345","tin_type":"ein","tin_value":"111222333","file_url":"fixtures/tic-in-network-v2-sample.json","reporting_entity":"Sample Health Plan","last_updated_on":"2026-06-01","schema":"v2"}
+{"npi":"1234567893","tin_type":"ein","tin_value":"111222333","file_url":"fixtures/tic-in-network-v2-sample.json","reporting_entity":"Sample Health Plan","last_updated_on":"2026-06-01","schema":"v2"}
+{"npi":"1770589349","tin_type":"ein","tin_value":"123456789","file_url":"fixtures/tic-in-network-v2-sample.json","reporting_entity":"Sample Health Plan","last_updated_on":"2026-06-01","schema":"v2"}
