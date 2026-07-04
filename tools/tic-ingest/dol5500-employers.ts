@@ -288,10 +288,14 @@ function normalizeName(name: string): string {
 }
 
 function hasHealthBenefit(value: string): boolean {
-  return value
-    .toUpperCase()
-    .split(/[^A-Z0-9]+/)
-    .includes("4A");
+  // DOL welfare codes are 2-char tokens (4A..4U) usually CONCATENATED with no separator
+  // (e.g. Kroger's real cell: "4A4B4E4F4G4H4L"); some layouts use commas. Strip separators,
+  // then scan 2-char chunks — exact-token matching drops most real health plans.
+  const s = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  for (let i = 0; i + 2 <= s.length; i += 2) {
+    if (s.slice(i, i + 2) === "4A") return true;
+  }
+  return false;
 }
 
 async function writeOutput(out: string, employers: Map<string, EmployerRow>): Promise<void> {
