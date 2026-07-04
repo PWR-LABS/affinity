@@ -10,6 +10,8 @@ tsx toc-manifest.ts --in fixtures/toc-sample.json --out out-manifest.csv        
 tsx nppes-allowlist.ts --in fixtures/nppes-sample.csv --state OH --zip-prefixes 440,441 --out out-allowlist.txt
                                                                                      # diff out-allowlist.txt vs fixtures/expected-allowlist.txt
                                                                                      # diff out-allowlist.meta.csv vs fixtures/expected-allowlist.meta.csv
+tsx dol5500-employers.ts --in fixtures/dol5500-sample.csv --in fixtures/dol5500-sf-sample.csv --out out-employers.ndjson
+                                                                                     # diff vs fixtures/expected-employers.ndjson
 ```
 
 Manifest sort: by `file_url`, then `plan_id`. Rows for structures with only an `allowed_amount_file`
@@ -23,3 +25,5 @@ across two `in_network` items (deduped). The v1 fixture contains a solo provider
 
 The SPEC-3 NPPES fixture uses synthetic values only and the canonical CMS data-dictionary column names
 referenced by `SPEC-3-nppes-allowlist.md`.
+
+The SPEC-4 DOL fixtures use synthetic values only and cover both Form 5500 and Form 5500-SF header names.

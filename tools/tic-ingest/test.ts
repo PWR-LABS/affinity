@@ -222,6 +222,87 @@ test("large repeated NPPES CSV completes under a 128 MB old-space ceiling", { ti
   }
 });
 
+test("dol5500 fixture produces byte-identical employer output", async () => {
+  const work = await makeTempDir("dol5500-fixtures-");
+  const outPath = join(work, "employers.ndjson");
+
+  const result = await runTsx([
+    "dol5500-employers.ts",
+    "--in",
+    "fixtures/dol5500-sample.csv",
+    "--in",
+    "fixtures/dol5500-sf-sample.csv",
+    "--out",
+    outPath,
+  ]);
+  const summary = parseSummary(result.stderr);
+
+  assert.equal(summary.rows_scanned, 20);
+  assert.equal(summary.kept, 14);
+  assert.equal(summary.dropped_non_health, 4);
+  assert.equal(summary.dropped_bad_ein, 2);
+  assert.equal(summary.employers_emitted, 11);
+  await assertSameFile(join(toolRoot, "fixtures/expected-employers.ndjson"), outPath);
+});
+
+test("dol5500 --no-health-only includes non-health plans", async () => {
+  const work = await makeTempDir("dol5500-no-health-filter-");
+  const outPath = join(work, "employers.ndjson");
+
+  const result = await runTsx([
+    "dol5500-employers.ts",
+    "--in",
+    "fixtures/dol5500-sample.csv",
+    "--out",
+    outPath,
+    "--no-health-only",
+  ]);
+  const summary = parseSummary(result.stderr);
+  const records = await readNdjson(outPath);
+
+  assert.equal(summary.dropped_non_health, 0);
+  assert.ok(records.some((record) => record.name_norm === "PINE RETIREMENT"));
+  assert.ok(records.some((record) => record.name_norm === "HARBOR VISION"));
+});
+
+test("large repeated DOL 5500 CSV completes under a 256 MB old-space ceiling", { timeout: 600_000 }, async () => {
+  const work = await makeTempDir("dol5500-memory-");
+  try {
+    const bigPath = join(work, "f_5500_2025_latest.csv");
+    const outPath = join(work, "employers.ndjson");
+    const targetBytes = Number(process.env.DOL5500_MEMORY_BYTES ?? String(2 * 1024 * 1024 * 1024));
+    await writeRepeatedDol5500Csv(bigPath, targetBytes);
+    const stat = await fs.stat(bigPath);
+    assert.ok(stat.size >= targetBytes, `expected generated CSV >= ${targetBytes} bytes; got ${stat.size}`);
+
+    const result = await runNode(
+      [
+        "--max-old-space-size=256",
+        tsxBin,
+        "dol5500-employers.ts",
+        "--in",
+        bigPath,
+        "--out",
+        outPath,
+      ],
+      { timeoutMs: 600_000 },
+    );
+    const summary = parseSummary(result.stderr);
+    const records = await readNdjson(outPath);
+
+    assert.ok(Number(summary.rows_scanned) > 0);
+    assert.ok(Number(summary.dropped_non_health) > 0);
+    assert.ok(Number(summary.dropped_bad_ein) > 0);
+    assert.equal(summary.employers_emitted, 2);
+    assert.deepEqual(
+      records.map((record) => record.name_norm),
+      ["MEMORY CLINIC", "MEMORY MARKET"],
+    );
+  } finally {
+    await fs.rm(work, { recursive: true, force: true });
+  }
+});
+
 async function writeRepeatedV2Fixture(path: string, totalEntries: number): Promise<void> {
   await fs.mkdir(dirname(path), { recursive: true });
   const fixture = JSON.parse(await fs.readFile(join(toolRoot, "fixtures/tic-in-network-v2-sample.json"), "utf8"));
@@ -270,6 +351,38 @@ async function writeRepeatedNppesCsv(path: string, targetBytes: number): Promise
     "2000000001,1,,Memory,Mina,Cleveland,OH,440010000,207Q00000X,,",
     "2000000002,2,Memory Clinic,,,Cleveland,OH,441010000,261Q00000X,,",
     "2000000003,1,,Closed,Cory,Cleveland,OH,440010000,207Q00000X,2025-01-01,",
+  ].join("\n");
+  const rowBlock = `${rows}\n`;
+  let chunk = "";
+  while (Buffer.byteLength(chunk) < 1024 * 1024) chunk += rowBlock;
+
+  await write(header);
+  while (written < targetBytes) {
+    await write(chunk);
+  }
+
+  output.end();
+  await once(output, "finish");
+}
+
+async function writeRepeatedDol5500Csv(path: string, targetBytes: number): Promise<void> {
+  await fs.mkdir(dirname(path), { recursive: true });
+  const output = createWriteStream(path);
+  let written = 0;
+
+  const write = async (chunk: string) => {
+    written += Buffer.byteLength(chunk);
+    if (!output.write(chunk)) await once(output, "drain");
+  };
+
+  const header =
+    "FORM_PLAN_YEAR_BEGIN_DATE,PLAN_NAME,SPONSOR_DFE_NAME,SPONS_DFE_MAIL_US_STATE,SPONS_DFE_EIN,TOT_ACT_PARTCP_BOY_CNT,TYPE_WELFARE_BNFT_CODE\n";
+  const rows = [
+    "2025-01-01,Memory Market Health Plan,THE MEMORY MARKET CO,OH,400000001,1200,4A",
+    "2025-01-01,Memory Market Health Plan,Memory Market Company,OH,400000001,900,4A",
+    "2025-01-01,Memory Clinic Health Plan,Memory Clinic LLC,OH,400000002,300,4A",
+    "2025-01-01,Memory Savings Plan,Memory Savings LLC,OH,400000003,200,2J",
+    "2025-01-01,Bad Memory Health Plan,Bad Memory LLC,OH,BAD-EIN,100,4A",
   ].join("\n");
   const rowBlock = `${rows}\n`;
   let chunk = "";
