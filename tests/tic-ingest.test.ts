@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { groupManifestByFile, parseManifestLine, parseMembershipLine, splitCsvLine } from "@/lib/tic/ingest";
+import {
+  groupManifestByFile,
+  normalizeEmployerName,
+  parseEmployerEinLine,
+  parseManifestLine,
+  parseMembershipLine,
+  splitCsvLine,
+} from "@/lib/tic/ingest";
 
 test("splitCsvLine handles quoted commas and doubled quotes", () => {
   assert.deepEqual(splitCsvLine('a,"b, with comma",c'), ["a", "b, with comma", "c"]);
@@ -38,4 +45,23 @@ test("groupManifestByFile dedups identical plan links and keys by file", () => {
   assert.equal(grouped.size, 2);
   assert.equal(grouped.get("https://x/f.json.gz")?.plans.length, 2);
   assert.equal(grouped.get("https://x/g.json.gz")?.plans.length, 1);
+});
+
+test("normalizeEmployerName matches SPEC-4 suffix stripping for employer search", () => {
+  assert.equal(normalizeEmployerName("THE Kroger Co."), "KROGER");
+  assert.equal(normalizeEmployerName("Acme Holdings LLC"), "ACME");
+  assert.equal(normalizeEmployerName("THE"), "THE");
+  assert.equal(normalizeEmployerName("Blue River, Health LLC"), "BLUE RIVER HEALTH");
+});
+
+test("parseEmployerEinLine parses SPEC-4 NDJSON and rejects malformed rows", () => {
+  const row = parseEmployerEinLine(
+    '{"ein":"310675386","name":"THE KROGER CO","name_norm":"KROGER","state":"OH","plan_name":"KROGER HEALTH & WELFARE PLAN","participants":420000,"form":"5500","plan_year":2025}',
+  );
+  assert.ok(row);
+  assert.equal(row.ein, "310675386");
+  assert.equal(row.nameNorm, "KROGER");
+  assert.equal(row.planName, "KROGER HEALTH & WELFARE PLAN");
+  assert.equal(parseEmployerEinLine("not json"), null);
+  assert.equal(parseEmployerEinLine('{"ein":"bad","name":"Bad Co"}'), null);
 });

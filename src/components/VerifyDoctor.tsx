@@ -56,6 +56,20 @@ export function VerifyDoctor() {
     }));
   }, []);
 
+  const fetchEmployers = useCallback(async (q: string): Promise<Suggestion[]> => {
+    const r = await fetch(`/api/employers/search?q=${encodeURIComponent(q)}`);
+    const d = await r.json().catch(() => ({ items: [] }));
+    if (!r.ok) return [];
+    return (d.items ?? []).map((e: { ein: string; name: string; state?: string | null; planName?: string | null }) => {
+      const bits = [e.state, `EIN ${e.ein}`].filter(Boolean);
+      return {
+        key: e.ein,
+        label: e.name,
+        sub: `${bits.join(" · ")}${e.planName ? ` (${e.planName})` : ""}`,
+      };
+    });
+  }, []);
+
   const npi = doctor?.npi ?? (/^\d{10}$/.test(npiDirect) ? npiDirect : null);
   const planSel = plan ?? (/^\d{9}$/.test(einDirect) ? { idType: "ein", id: einDirect, label: `Employer EIN ${einDirect}` } : null);
 
@@ -122,6 +136,17 @@ export function VerifyDoctor() {
               setEinDirect("");
             }}
           />
+          <div style={{ marginTop: "0.5rem" }}>
+            <Typeahead
+              label="…or search your employer"
+              placeholder="Employer name, e.g. Kroger"
+              fetchSuggestions={fetchEmployers}
+              onSelect={(s) => {
+                setPlan({ idType: "ein", id: s.key, label: s.label });
+                setEinDirect("");
+              }}
+            />
+          </div>
           <div className="field" style={{ marginTop: "0.5rem" }}>
             <label htmlFor="v-ein">…or your employer&rsquo;s EIN (on your W-2, box b)</label>
             <input id="v-ein" inputMode="numeric" maxLength={9} placeholder="9-digit EIN"

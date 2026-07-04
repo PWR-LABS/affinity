@@ -41,6 +41,7 @@
     "eval:m0-smoke": "tsx scripts/eval-m0-smoke.ts",
     "eval:production-readiness": "tsx scripts/eval-production-readiness.ts",
     "tic:load": "tsx scripts/tic-load.ts",
+    "employers:load": "tsx scripts/employers-load.ts",
     "eval:tic-reconcile": "tsx scripts/eval-tic-reconcile.ts"
   },
   "dependencies": {

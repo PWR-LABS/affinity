@@ -303,6 +303,119 @@ test("large repeated DOL 5500 CSV completes under a 256 MB old-space ceiling", {
   }
 });
 
+test("tic-runner tiers, retries failed shards, and resumes completed work", async () => {
+  const work = await makeTempDir("tic-runner-");
+  const outDir = join(work, "out");
+  const source = await fs.readFile(join(toolRoot, "fixtures/tic-in-network-v2-sample.json"));
+  const requestCounts = new Map<string, number>();
+  const getCounts = new Map<string, number>();
+
+  const server = createServer((request, response) => {
+    const path = request.url?.split("?")[0] ?? "/";
+    requestCounts.set(path, (requestCounts.get(path) ?? 0) + 1);
+    if (request.method === "GET") getCounts.set(path, (getCounts.get(path) ?? 0) + 1);
+
+    const lengths: Record<string, number> = {
+      "/runner-fast.json": 120,
+      "/runner-retry.json": 180,
+      "/runner-large.json": 9999,
+      "/runner-small-plan.json": 90,
+    };
+    if (!(path in lengths)) {
+      response.writeHead(404);
+      response.end();
+      return;
+    }
+
+    if (request.method === "HEAD") {
+      response.writeHead(200, { "content-length": String(lengths[path]) });
+      response.end();
+      return;
+    }
+
+    if (path === "/runner-retry.json" && (getCounts.get(path) ?? 0) <= 2) {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end("{");
+      return;
+    }
+
+    response.writeHead(200, { "content-type": "application/json", "content-length": String(source.length) });
+    response.end(source);
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+
+  try {
+    const address = server.address();
+    assert.equal(typeof address, "object");
+    const baseUrl = `http://127.0.0.1:${address!.port}`;
+    const manifestPath = join(work, "manifest.files.csv");
+    await fs.writeFile(
+      manifestPath,
+      [
+        "file_url,file_description,plan_count,content_length_bytes",
+        `${baseUrl}/runner-fast.json,fast shard,25,`,
+        `${baseUrl}/runner-retry.json,retry shard,12,180`,
+        `${baseUrl}/runner-large.json,large shard,30,9999`,
+        `${baseUrl}/runner-small-plan.json,small plan count,2,90`,
+        "",
+      ].join("\n"),
+    );
+
+    const result = await runTsx([
+      "tic-runner.ts",
+      "--manifest",
+      manifestPath,
+      "--out-dir",
+      outDir,
+      "--max-bytes",
+      "500",
+      "--passes",
+      "3",
+      "--concurrency",
+      "1",
+    ]);
+    const summary = parseSummary(result.stderr);
+
+    assert.equal(summary.candidates, 3);
+    assert.equal(summary.tier_a, 2);
+    assert.equal(summary.tier_b, 1);
+    assert.equal(summary.done, 2);
+    assert.equal(summary.failed, 0);
+    assert.equal(summary.pairs_total, 6);
+    await assertSameText(await expectedFixtureText("expected-runner-tier-a.csv", baseUrl), join(outDir, "tier-a.csv"));
+    await assertSameText(await expectedFixtureText("expected-runner-tier-b.csv", baseUrl), join(outDir, "tier-b.csv"));
+    await assertExists(join(outDir, "runner-fast.done"));
+    await assertExists(join(outDir, "runner-retry.done"));
+    assert.equal(getCounts.get("/runner-retry.json"), 3);
+    assert.equal(getCounts.get("/runner-large.json") ?? 0, 0);
+
+    const fastGets = getCounts.get("/runner-fast.json") ?? 0;
+    const retryGets = getCounts.get("/runner-retry.json") ?? 0;
+    const rerun = await runTsx([
+      "tic-runner.ts",
+      "--manifest",
+      manifestPath,
+      "--out-dir",
+      outDir,
+      "--max-bytes",
+      "500",
+      "--passes",
+      "3",
+      "--concurrency",
+      "1",
+    ]);
+    const rerunSummary = parseSummary(rerun.stderr);
+    assert.equal(rerunSummary.done, 2);
+    assert.equal(rerunSummary.failed, 0);
+    assert.equal(getCounts.get("/runner-fast.json") ?? 0, fastGets);
+    assert.equal(getCounts.get("/runner-retry.json") ?? 0, retryGets);
+  } finally {
+    server.close();
+    await once(server, "close");
+  }
+});
+
 async function writeRepeatedV2Fixture(path: string, totalEntries: number): Promise<void> {
   await fs.mkdir(dirname(path), { recursive: true });
   const fixture = JSON.parse(await fs.readFile(join(toolRoot, "fixtures/tic-in-network-v2-sample.json"), "utf8"));
@@ -399,6 +512,18 @@ async function writeRepeatedDol5500Csv(path: string, targetBytes: number): Promi
 
 async function assertSameFile(expected: string, actual: string): Promise<void> {
   assert.equal(await fs.readFile(actual, "utf8"), await fs.readFile(expected, "utf8"));
+}
+
+async function assertSameText(expected: string, actual: string): Promise<void> {
+  assert.equal(await fs.readFile(actual, "utf8"), expected);
+}
+
+async function assertExists(path: string): Promise<void> {
+  await fs.access(path);
+}
+
+async function expectedFixtureText(file: string, baseUrl: string): Promise<string> {
+  return (await fs.readFile(join(toolRoot, "fixtures", file), "utf8")).replaceAll("{{BASE_URL}}", baseUrl);
 }
 
 async function makeTempDir(prefix: string): Promise<string> {

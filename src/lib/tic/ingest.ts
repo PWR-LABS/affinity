@@ -32,6 +32,16 @@ export interface TicMembershipLine {
   schema?: string;
 }
 
+export interface EmployerEinLine {
+  ein: string;
+  name: string;
+  nameNorm: string;
+  state?: string;
+  planName?: string;
+  participants?: number;
+  planYear?: number;
+}
+
 /** Minimal RFC-4180 CSV line splitter — quoted fields may contain commas and doubled quotes. */
 export function splitCsvLine(line: string): string[] {
   const out: string[] = [];
@@ -64,6 +74,25 @@ export function splitCsvLine(line: string): string[] {
 }
 
 const MANIFEST_HEADER = "file_url,file_description,plan_name,plan_id_type,plan_id,plan_market_type,reporting_entity";
+
+const EMPLOYER_SUFFIXES = new Set([
+  "INC",
+  "INCORPORATED",
+  "LLC",
+  "LLP",
+  "LP",
+  "LTD",
+  "CORP",
+  "CORPORATION",
+  "CO",
+  "COMPANY",
+  "PC",
+  "PLLC",
+  "PA",
+  "GROUP",
+  "HOLDINGS",
+  "THE",
+]);
 
 /** Parse one manifest.csv data line (pass the header line to detect + skip it → null). */
 export function parseManifestLine(line: string): TicManifestRow | null {
@@ -104,6 +133,55 @@ export function parseMembershipLine(line: string): TicMembershipLine | null {
     reportingEntity: typeof obj.reporting_entity === "string" ? obj.reporting_entity : "unknown",
     lastUpdatedOn: typeof obj.last_updated_on === "string" ? obj.last_updated_on : undefined,
     schema: typeof obj.schema === "string" ? obj.schema : undefined,
+  };
+}
+
+/** SPEC-4 employer-name normalization shared by DOL ingest and employer search. */
+export function normalizeEmployerName(value: string): string {
+  const tokens = value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  while (tokens.length > 1 && EMPLOYER_SUFFIXES.has(tokens[tokens.length - 1])) {
+    tokens.pop();
+  }
+  while (tokens.length > 1 && tokens[0] === "THE") {
+    tokens.shift();
+  }
+
+  return tokens.join(" ");
+}
+
+/** Parse one SPEC-4 employers.ndjson line. Malformed/blank lines → null. */
+export function parseEmployerEinLine(line: string): EmployerEinLine | null {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  let obj: Record<string, unknown>;
+  try {
+    obj = JSON.parse(trimmed) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+
+  const ein = typeof obj.ein === "string" ? obj.ein.trim() : "";
+  const name = typeof obj.name === "string" ? obj.name.trim() : "";
+  const nameNorm =
+    typeof obj.name_norm === "string" && obj.name_norm.trim()
+      ? obj.name_norm.trim()
+      : normalizeEmployerName(name);
+  if (!/^\d{9}$/.test(ein) || !name || !nameNorm) return null;
+
+  return {
+    ein,
+    name,
+    nameNorm,
+    state: typeof obj.state === "string" && obj.state.trim() ? obj.state.trim() : undefined,
+    planName: typeof obj.plan_name === "string" && obj.plan_name.trim() ? obj.plan_name.trim() : undefined,
+    participants: typeof obj.participants === "number" && Number.isFinite(obj.participants) ? obj.participants : undefined,
+    planYear: typeof obj.plan_year === "number" && Number.isInteger(obj.plan_year) ? obj.plan_year : undefined,
   };
 }
 

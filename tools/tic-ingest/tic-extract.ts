@@ -1,6 +1,7 @@
 import { createWriteStream, promises as fs } from "node:fs";
 import { dirname, basename, join } from "node:path";
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import {
   getStringArg,
   isScalarToken,
@@ -41,6 +42,26 @@ type Metadata = {
 };
 
 type ReferenceTable = Map<string, ProviderGroup[]>;
+
+export type ExtractSummary = {
+  files: number;
+  npis_emitted: number;
+  pairs_emitted: number;
+  zero_npi_dropped: number;
+  tin_in_npi_dropped: number;
+  remote_refs_fetched: number;
+  remote_refs_404: number;
+  schema: "v1" | "v2";
+  seconds: number;
+  peak_rss_mb: number;
+};
+
+export type RunExtractOptions = {
+  input: string;
+  out: string;
+  allowlistPath?: string;
+  progress?: boolean;
+};
 
 class ExtractionState {
   pairs = new Map<string, OutputPair>();
@@ -124,37 +145,31 @@ const V1_IN_NETWORK_REFERENCE_PATH = [
   "*",
 ];
 
-async function main(): Promise<void> {
+export async function runExtract(options: RunExtractOptions): Promise<ExtractSummary> {
   const started = Date.now();
-  const args = parseArgs(process.argv.slice(2));
-  const input = getStringArg(args, "in");
-  const out = getStringArg(args, "out") ?? "providers.ndjson";
-  const allowlistPath = getStringArg(args, "allowlist");
-
-  if (!input) throw new Error("missing required --in <url|path>");
-
-  const allowlist = allowlistPath ? await readAllowlist(allowlistPath) : undefined;
+  const allowlist = options.allowlistPath ? await readAllowlist(options.allowlistPath) : undefined;
   const state = new ExtractionState(allowlist);
-  const progress = startProgress(() => `rows=${state.pairs.size} npis=${state.npis.size}`);
+  const progress =
+    options.progress === false ? undefined : startProgress(() => `rows=${state.pairs.size} npis=${state.npis.size}`);
 
   let firstPass: FirstPassResult;
   let schema: "v1" | "v2" = "v2";
 
   try {
-    firstPass = await runFirstPass(input, state);
+    firstPass = await runFirstPass(options.input, state);
     if (firstPass.sawProviderReferences) {
       schema = "v1";
       state.resetOutputCounts();
-      await runV1SecondPass(input, firstPass.references, state);
+      await runV1SecondPass(options.input, firstPass.references, state);
     }
 
-    await writeSortedNdjson(out, input, firstPass.metadata, schema, state.pairs);
+    await writeSortedNdjson(options.out, options.input, firstPass.metadata, schema, state.pairs);
   } finally {
-    clearInterval(progress);
+    if (progress) clearInterval(progress);
   }
 
   const seconds = Number(((Date.now() - started) / 1000).toFixed(3));
-  const summary = {
+  return {
     files: 1,
     npis_emitted: state.npis.size,
     pairs_emitted: state.pairs.size,
@@ -166,6 +181,17 @@ async function main(): Promise<void> {
     seconds,
     peak_rss_mb: peakRssMb(),
   };
+}
+
+async function main(): Promise<void> {
+  const args = parseArgs(process.argv.slice(2));
+  const input = getStringArg(args, "in");
+  const out = getStringArg(args, "out") ?? "providers.ndjson";
+  const allowlistPath = getStringArg(args, "allowlist");
+
+  if (!input) throw new Error("missing required --in <url|path>");
+
+  const summary = await runExtract({ input, out, allowlistPath });
   process.stderr.write(`${JSON.stringify(summary)}\n`);
 }
 
@@ -500,7 +526,9 @@ function peakRssMb(): number {
   return Math.round(process.resourceUsage().maxRSS / 1024);
 }
 
-main().catch((error) => {
-  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-  process.exitCode = 1;
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main().catch((error) => {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    process.exitCode = 1;
+  });
+}

@@ -26,9 +26,9 @@ datasource db {
 /// A household shopping for ACA coverage: where they live, who they see, what they take.
 /// The unit the whole product reasons about. No name/SSN/DOB — only what rating + matching need.
 model Profile {
-  id     String @id @default(cuid())
+  id    String  @id @default(cuid())
   /// Optional human label the operator gives a saved profile ("me", "mom"); never identifying PII.
-  label  String?
+  label String?
 
   // --- Geography → rating area (drives plan availability + subsidy) ---
   zip        String
@@ -89,23 +89,23 @@ model Plan {
   id String @id @default(cuid())
 
   /// Marketplace plan id (14-char HIOS id) for a given year — the external key.
-  externalId   String
-  year         Int
-  issuerName   String
+  externalId    String
+  year          Int
+  issuerName    String
   marketingName String
   /// Bronze | Silver | Gold | Platinum | Catastrophic
-  metalLevel   String
+  metalLevel    String
   /// HMO | PPO | EPO | POS | Indemnity (nullable until known)
-  planType     String?
-  ratingAreaId String?
+  planType      String?
+  ratingAreaId  String?
 
   // --- Cost-sharing (whole dollars / percents; the M2 true-cost engine reads these) ---
   /// Sticker monthly premium for the rating context (pre-subsidy). NOT the rank key on its own.
-  premiumUsdMonthly      Int?
-  deductibleUsd          Int?
-  oopMaxUsd              Int?
-  primaryCareCopayUsd    Int?
-  coinsuranceRate        Float?
+  premiumUsdMonthly   Int?
+  deductibleUsd       Int?
+  oopMaxUsd           Int?
+  primaryCareCopayUsd Int?
+  coinsuranceRate     Float?
 
   // --- Provenance (mandatory) ---
   /// Where this plan record came from, e.g. "marketplace-api".
@@ -189,17 +189,17 @@ enum CoverageSource {
 
 /// One issuer Transparency-in-Coverage in-network file (a shard) we've indexed.
 model TicFile {
-  id              String    @id @default(cuid())
-  url             String    @unique
-  reportingEntity String
+  id                String          @id @default(cuid())
+  url               String          @unique
+  reportingEntity   String
   /// The file's own `last_updated_on` — freshness as the SOURCE reports it.
   sourceLastUpdated DateTime?
   /// Structural mode the extractor detected ("v1" reference-style | "v2" inline).
-  schemaMode      String?
+  schemaMode        String?
   /// When our pipeline pulled + extracted the file.
-  fetchedAt       DateTime
-  memberships     TicMembership[]
-  planLinks       TicPlanLink[]
+  fetchedAt         DateTime
+  memberships       TicMembership[]
+  planLinks         TicPlanLink[]
 
   @@index([reportingEntity])
 }
@@ -230,4 +230,20 @@ model TicPlanLink {
 
   @@index([planIdType, planId])
   @@index([fileId])
+}
+
+/// Employer-name → EIN lookup rows from public DOL Form 5500 filings (SPEC-4 output).
+model EmployerEin {
+  id           String  @id @default(cuid())
+  ein          String
+  name         String
+  nameNorm     String
+  state        String?
+  planName     String?
+  participants Int?
+  planYear     Int?
+
+  @@unique([ein, nameNorm])
+  @@index([nameNorm])
+  @@index([state])
 }
