@@ -8,12 +8,12 @@
  *
  * Usage: DATABASE_URL=... tsx scripts/tic-load.ts --manifest <manifest.csv> --shards <dir>
  */
-import { createReadStream, existsSync, readdirSync, readFileSync } from "node:fs";
+import { createReadStream, existsSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import { createInterface } from "node:readline";
 
 import { prisma } from "@/lib/prisma";
-import { groupManifestByFile, parseManifestLine, parseMembershipLine, type TicManifestRow } from "@/lib/tic/ingest";
+import { parseManifestLine, parseMembershipLine, type TicFilePlans } from "@/lib/tic/ingest";
 
 const BATCH = 5000;
 
@@ -32,14 +32,27 @@ async function main(): Promise<void> {
     throw new Error("Usage: tsx scripts/tic-load.ts --manifest <manifest.csv> --shards <dir-with-ndjson>");
   }
 
-  // Manifest → file → plan links.
-  const rows: TicManifestRow[] = [];
-  for (const line of readFileSync(manifestPath, "utf8").split("\n")) {
+  // Manifest → file → plan links. Streamed + grouped incrementally: big issuers ship 800K+ rows with
+  // ~400-char signed URLs, so materializing all rows (or URL-prefixed dedup keys) OOMs. Dedup is
+  // per-file with short keys instead.
+  const byFile = new Map<string, TicFilePlans & { seen: Set<string> }>();
+  let manifestRows = 0;
+  const manifestRl = createInterface({ input: createReadStream(manifestPath), crlfDelay: Infinity });
+  for await (const line of manifestRl) {
     const r = parseManifestLine(line);
-    if (r) rows.push(r);
+    if (!r) continue;
+    manifestRows++;
+    let entry = byFile.get(r.fileUrl);
+    if (!entry) {
+      entry = { reportingEntity: r.reportingEntity, plans: [], seen: new Set() };
+      byFile.set(r.fileUrl, entry);
+    }
+    const key = `${r.planIdType}|${r.planId}|${r.planName}`;
+    if (entry.seen.has(key)) continue;
+    entry.seen.add(key);
+    entry.plans.push({ planName: r.planName, planIdType: r.planIdType, planId: r.planId, planMarketType: r.planMarketType });
   }
-  const byFile = groupManifestByFile(rows);
-  console.log(`manifest: ${rows.length} rows → ${byFile.size} files`);
+  console.log(`manifest: ${manifestRows} rows → ${byFile.size} files`);
 
   const fetchedAt = new Date();
   const shards = readdirSync(shardsDir).filter((f) => f.endsWith(".ndjson"));
