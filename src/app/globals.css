@@ -725,6 +725,8 @@ a.cta:hover { filter: brightness(1.06); box-shadow: var(--shadow-2); }
 .cov-pill[data-cov="n"] { border-color: color-mix(in srgb, var(--bad) 45%, var(--border)); }
 .cov-pill[data-cov="n"]::before { background: var(--bad); }
 .cov-pill[data-cov="u"]::before { background: var(--muted); }
+/* Prior-authorization marker on a drug pill — the plan's own flag, surfaced, never hidden. */
+.pa-note { margin-left: 0.3rem; font-size: 0.68rem; font-weight: 700; color: var(--warn); white-space: nowrap; }
 
 /* ---- Prose (how-it-works) ---------------------------------------------------- */
 .prose {

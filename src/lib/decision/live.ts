@@ -8,7 +8,7 @@
  */
 import { MarketplaceClient } from "@/lib/marketplace/client";
 import { stateBasedMarketplace, StateNotSupportedError } from "@/lib/marketplace/states";
-import type { MarketplaceCostShare, MarketplacePlan } from "@/lib/marketplace/types";
+import type { MarketplaceCostShare, MarketplaceDrugCoverage, MarketplacePlan } from "@/lib/marketplace/types";
 
 export interface LivePlansInput {
   zip: string;
@@ -25,6 +25,8 @@ export interface LiveSubjectStatus {
   label?: string;
   /** true = in-network/on-formulary, false = not covered, null = the API didn't answer (unknown). */
   covered: boolean | null;
+  /** Drugs only: the plan requires prior authorization for this drug (absent = no flag / unknown). */
+  priorAuth?: boolean;
 }
 
 export interface LivePlanRow {
@@ -132,17 +134,26 @@ export async function runLivePlans(input: LivePlansInput): Promise<LivePlansResu
     if (!r.plan_id) continue;
     (provByPlan.get(r.plan_id) ?? provByPlan.set(r.plan_id, new Map()).get(r.plan_id)!).set(r.npi, r.coverage);
   }
-  const drugByPlan = new Map<string, Map<string, string | undefined>>();
+  const drugByPlan = new Map<string, Map<string, MarketplaceDrugCoverage>>();
   for (const r of drugCov) {
     if (!r.plan_id) continue;
-    (drugByPlan.get(r.plan_id) ?? drugByPlan.set(r.plan_id, new Map()).get(r.plan_id)!).set(r.rxcui, r.coverage);
+    (drugByPlan.get(r.plan_id) ?? drugByPlan.set(r.plan_id, new Map()).get(r.plan_id)!).set(r.rxcui, r);
   }
 
   const rows: LivePlanRow[] = plans.map((p) => {
     const pm = provByPlan.get(p.id) ?? new Map();
     const dm = drugByPlan.get(p.id) ?? new Map();
     const doctors: LiveSubjectStatus[] = input.doctors.map((d) => ({ key: d.npi, label: d.label, covered: isCovered(pm.get(d.npi)) }));
-    const drugs: LiveSubjectStatus[] = input.drugs.map((d) => ({ key: d.rxcui, label: d.label, covered: isCovered(dm.get(d.rxcui)) }));
+    const drugs: LiveSubjectStatus[] = input.drugs.map((d) => {
+      const rec = dm.get(d.rxcui);
+      return {
+        key: d.rxcui,
+        label: d.label,
+        covered: isCovered(rec?.coverage),
+        // Surface the plan's own PA flag only when it's affirmatively true — absent stays absent.
+        ...(rec?.prior_authorization === true ? { priorAuth: true } : {}),
+      };
+    });
     const doctorsCovered = doctors.filter((x) => x.covered === true).length;
     const drugsCovered = drugs.filter((x) => x.covered === true).length;
     const gross = p.premium ?? 0;

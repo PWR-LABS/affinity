@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
 
-interface SubjectStatus { key: string; label?: string; covered: boolean | null }
+interface SubjectStatus { key: string; label?: string; covered: boolean | null; priorAuth?: boolean }
 interface PlanRow {
   id: string; name: string; metal?: string; type?: string;
   premiumMonthly: number; netPremiumMonthly: number; deductible?: number; oopMax?: number;
@@ -215,8 +215,10 @@ export function PlanFinder() {
                       </span>
                     ))}
                     {p.drugs.map((d) => (
-                      <span key={d.key} className="cov-pill" data-cov={d.covered === true ? "y" : d.covered === false ? "n" : "u"} title={`${d.label}: ${covWord(d.covered)}`}>
+                      <span key={d.key} className="cov-pill" data-cov={d.covered === true ? "y" : d.covered === false ? "n" : "u"}
+                        title={`${d.label}: ${covWord(d.covered)}${d.priorAuth ? " — this plan requires prior authorization" : ""}`}>
                         {covMark(d.covered)} {d.label ?? d.key}
+                        {d.priorAuth && <span className="pa-note" aria-label="prior authorization required">⚠ PA</span>}
                       </span>
                     ))}
                   </div>
