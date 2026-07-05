@@ -87,3 +87,26 @@ income / providers / medications are set locally in `.env` and never committed.
   links + direct EIN entry (W-2 box b), doctrine-rendered result with source, freshness, and a visible
   confidence meter. Honest limits on-page: one source, doctors-only for commercial, confirm before
   relying. Off the main nav until the index is provisioned in production.
+
+## Medicare Part D — the formulary + hidden-flags layer (2026-07-05)
+
+- **S7 — Part D ingest** (`tools/tic-ingest/partd-formulary`, Codex to spec, verified): the monthly CMS
+  Part D PUF (a zip-of-zips) → formulary + plan NDJSON, constant-memory. Real June 2026 file →
+  **1,124,586 formulary rows · 5,518 plans across all 50 states** — genuinely nationwide (CMS publishes
+  one national file), loaded into local + production Postgres.
+- **`CMS_PARTD` source + adapter.** New source tag (base confidence 0.65) flowing through the same N-way
+  `reconcileMany()` core; `buildPartDAnswer` emits doctrine answers (on-formulary→yes w/ tier ·
+  indexed-but-absent→no · unindexed→honest unknown). New `eval:partd-reconcile`; readiness bundle now 11 gates.
+- **The flag the official tools hide.** The adapter surfaces the **prior-authorization / step-therapy /
+  quantity-limit** utilization-management flags that HealthCare.gov's own consumer API withholds — proven
+  live: AARP Medicare Rx Preferred, RxCUI 1000048, on formulary at tier 4 **with PA required**.
+- **`/api/partd/verify`.** POST (drug/plan never land in URLs), doctrine-shaped result plus the UM flags,
+  503-degrades when the index isn't provisioned. Medicare is now queryable end-to-end.
+
+## Nationwide groundwork (2026-07-05)
+
+- **Issuer registry** (`tools/tic-ingest/issuer-registry`, SPEC-8, Codex to spec): a curated top-~35
+  commercial-issuer seed + a streaming validator that confirms each Transparency-in-Coverage index is a
+  live TiC table-of-contents and records in-network file counts + schema (v1 references / v2 inline) —
+  the evidence table that sizes a national build before any multi-TB download. Unresolved issuers are
+  honest recorded gaps, never dropped. SPEC-9 (resolve the live index URLs) queued next.
