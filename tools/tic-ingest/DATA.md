@@ -48,3 +48,21 @@ For plan geography, output prefers the first populated key in this order: `state
 The formulary scanner deduplicates on `formulary_id|rxcui` and keeps the first row. Memory use is therefore
 mostly the retained unique key plus JSON-line map; the 512 MB ceiling test uses repeated rows to exercise
 streaming over a 2 GB pipe-delimited input without growing the dedup set with every scanned row.
+
+## Part D real-file note (SPEC-7)
+
+The CMS monthly PUF is a **zip of zips**: the outer `2026_YYYYMMDD.zip` contains
+`basic drugs formulary file  <date>.zip` and `plan information  <date>.zip`, each
+wrapping a single pipe-delimited `.txt`. `partd-formulary.ts --in <zip>` reads the
+outer zip's members directly, so it sees the inner zips (not the .txt) and reports
+missing columns. Until the tool learns nested-zip unwrapping, extract first:
+
+```sh
+mkdir -p flat && cd inner_extract
+unzip -o '2026_*.zip' 'basic drugs formulary file*.zip' 'plan information*.zip'
+unzip -o 'basic drugs formulary file*.zip' -d ../flat/
+unzip -o 'plan information*.zip' -d ../flat/
+cd .. && npx tsx partd-formulary.ts --in flat --out-dir out
+```
+
+June 2026 file → 1,124,586 formulary rows · 5,821 plans.
