@@ -87,6 +87,7 @@ const EARLY_STOP = Symbol("early-stop");
 const INDEX_SAMPLE_LIMIT = 3;
 const HEAD_RANGE_BYTES = 65_536;
 const RATE_PROBE_BYTES = 1024 * 1024;
+const FULL_COUNT_CONTENT_LENGTH_LIMIT = 1024 * 1024 * 1024;
 
 async function main(): Promise<void> {
   const started = Date.now();
@@ -180,9 +181,14 @@ async function resolveIssuer(seed: IssuerSeed, options: CliOptions, summary: Sum
 
   let validation: IndexValidation;
   try {
+    const useFullCount =
+      options.fullCount &&
+      (!/^https?:\/\//i.test(seed.indexUrl) ||
+        opened.contentLength === null ||
+        opened.contentLength <= FULL_COUNT_CONTENT_LENGTH_LIMIT);
     validation = options.headOnly
       ? await validateIndexHead(opened.stream)
-      : await validateIndexStream(opened.stream, options.fullCount);
+      : await validateIndexStream(opened.stream, useFullCount);
   } catch (error) {
     validation = {
       reportingEntityName: null,
@@ -210,9 +216,7 @@ async function resolveIssuer(seed: IssuerSeed, options: CliOptions, summary: Sum
 
   if (options.probeRates) {
     result.rateSchema =
-      validation.error === null && validation.sampleFileLocations[0]
-        ? await probeRateSchema(validation.sampleFileLocations[0])
-        : null;
+      validation.error === null ? await probeSampledRateSchemas(validation.sampleFileLocations) : null;
   }
 
   summary.reachable += 1;
@@ -237,7 +241,9 @@ async function validateIndexStream(stream: Readable, fullCount: boolean): Promis
   let reportingEntityName: string | null = null;
   let reportingStructures = 0;
   let inNetworkFileCount = 0;
+  let catalogIndexCount = 0;
   const sampleFileLocations: string[] = [];
+  const catalogSampleFileLocations: string[] = [];
 
   const stoppedEarly = await parseTokens(stream, (token) => {
     if (token.name === "startObject") {
@@ -284,19 +290,51 @@ async function validateIndexStream(stream: Readable, fullCount: boolean): Promis
           throw EARLY_STOP;
         }
       }
+      if (isCatalogIndexLocation(path, value)) {
+        catalogIndexCount += 1;
+        if (catalogSampleFileLocations.length < INDEX_SAMPLE_LIMIT) catalogSampleFileLocations.push(value);
+        if (!fullCount && catalogSampleFileLocations.length >= INDEX_SAMPLE_LIMIT) {
+          throw EARLY_STOP;
+        }
+      }
       tracker.value();
     }
   });
 
   const isTicIndex = Boolean(reportingEntityName) && reportingStructures > 0 && inNetworkFileCount > 0;
+  if (isTicIndex) {
+    return {
+      reportingEntityName,
+      reportingStructures,
+      inNetworkFileCount,
+      countExact: fullCount && !stoppedEarly,
+      sampleFileLocations,
+      error: null,
+    };
+  }
+
+  const isCatalogIndex = catalogIndexCount > 0;
   return {
     reportingEntityName,
-    reportingStructures,
-    inNetworkFileCount,
+    reportingStructures: isCatalogIndex ? null : reportingStructures,
+    inNetworkFileCount: isCatalogIndex ? catalogIndexCount : inNetworkFileCount,
     countExact: fullCount && !stoppedEarly,
-    sampleFileLocations,
-    error: isTicIndex ? null : "not a TiC index",
+    sampleFileLocations: isCatalogIndex ? catalogSampleFileLocations : sampleFileLocations,
+    error: isCatalogIndex ? null : "not a TiC index",
   };
+}
+
+function isCatalogIndexLocation(path: string[], value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const location = value.trim();
+  if (!/^https?:\/\//i.test(location)) return false;
+  if (!/_index\.json(?:\.gz)?(?:[?#]|$)/i.test(location)) return false;
+  return (
+    pathMatches(path, ["blobs", "*", "downloadUrl"]) ||
+    pathMatches(path, ["*", "url"]) ||
+    pathMatches(path, ["files", "*", "url"]) ||
+    pathMatches(path, ["mrfs", "*", "files", "*", "url"])
+  );
 }
 
 async function parseTokens(stream: Readable, onToken: (token: JsonToken) => void): Promise<boolean> {
@@ -336,16 +374,46 @@ async function parseTokens(stream: Readable, onToken: (token: JsonToken) => void
   });
 }
 
-async function probeRateSchema(location: string): Promise<string | null> {
+async function probeRateSchema(location: string, depth = 0): Promise<string | null> {
   try {
     const opened = await openSource(location, { rangeBytes: RATE_PROBE_BYTES });
     if (!opened.stream) return null;
     const text = await collectPrefix(opened.stream, RATE_PROBE_BYTES);
     if (text.includes('"provider_references"')) return "v1";
     if (text.includes('"provider_groups"')) return "v2";
+    const nestedRateLocation = depth < 2 ? firstNestedRateLocation(text) : null;
+    if (nestedRateLocation) return probeRateSchema(nestedRateLocation, depth + 1);
     return "unknown";
   } catch {
     return null;
+  }
+}
+
+async function probeSampledRateSchemas(locations: string[]): Promise<string | null> {
+  let fallback: string | null = null;
+  for (const location of locations) {
+    const schema = await probeRateSchema(location);
+    if (schema === "v1" || schema === "v2") return schema;
+    if (schema && fallback === null) fallback = schema;
+  }
+  return fallback;
+}
+
+function firstNestedRateLocation(text: string): string | null {
+  const locationPattern = /"location"\s*:\s*"((?:\\.|[^"\\])+)"/g;
+  let match: RegExpExecArray | null;
+  while ((match = locationPattern.exec(text)) !== null) {
+    const location = jsonStringValue(match[1]);
+    if (/^https?:\/\//i.test(location)) return location;
+  }
+  return null;
+}
+
+function jsonStringValue(value: string): string {
+  try {
+    return JSON.parse(`"${value}"`);
+  } catch {
+    return value;
   }
 }
 

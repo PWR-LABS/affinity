@@ -6,9 +6,9 @@
     "family": "UnitedHealth Group",
     "footprint": "national",
     "transparencyPageUrl": "https://transparency-in-coverage.uhc.com/",
-    "indexUrl": null,
+    "indexUrl": "https://transparency-in-coverage.uhc.com/api/v1/uhc/blobs/",
     "haveData": false,
-    "notes": "largest commercial carrier; index URL unresolved in seed"
+    "notes": "Resolved 2026-07-05 from UHC transparency page JS, which maps UHC to /api/v1/uhc/blobs/; top-level blob catalog of nested per-employer indexes."
   },
   {
     "key": "anthem",
@@ -17,9 +17,9 @@
     "family": "Elevance Health",
     "footprint": ["CA", "CO", "CT", "GA", "IN", "KY", "ME", "MO", "NV", "NH", "NY", "OH", "VA", "WI"],
     "transparencyPageUrl": "https://www.anthem.com/machine-readable-file",
-    "indexUrl": null,
+    "indexUrl": "https://antm-pt-prod-dataz-nogbd-nophi-us-east1.s3.amazonaws.com/anthem/2026-07-01_anthem_index.json.gz",
     "haveData": true,
-    "notes": "pilot issuer; index URL unresolved in seed"
+    "notes": "Resolved 2026-07-05 from Anthem search page script.js tocLink(), which builds anthem/YYYY-MM-01_anthem_index.json.gz on the active S3 bucket."
   },
   {
     "key": "aetna",
@@ -28,9 +28,9 @@
     "family": "CVS Health",
     "footprint": "national",
     "transparencyPageUrl": "https://www.aetna.com/individuals-families/member-rights-resources/rights/disclosure-information.html",
-    "indexUrl": null,
+    "indexUrl": "https://mrf.healthsparq.com/aetnacvs-egress.nophi.kyruushsq.com/prd/mrf/AETNACVS_I/ALICFI/2026-07-05/tableOfContents/2026-07-05_Aetna-Life-Insurance-Company_index.json.gz",
     "haveData": false,
-    "notes": "national commercial carrier; index URL unresolved in seed"
+    "notes": "Resolved 2026-07-05 from Aetna TiC producer page and HealthSparq ALICFI current tableOfContents URL for Aetna Life Insurance Company."
   },
   {
     "key": "cigna",
@@ -39,9 +39,9 @@
     "family": "The Cigna Group",
     "footprint": "national",
     "transparencyPageUrl": "https://www.cigna.com/legal/compliance/machine-readable-files",
-    "indexUrl": null,
+    "indexUrl": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/table-of-contents/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_index.json?Expires=1786802500&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9kMjVrZ3o1cmlra3E0bi5jbG91ZGZyb250Lm5ldC9jb3N0X3RyYW5zcGFyZW5jeS9tcmYvdGFibGUtb2YtY29udGVudHMvcmVwb3J0aW5nX21vbnRoPTIwMjYtMDcvMjAyNi0wNy0wMV9jaWduYS1oZWFsdGgtbGlmZS1pbnN1cmFuY2UtY29tcGFueV9pbmRleC5qc29uIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzg2ODAyNTAwfX19XX0_&Signature=GyhWC~kQYTRoSldJfoOW9u05iSoNgy7jZUqvTi5hqV4o0EL2pFIvW9Y-Mhqr~VOA0or7ZuZnk7wRv7G9d6QvDinuQn3M2VRH9V~E9RXcXkwG1SEHik~5orSiiwd6CHFjxqENNlvFuP6THaqS4nUPQcyUJ1rIHZCafnF1gYv0UNAdWxS9PmBmuoxW2kBGoGI0Dh~tVvIDyUzBdyL3PucjCCBG-ryHLfnU~SE-2OT5FCGRws2N1Q7NyJuqeSOsjwO9AvxP0lHgZtsAZfmlql9Mp-RfhDESmHg6iBsIlYi1du69MeoZ8N3CXQ~WlNL4Dl-MfMpW2XcUoMyYXWDoIVhORw__&Key-Pair-Id=K1NVBEPVH9LWJP",
     "haveData": true,
-    "notes": "pilot issuer; index URL unresolved in seed"
+    "notes": "Resolved 2026-07-05 from Cigna compliance page /static/mrf/latest.json TOC lookup; current signed Cigna Health Life index URL."
   },
   {
     "key": "hcsc",
@@ -50,9 +50,9 @@
     "family": "Health Care Service Corp",
     "footprint": ["IL", "TX", "OK", "NM", "MT"],
     "transparencyPageUrl": "https://www.hcsc.com/transparency-in-coverage",
-    "indexUrl": null,
+    "indexUrl": "https://www.bcbsil.com/content/dam/bcbs/mrf/si-filelist.json",
     "haveData": false,
-    "notes": "large regional Blue plan family; index URL unresolved in seed"
+    "notes": "Resolved 2026-07-05 from BCBSIL ASO MRF page, which references /content/dam/bcbs/mrf/si-filelist.json; nested HCSC state/EIN index catalog."
   },
   {
     "key": "kaiser",
@@ -63,7 +63,7 @@
     "transparencyPageUrl": "https://healthy.kaiserpermanente.org/",
     "indexUrl": null,
     "haveData": false,
-    "notes": "closed HMO network model; index URL unresolved in seed"
+    "notes": "Official KP machine-readable page resolved, but no single top-level index URL found; page is regional and notes some plans may lack TOCs."
   },
   {
     "key": "centene",
@@ -72,9 +72,9 @@
     "family": "Centene",
     "footprint": "national",
     "transparencyPageUrl": "https://www.centene.com/why-were-different/transparency-in-coverage.html",
-    "indexUrl": null,
+    "indexUrl": "https://www.centene.com/content/dam/centene/Centene%20Corporate/json/DOCUMENT/2026-06-29_ambetter_index.json",
     "haveData": false,
-    "notes": "national exchange footprint; index URL unresolved in seed"
+    "notes": "Resolved 2026-07-05 from Centene Machine Readable Files page Table of Contents link for Ambetter."
   },
   {
     "key": "humana",
@@ -85,7 +85,7 @@
     "transparencyPageUrl": "https://www.humana.com/",
     "indexUrl": null,
     "haveData": false,
-    "notes": "mostly Medicare Advantage with thinner commercial footprint; index URL unresolved in seed"
+    "notes": "Live index unresolved: official Humana Cost Transparency URL redirects to /syntheticdata/healthplan-price-transparency and returned HTTP 502 on 2026-07-05."
   },
   {
     "key": "bcbsmi",
@@ -94,9 +94,9 @@
     "family": "BCBSM",
     "footprint": ["MI"],
     "transparencyPageUrl": "https://www.bcbsm.com/",
-    "indexUrl": null,
+    "indexUrl": "https://bcbsm.sapphiremrfhub.com/tocs/current/blue_cross_blue_shield_of_michigan",
     "haveData": false,
-    "notes": "Michigan regional Blue plan; index URL unresolved in seed"
+    "notes": "Resolved 2026-07-05 from bcbsm.com/mrf/index/ link to Sapphire current BCBSM TOC redirect."
   },
   {
     "key": "flblue",
@@ -105,9 +105,9 @@
     "family": "GuideWell",
     "footprint": ["FL"],
     "transparencyPageUrl": "https://www.floridablue.com/",
-    "indexUrl": null,
+    "indexUrl": "https://d1hgtx7rrdl2cn.cloudfront.net/mrf/toc/FloridaBlue_Health-Insurance-Issuer_index.json",
     "haveData": false,
-    "notes": "Florida regional Blue plan; index URL unresolved in seed"
+    "notes": "Resolved 2026-07-05 from Florida Blue Machine-Readable Files page Table of Contents table; chose Health Insurance Issuer TOC."
   },
   {
     "key": "highmark",
@@ -116,9 +116,9 @@
     "family": "Highmark",
     "footprint": ["PA", "WV", "DE", "NY"],
     "transparencyPageUrl": "https://www.highmark.com/",
-    "indexUrl": null,
+    "indexUrl": "https://mrfdata.hmhs.com/files/363/pa/inbound/local/2026-07-01_Highmark_Blue_Cross_Blue_Shield_of_Pennsylvania_index.json",
     "haveData": false,
-    "notes": "regional Blue plan; index URL unresolved in seed"
+    "notes": "Resolved 2026-07-05 from Highmark transparency page to mrfdata.hmhs.com script.js; chose Pennsylvania Highmark BCBS dated TOC."
   },
   {
     "key": "ibx",
@@ -171,9 +171,9 @@
     "family": "CareFirst",
     "footprint": ["MD", "DC", "VA"],
     "transparencyPageUrl": "https://www.carefirst.com/",
-    "indexUrl": null,
+    "indexUrl": "https://stmrffilesprod001.blob.core.windows.net/mrf-files/2026-05-27_carefirst%20ppo_index.json",
     "haveData": false,
-    "notes": "Mid-Atlantic regional Blue plan; index URL unresolved in seed"
+    "notes": "Resolved 2026-07-05 from CareFirst machine-readable-file page data-key for the CareFirst PPO TOC Azure blob."
   },
   {
     "key": "bcbsma",
