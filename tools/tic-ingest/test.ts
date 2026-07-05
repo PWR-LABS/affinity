@@ -303,6 +303,71 @@ test("large repeated DOL 5500 CSV completes under a 256 MB old-space ceiling", {
   }
 });
 
+test("partd fixture produces byte-identical formulary and plan outputs", async () => {
+  const work = await makeTempDir("partd-fixtures-");
+  const outDir = join(work, "out");
+
+  const result = await runTsx(["partd-formulary.ts", "--in", "fixtures", "--out-dir", outDir]);
+  const summary = parseSummary(result.stderr);
+
+  assert.equal(summary.formulary_rows, 10);
+  assert.equal(summary.formulary_emitted, 9);
+  assert.equal(summary.plan_rows, 10);
+  assert.equal(summary.plans_emitted, 10);
+  assert.equal(summary.missing_yn_values, 5);
+  await assertSameFile(join(toolRoot, "fixtures/expected-partd-formulary.ndjson"), join(outDir, "partd-formulary.ndjson"));
+  await assertSameFile(join(toolRoot, "fixtures/expected-partd-plans.ndjson"), join(outDir, "partd-plans.ndjson"));
+});
+
+test("large repeated Part D formulary file completes under a 512 MB old-space ceiling", { timeout: 600_000 }, async () => {
+  const work = await makeTempDir("partd-memory-");
+  try {
+    const inputDir = join(work, "input");
+    const outDir = join(work, "out");
+    const bigPath = join(inputDir, "2026 basic drugs formulary sample.txt");
+    const planPath = join(inputDir, "2026 plan information sample.txt");
+    const targetBytes = Number(process.env.PARTD_MEMORY_BYTES ?? String(2 * 1024 * 1024 * 1024));
+
+    await writeRepeatedPartdFormulary(bigPath, targetBytes);
+    await fs.writeFile(
+      planPath,
+      [
+        "CONTRACT_ID|PLAN_ID|SEGMENT_ID|PLAN_NAME|FORMULARY_ID|PREMIUM|DEDUCTIBLE|STATE|COUNTY_CODE|REGION",
+        "S9000|001|0|Memory Rx Standard|90001|0|545|OH|39035|",
+        "",
+      ].join("\n"),
+    );
+    const stat = await fs.stat(bigPath);
+    assert.ok(stat.size >= targetBytes, `expected generated pipe file >= ${targetBytes} bytes; got ${stat.size}`);
+
+    const result = await runNode(
+      [
+        "--max-old-space-size=512",
+        tsxBin,
+        "partd-formulary.ts",
+        "--in",
+        inputDir,
+        "--out-dir",
+        outDir,
+      ],
+      { timeoutMs: 600_000 },
+    );
+    const summary = parseSummary(result.stderr);
+    const formulary = await readNdjson(join(outDir, "partd-formulary.ndjson"));
+    const plans = await readNdjson(join(outDir, "partd-plans.ndjson"));
+
+    assert.ok(Number(summary.formulary_rows) > 0);
+    assert.equal(summary.formulary_emitted, 3);
+    assert.equal(summary.plan_rows, 1);
+    assert.equal(summary.plans_emitted, 1);
+    assert.ok(Number(summary.missing_yn_values) > 0);
+    assert.equal(formulary.length, 3);
+    assert.equal(plans.length, 1);
+  } finally {
+    await fs.rm(work, { recursive: true, force: true });
+  }
+});
+
 test("tic-runner tiers, retries failed shards, and resumes completed work", async () => {
   const work = await makeTempDir("tic-runner-");
   const outDir = join(work, "out");
@@ -496,6 +561,36 @@ async function writeRepeatedDol5500Csv(path: string, targetBytes: number): Promi
     "2025-01-01,Memory Clinic Health Plan,Memory Clinic LLC,OH,400000002,300,4A",
     "2025-01-01,Memory Savings Plan,Memory Savings LLC,OH,400000003,200,2J",
     "2025-01-01,Bad Memory Health Plan,Bad Memory LLC,OH,BAD-EIN,100,4A",
+  ].join("\n");
+  const rowBlock = `${rows}\n`;
+  let chunk = "";
+  while (Buffer.byteLength(chunk) < 1024 * 1024) chunk += rowBlock;
+
+  await write(header);
+  while (written < targetBytes) {
+    await write(chunk);
+  }
+
+  output.end();
+  await once(output, "finish");
+}
+
+async function writeRepeatedPartdFormulary(path: string, targetBytes: number): Promise<void> {
+  await fs.mkdir(dirname(path), { recursive: true });
+  const output = createWriteStream(path);
+  let written = 0;
+
+  const write = async (chunk: string) => {
+    written += Buffer.byteLength(chunk);
+    if (!output.write(chunk)) await once(output, "drain");
+  };
+
+  const header =
+    "FORMULARY_ID|FORMULARY_VERSION|CONTRACT_YEAR|RXCUI|NDC|TIER_LEVEL_VALUE|QUANTITY_LIMIT_YN|QUANTITY_LIMIT_AMOUNT|QUANTITY_LIMIT_DAYS|PRIOR_AUTHORIZATION_YN|STEP_THERAPY_YN\n";
+  const rows = [
+    "90001|1|2026|111111|00000000001|1|Y|30|30|N|N",
+    "90001|1|2026|222222|00000000002|2|N|||Y|N",
+    "90002|2|2026|333333|00000000003|3||||Y|",
   ].join("\n");
   const rowBlock = `${rows}\n`;
   let chunk = "";

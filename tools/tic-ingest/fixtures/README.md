@@ -12,6 +12,9 @@ tsx nppes-allowlist.ts --in fixtures/nppes-sample.csv --state OH --zip-prefixes 
                                                                                      # diff out-allowlist.meta.csv vs fixtures/expected-allowlist.meta.csv
 tsx dol5500-employers.ts --in fixtures/dol5500-sample.csv --in fixtures/dol5500-sf-sample.csv --out out-employers.ndjson
                                                                                      # diff vs fixtures/expected-employers.ndjson
+tsx partd-formulary.ts --in fixtures --out-dir out-partd
+                                                                                     # diff out-partd/partd-formulary.ndjson vs fixtures/expected-partd-formulary.ndjson
+                                                                                     # diff out-partd/partd-plans.ndjson vs fixtures/expected-partd-plans.ndjson
 ```
 
 Manifest sort: by `file_url`, then `plan_id`. Rows for structures with only an `allowed_amount_file`
@@ -27,3 +30,7 @@ The SPEC-3 NPPES fixture uses synthetic values only and the canonical CMS data-d
 referenced by `SPEC-3-nppes-allowlist.md`.
 
 The SPEC-4 DOL fixtures use synthetic values only and cover both Form 5500 and Form 5500-SF header names.
+
+The SPEC-7 Part D fixtures use synthetic values only. The directory input path exercises the fixture aliases
+for the real `basic drugs formulary` and `plan information` member patterns, blank/invalid `_YN` handling,
+duplicate `(formulary_id, rxcui)` suppression, and plan geography fallback from `state` to `county_code`.

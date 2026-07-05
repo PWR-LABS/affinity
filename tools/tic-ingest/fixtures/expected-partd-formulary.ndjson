@@ -1,0 +1,9 @@
+{"formulary_id":"F100","contract_year":2026,"rxcui":"1593856","tier":3,"prior_authorization":true,"step_therapy":false,"quantity_limit":true,"quantity_limit_amount":60,"quantity_limit_days":30}
+{"formulary_id":"F100","contract_year":2026,"rxcui":"617310","tier":1,"prior_authorization":false,"step_therapy":false,"quantity_limit":false}
+{"formulary_id":"F100","contract_year":2026,"rxcui":"999001","tier":2,"step_therapy":true}
+{"formulary_id":"F101","contract_year":2026,"rxcui":"123456","tier":4,"prior_authorization":false,"step_therapy":true,"quantity_limit":true,"quantity_limit_amount":90,"quantity_limit_days":90}
+{"formulary_id":"F101","contract_year":2026,"rxcui":"234567","tier":5,"prior_authorization":true,"step_therapy":true,"quantity_limit":false}
+{"formulary_id":"F102","contract_year":2026,"rxcui":"345678","tier":6,"prior_authorization":false,"step_therapy":false}
+{"formulary_id":"F102","contract_year":2026,"rxcui":"456789","tier":2,"step_therapy":false,"quantity_limit":true,"quantity_limit_amount":30,"quantity_limit_days":15}
+{"formulary_id":"F103","contract_year":2026,"rxcui":"567890","tier":3,"prior_authorization":false,"quantity_limit":false}
+{"formulary_id":"F104","contract_year":2027,"rxcui":"678901","tier":1,"prior_authorization":true,"step_therapy":true,"quantity_limit":true,"quantity_limit_amount":15,"quantity_limit_days":30}

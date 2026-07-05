@@ -1,0 +1,10 @@
+{"contract_id":"H2222","plan_id":"001","segment_id":"0","plan_name":"Capital Basic","formulary_id":"F100","state":"DC"}
+{"contract_id":"H2222","plan_id":"002","segment_id":"0","plan_name":"Capital Choice","formulary_id":"F103","state":"DC"}
+{"contract_id":"S1234","plan_id":"001","segment_id":"0","plan_name":"Lake Health Saver","formulary_id":"F100","state":"OH"}
+{"contract_id":"S1234","plan_id":"002","segment_id":"0","plan_name":"Lake Health Plus","formulary_id":"F101","state":"OH"}
+{"contract_id":"S1234","plan_id":"003","segment_id":"0","plan_name":"Lake Health Flex","formulary_id":"F102","county_code":"39035"}
+{"contract_id":"S7777","plan_id":"100","segment_id":"0","plan_name":"River Value","formulary_id":"F102","state":"KY"}
+{"contract_id":"S7777","plan_id":"101","segment_id":"0","plan_name":"River Secure","formulary_id":"F103","county_code":"21111"}
+{"contract_id":"S8888","plan_id":"050","segment_id":"0","plan_name":"North Star Rx","formulary_id":"F104","state":"MN"}
+{"contract_id":"S9999","plan_id":"010","segment_id":"1","plan_name":"Plains Standard","formulary_id":"F104","state":"KS"}
+{"contract_id":"S9999","plan_id":"011","segment_id":"1","plan_name":"Plains Select","formulary_id":"F101","state":"KS"}
