@@ -1,0 +1,30 @@
+{
+  "reporting_entity_name": "Fixture Inline Health",
+  "reporting_entity_type": "health insurance issuer",
+  "reporting_structure": [
+    {
+      "reporting_plans": [
+        {
+          "plan_name": "Fixture Inline PPO",
+          "plan_id_type": "ein",
+          "plan_id": "111111111",
+          "plan_market_type": "group"
+        }
+      ],
+      "in_network_files": [
+        {
+          "description": "inline v2 primary",
+          "location": "file://fixtures/rate-inline-v2.json"
+        },
+        {
+          "description": "inline v2 secondary",
+          "location": "file://fixtures/rate-inline-v2-secondary.json"
+        },
+        {
+          "description": "inline v2 tertiary",
+          "location": "file://fixtures/rate-inline-v2-tertiary.json"
+        }
+      ]
+    }
+  ]
+}

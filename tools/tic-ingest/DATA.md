@@ -49,6 +49,35 @@ The formulary scanner deduplicates on `formulary_id|rxcui` and keeps the first r
 mostly the retained unique key plus JSON-line map; the 512 MB ceiling test uses repeated rows to exercise
 streaming over a 2 GB pipe-delimited input without growing the dedup set with every scanned row.
 
+# Issuer Registry
+
+`issuers.seed.json` is the checked-in national commercial issuer seed. The spec only provides transparency
+landing pages, not machine-readable index URLs, so unresolved `indexUrl` values are intentionally preserved
+as `null` until a human resolves and cites each TOC URL. Running the validator still emits one
+`issuers.resolved.ndjson` row per seed entry so the registry records gaps honestly.
+
+Command run from `tools/tic-ingest/`:
+
+```sh
+npx tsx issuer-registry.ts --in issuers.seed.json --out issuers.resolved.ndjson --probe-rates
+```
+
+The memory ceiling test generates a synthetic 2 GB TiC index and runs:
+
+```sh
+node --max-old-space-size=256 node_modules/.bin/tsx issuer-registry.ts --in <seed> --out <out> --full-count
+```
+
+The validator streams JSON tokens, retaining only counters and the first three sampled rate-file locations.
+Its stderr summary includes `peak_rss_mb` for documenting the ceiling run.
+
+Observed standalone SPEC-8 ceiling run:
+
+```json
+{"generated_bytes":2147484361,"expected_files":2180187}
+{"entries":1,"validated":1,"reachable":1,"unresolved":0,"seconds":5.254,"peak_rss_mb":125}
+```
+
 ## Part D real-file note (SPEC-7)
 
 The CMS monthly PUF is a **zip of zips**: the outer `2026_YYYYMMDD.zip` contains

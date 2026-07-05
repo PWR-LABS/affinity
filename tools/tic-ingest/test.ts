@@ -368,6 +368,86 @@ test("large repeated Part D formulary file completes under a 512 MB old-space ce
   }
 });
 
+test("issuer registry fixture produces byte-identical resolved output", async () => {
+  const work = await makeTempDir("issuer-registry-fixtures-");
+  const outPath = join(work, "issuers.resolved.ndjson");
+
+  const result = await runTsx([
+    "issuer-registry.ts",
+    "--in",
+    "fixtures/issuers-seed-sample.json",
+    "--out",
+    outPath,
+    "--probe-rates",
+  ]);
+  const summary = parseSummary(result.stderr);
+
+  assert.equal(summary.entries, 4);
+  assert.equal(summary.validated, 3);
+  assert.equal(summary.reachable, 3);
+  assert.equal(summary.unresolved, 1);
+  await assertSameFile(join(toolRoot, "fixtures/expected-issuers.resolved.ndjson"), outPath);
+});
+
+test("large issuer index full-count completes under a 256 MB old-space ceiling", { timeout: 600_000 }, async () => {
+  const work = await makeTempDir("issuer-registry-memory-");
+  try {
+    const bigPath = join(work, "issuer-index-memory.json");
+    const seedPath = join(work, "issuers.seed.json");
+    const outPath = join(work, "issuers.resolved.ndjson");
+    const targetBytes = Number(process.env.ISSUER_MEMORY_BYTES ?? String(2 * 1024 * 1024 * 1024));
+    const expectedFiles = await writeRepeatedIssuerIndex(bigPath, targetBytes);
+    await fs.writeFile(
+      seedPath,
+      JSON.stringify(
+        [
+          {
+            key: "memory",
+            legalName: "Memory Health Insurance Company",
+            brand: "Memory Health",
+            family: "Memory",
+            footprint: "national",
+            transparencyPageUrl: "https://issuer.example/memory",
+            indexUrl: bigPath,
+            haveData: true,
+            notes: "synthetic large index fixture",
+          },
+        ],
+        null,
+        2,
+      ),
+    );
+    const stat = await fs.stat(bigPath);
+    assert.ok(stat.size >= targetBytes, `expected generated issuer index >= ${targetBytes} bytes; got ${stat.size}`);
+
+    const result = await runNode(
+      [
+        "--max-old-space-size=256",
+        tsxBin,
+        "issuer-registry.ts",
+        "--in",
+        seedPath,
+        "--out",
+        outPath,
+        "--full-count",
+      ],
+      { timeoutMs: 600_000 },
+    );
+    const summary = parseSummary(result.stderr);
+    const records = await readNdjson(outPath);
+
+    assert.equal(summary.entries, 1);
+    assert.equal(summary.validated, 1);
+    assert.equal(summary.reachable, 1);
+    assert.equal(records.length, 1);
+    assert.equal(records[0].inNetworkFileCount, expectedFiles);
+    assert.equal(records[0].countExact, true);
+    assert.equal((records[0].sampleFileLocations as unknown[]).length, 3);
+  } finally {
+    await fs.rm(work, { recursive: true, force: true });
+  }
+});
+
 test("tic-runner tiers, retries failed shards, and resumes completed work", async () => {
   const work = await makeTempDir("tic-runner-");
   const outDir = join(work, "out");
@@ -603,6 +683,34 @@ async function writeRepeatedPartdFormulary(path: string, targetBytes: number): P
 
   output.end();
   await once(output, "finish");
+}
+
+async function writeRepeatedIssuerIndex(path: string, targetBytes: number): Promise<number> {
+  await fs.mkdir(dirname(path), { recursive: true });
+  const output = createWriteStream(path);
+  let written = 0;
+  let files = 0;
+  const pad = "x".repeat(900);
+
+  const write = async (chunk: string) => {
+    written += Buffer.byteLength(chunk);
+    if (!output.write(chunk)) await once(output, "drain");
+  };
+
+  await write(
+    '{"reporting_entity_name":"Memory Index Health","reporting_entity_type":"health insurance issuer","reporting_structure":[{"reporting_plans":[],"in_network_files":[',
+  );
+  while (files < 3 || written < targetBytes) {
+    const prefix = files === 0 ? "" : ",";
+    const location = `https://issuer.example/rates/memory-${String(files).padStart(8, "0")}.json.gz`;
+    await write(`${prefix}{"description":"${pad}","location":"${location}"}`);
+    files += 1;
+  }
+  await write("]}]}\n");
+
+  output.end();
+  await once(output, "finish");
+  return files;
 }
 
 async function assertSameFile(expected: string, actual: string): Promise<void> {

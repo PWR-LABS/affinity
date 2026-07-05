@@ -1,0 +1,46 @@
+[
+  {
+    "key": "unresolved",
+    "legalName": "Fixture Unknown Health",
+    "brand": "Fixture Unknown",
+    "family": "Fixture",
+    "footprint": "national",
+    "transparencyPageUrl": "https://issuer.example/unresolved",
+    "indexUrl": null,
+    "haveData": false,
+    "notes": "synthetic unresolved issuer"
+  },
+  {
+    "key": "fixture-v2",
+    "legalName": "Fixture Inline Health",
+    "brand": "Fixture Inline",
+    "family": "Fixture",
+    "footprint": "national",
+    "transparencyPageUrl": "https://issuer.example/v2",
+    "indexUrl": "fixtures/issuer-index-v2.json",
+    "haveData": true,
+    "notes": "synthetic v2 fixture"
+  },
+  {
+    "key": "notoc",
+    "legalName": "Fixture Broken Health",
+    "brand": "Fixture Broken",
+    "family": "Fixture",
+    "footprint": ["OH"],
+    "transparencyPageUrl": "https://issuer.example/notoc",
+    "indexUrl": "fixtures/issuer-index-notoc.json",
+    "haveData": false,
+    "notes": "synthetic non-TOC fixture"
+  },
+  {
+    "key": "fixture-v1",
+    "legalName": "Fixture Reference Health",
+    "brand": "Fixture Reference",
+    "family": "Fixture",
+    "footprint": ["OH", "PA"],
+    "transparencyPageUrl": "https://issuer.example/v1",
+    "indexUrl": "fixtures/issuer-index-v1.json.gz",
+    "haveData": true,
+    "notes": "synthetic gzipped v1 fixture"
+  }
+]

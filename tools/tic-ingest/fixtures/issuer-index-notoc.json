@@ -1,0 +1,5 @@
+{
+  "reporting_entity_name": "Fixture Broken Health",
+  "reporting_entity_type": "health insurance issuer",
+  "note": "valid JSON but missing reporting_structure"
+}

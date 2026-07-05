@@ -1,0 +1,24 @@
+{
+  "reporting_entity_name": "Fixture Reference Health",
+  "provider_references": [
+    {
+      "provider_group_id": 1,
+      "provider_groups": [
+        {
+          "npi": [1770589349],
+          "tin": { "type": "ein", "value": "222222222" }
+        }
+      ]
+    }
+  ],
+  "in_network": [
+    {
+      "negotiation_arrangement": "ffs",
+      "name": "Office visit",
+      "billing_code_type": "CPT",
+      "billing_code": "99213",
+      "provider_references": [1],
+      "negotiated_rates": []
+    }
+  ]
+}

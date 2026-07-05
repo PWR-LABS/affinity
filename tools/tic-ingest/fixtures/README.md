@@ -15,6 +15,8 @@ tsx dol5500-employers.ts --in fixtures/dol5500-sample.csv --in fixtures/dol5500-
 tsx partd-formulary.ts --in fixtures --out-dir out-partd
                                                                                      # diff out-partd/partd-formulary.ndjson vs fixtures/expected-partd-formulary.ndjson
                                                                                      # diff out-partd/partd-plans.ndjson vs fixtures/expected-partd-plans.ndjson
+tsx issuer-registry.ts --in fixtures/issuers-seed-sample.json --out out-issuers.resolved.ndjson --probe-rates
+                                                                                     # diff vs fixtures/expected-issuers.resolved.ndjson
 ```
 
 Manifest sort: by `file_url`, then `plan_id`. Rows for structures with only an `allowed_amount_file`
@@ -34,3 +36,7 @@ The SPEC-4 DOL fixtures use synthetic values only and cover both Form 5500 and F
 The SPEC-7 Part D fixtures use synthetic values only. The directory input path exercises the fixture aliases
 for the real `basic drugs formulary` and `plan information` member patterns, blank/invalid `_YN` handling,
 duplicate `(formulary_id, rxcui)` suppression, and plan geography fallback from `state` to `county_code`.
+
+The SPEC-8 issuer-registry fixtures use synthetic issuer names and local paths only. They cover a plain v2
+TOC, a gzipped v1 TOC, a valid JSON file that is not a TiC TOC, an unresolved seed entry, and `--probe-rates`
+schema sniffing from the first sampled in-network file.
