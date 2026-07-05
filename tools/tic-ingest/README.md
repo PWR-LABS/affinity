@@ -17,6 +17,7 @@ assume it.
 | `toc-manifest` | SPEC-1 | issuer table-of-contents JSON (URL or path, may be .gz) | `manifest.csv` of in-network files + plan mapping |
 | `tic-extract` | SPEC-2 | one in-network rate file (URL or path, .json or .json.gz) | `providers.ndjson` of (npi, tin, file) tuples |
 | `nppes-allowlist` | SPEC-3 | NPPES full-replacement CSV + state/CBSA filter | `allowlist.txt` of NPIs |
+| `issuer-registry` | SPEC-8 | curated `issuers.seed.json` (top ~35 commercial families) | `issuers.resolved.ndjson` — validated index URLs + metadata |
 
 **Shared conventions**
 - CLI: `--in <url|path>` `--out <path>`; non-zero exit on fatal error; progress line to stderr every 10s
