@@ -175,8 +175,51 @@ enum CoverageSource {
   MARKETPLACE_API
   ISSUER_MRF
   ISSUER_TIC_MRF
+  CMS_PARTD
   CROWD
   SECRET_SHOPPER
+}
+
+// ---------------------------------------------------------------------------
+// Medicare Part D formulary index (the Medicare segment's S4).
+// From the CMS monthly PUF: plans point at a formulary; a formulary lists drugs
+// by RxCUI with tier + utilization-management flags. "Is drug X on plan Y?" =
+// plan → formularyId → drug row. No pricing data is stored, per doctrine.
+// ---------------------------------------------------------------------------
+
+/// One Part D plan (contract/plan/segment) for a contract year, from the plan-information file.
+model PartDPlan {
+  id          String  @id @default(cuid())
+  contractId  String
+  planId      String
+  segmentId   String
+  contractYear Int
+  planName    String
+  formularyId String
+  /// State/region when the layout carries it (regional PDPs may not).
+  state       String?
+
+  @@unique([contractId, planId, segmentId, contractYear])
+  @@index([formularyId])
+  @@index([state])
+}
+
+/// One (formulary, drug) row from the basic-drugs-formulary file. Booleans are nullable:
+/// null = the source didn't say — never coerced to false.
+model PartDFormularyDrug {
+  id                  String  @id @default(cuid())
+  formularyId         String
+  contractYear        Int
+  rxcui               String
+  tier                Int?
+  priorAuthorization  Boolean?
+  stepTherapy         Boolean?
+  quantityLimit       Boolean?
+  quantityLimitAmount Float?
+  quantityLimitDays   Int?
+
+  @@unique([formularyId, contractYear, rxcui])
+  @@index([rxcui])
 }
 
 // ---------------------------------------------------------------------------

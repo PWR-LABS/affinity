@@ -19,6 +19,7 @@ const GATES = [
   "eval:ui-smoke",
   "eval:network-bridge",
   "eval:tic-reconcile",
+  "eval:partd-reconcile",
 ];
 
 function run(script: string): boolean {

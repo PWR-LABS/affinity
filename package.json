@@ -42,7 +42,9 @@
     "eval:production-readiness": "tsx scripts/eval-production-readiness.ts",
     "tic:load": "tsx scripts/tic-load.ts",
     "employers:load": "tsx scripts/employers-load.ts",
-    "eval:tic-reconcile": "tsx scripts/eval-tic-reconcile.ts"
+    "eval:tic-reconcile": "tsx scripts/eval-tic-reconcile.ts",
+    "partd:load": "tsx scripts/partd-load.ts",
+    "eval:partd-reconcile": "tsx scripts/eval-partd-reconcile.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
