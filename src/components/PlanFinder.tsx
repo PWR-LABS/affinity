@@ -81,71 +81,75 @@ export function PlanFinder() {
 
   return (
     <div className="finder">
-      <form className="elig-form page-panel" onSubmit={onSubmit} noValidate>
+      <form className="elig-form page-panel" onSubmit={onSubmit} noValidate aria-busy={loading}>
         <div className="elig-grid">
           <div className="field">
             <label htmlFor="f-zip">ZIP code</label>
-            <input id="f-zip" inputMode="numeric" pattern="\d{5}" maxLength={5} placeholder="ZIP code"
+            <input id="f-zip" name="zip" type="text" inputMode="numeric" autoComplete="postal-code" pattern="\d{5}" maxLength={5} placeholder="ZIP code"
               value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, ""))} required />
           </div>
           <div className="field">
             <label htmlFor="f-age">Your age</label>
-            <input id="f-age" inputMode="numeric" placeholder="Age" value={age}
+            <input id="f-age" name="age" type="text" inputMode="numeric" autoComplete="off" placeholder="Age" value={age}
               onChange={(e) => setAge(e.target.value.replace(/\D/g, ""))} required />
           </div>
           <div className="field">
             <label htmlFor="f-income">Annual household income</label>
-            <input id="f-income" inputMode="numeric" placeholder="Annual income" value={income}
+            <input id="f-income" name="income" type="text" inputMode="numeric" autoComplete="off" placeholder="Annual income" value={income}
               onChange={(e) => setIncome(e.target.value.replace(/[^\d]/g, ""))} required />
           </div>
           <div className="field">
             <label htmlFor="f-size">People in household</label>
-            <input id="f-size" inputMode="numeric" placeholder="1" value={householdSize}
+            <input id="f-size" name="householdSize" type="text" inputMode="numeric" autoComplete="off" placeholder="1" value={householdSize}
               onChange={(e) => setHouseholdSize(e.target.value.replace(/\D/g, ""))} required />
           </div>
         </div>
 
-        <div className="picker-block">
-          <Typeahead
-            label="Add your doctors"
-            placeholder={/^\d{5}$/.test(zip) ? "Search by name, e.g. Smith" : "Enter your ZIP above first"}
-            fetchSuggestions={fetchDoctors}
-            onSelect={(s) => setDoctors((cur) => (cur.some((d) => d.npi === s.key) ? cur : [...cur, { npi: s.key, label: s.label }]))}
-          />
-          {doctors.length > 0 && (
-            <ul className="chips" aria-label="Selected doctors">
-              {doctors.map((d) => (
-                <li key={d.npi} className="chip">
-                  {d.label}
-                  <button type="button" aria-label={`Remove ${d.label}`} onClick={() => setDoctors((c) => c.filter((x) => x.npi !== d.npi))}>×</button>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="picker-grid">
+          <div className="picker-block">
+            <Typeahead
+              label="Add your doctors"
+              placeholder={/^\d{5}$/.test(zip) ? "Search by name, e.g. Smith" : "Enter your ZIP above first"}
+              fetchSuggestions={fetchDoctors}
+              onSelect={(s) => setDoctors((cur) => (cur.some((d) => d.npi === s.key) ? cur : [...cur, { npi: s.key, label: s.label }]))}
+            />
+            {doctors.length > 0 && (
+              <ul className="chips" aria-label="Selected doctors">
+                {doctors.map((d) => (
+                  <li key={d.npi} className="chip">
+                    <span>{d.label}</span>
+                    <button type="button" aria-label={`Remove ${d.label}`} onClick={() => setDoctors((c) => c.filter((x) => x.npi !== d.npi))}>×</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="picker-block">
+            <Typeahead
+              label="Add your medications"
+              placeholder="Search by name, e.g. metformin"
+              fetchSuggestions={fetchDrugs}
+              onSelect={(s) => setDrugs((cur) => (cur.some((d) => d.rxcui === s.key) ? cur : [...cur, { rxcui: s.key, label: s.label }]))}
+            />
+            {drugs.length > 0 && (
+              <ul className="chips" aria-label="Selected medications">
+                {drugs.map((d) => (
+                  <li key={d.rxcui} className="chip">
+                    <span>{d.label}</span>
+                    <button type="button" aria-label={`Remove ${d.label}`} onClick={() => setDrugs((c) => c.filter((x) => x.rxcui !== d.rxcui))}>×</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
-        <div className="picker-block">
-          <Typeahead
-            label="Add your medications"
-            placeholder="Search by name, e.g. metformin"
-            fetchSuggestions={fetchDrugs}
-            onSelect={(s) => setDrugs((cur) => (cur.some((d) => d.rxcui === s.key) ? cur : [...cur, { rxcui: s.key, label: s.label }]))}
-          />
-          {drugs.length > 0 && (
-            <ul className="chips" aria-label="Selected medications">
-              {drugs.map((d) => (
-                <li key={d.rxcui} className="chip">
-                  {d.label}
-                  <button type="button" aria-label={`Remove ${d.label}`} onClick={() => setDrugs((c) => c.filter((x) => x.rxcui !== d.rxcui))}>×</button>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="form-actions">
+          <button type="submit" className="primary primary-lg" disabled={loading}>
+            {loading ? "Finding your plans…" : "Find my plans"}
+          </button>
         </div>
-
-        <button type="submit" className="primary primary-lg" disabled={loading}>
-          {loading ? "Finding your plans…" : "Find my plans"}
-        </button>
       </form>
 
       {error && <p className="elig-error" role="alert">{error}</p>}

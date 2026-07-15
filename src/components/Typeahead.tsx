@@ -84,6 +84,7 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
       <div className="typeahead-shell">
         <input
           id={id}
+          type="text"
           role="combobox"
           aria-expanded={open}
           aria-controls={listId}
@@ -97,7 +98,7 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           onFocus={() => items.length && setOpen(true)}
         />
-        {loading && <span className="typeahead-spin" aria-hidden>…</span>}
+        {loading && <span className="typeahead-spin" aria-hidden />}
       </div>
       {open && (items.length > 0 || (!loading && q.trim().length >= 2)) && (
         <ul className="typeahead-menu" id={listId} role="listbox">

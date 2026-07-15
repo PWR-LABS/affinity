@@ -59,34 +59,36 @@ export function EligibilityCheck() {
 
   return (
     <div className="elig">
-      <form className="elig-form page-panel" onSubmit={onSubmit} noValidate>
+      <form className="elig-form page-panel" onSubmit={onSubmit} noValidate aria-busy={loading}>
         <div className="elig-grid">
           <div className="field">
             <label htmlFor="zip">ZIP code</label>
-            <input id="zip" name="zip" inputMode="numeric" autoComplete="postal-code" pattern="\d{5}" maxLength={5}
+            <input id="zip" name="zip" type="text" inputMode="numeric" autoComplete="postal-code" pattern="\d{5}" maxLength={5}
               placeholder="ZIP code" value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, ""))} required />
           </div>
           <div className="field">
             <label htmlFor="age">Your age</label>
-            <input id="age" name="age" inputMode="numeric" placeholder="Age" value={age}
+            <input id="age" name="age" type="text" inputMode="numeric" autoComplete="off" placeholder="Age" value={age}
               onChange={(e) => setAge(e.target.value.replace(/\D/g, ""))} required />
           </div>
           <div className="field">
             <label htmlFor="income">Annual household income</label>
-            <input id="income" name="income" inputMode="numeric" autoComplete="off" placeholder="Annual income"
+            <input id="income" name="income" type="text" inputMode="numeric" autoComplete="off" placeholder="Annual income"
               value={income} onChange={(e) => setIncome(e.target.value.replace(/[^\d]/g, ""))} required
               aria-describedby="income-help" />
             <p id="income-help" className="field-help">Your best estimate for this year. Stays private — never stored.</p>
           </div>
           <div className="field">
             <label htmlFor="householdSize">People in household</label>
-            <input id="householdSize" name="householdSize" inputMode="numeric" placeholder="1" value={householdSize}
+            <input id="householdSize" name="householdSize" type="text" inputMode="numeric" autoComplete="off" placeholder="1" value={householdSize}
               onChange={(e) => setHouseholdSize(e.target.value.replace(/\D/g, ""))} required />
           </div>
         </div>
-        <button type="submit" className="primary primary-lg" disabled={loading}>
-          {loading ? "Checking…" : "Check my coverage"}
-        </button>
+        <div className="form-actions">
+          <button type="submit" className="primary primary-lg" disabled={loading}>
+            {loading ? "Checking…" : "Check my coverage"}
+          </button>
+        </div>
       </form>
 
       {error && (

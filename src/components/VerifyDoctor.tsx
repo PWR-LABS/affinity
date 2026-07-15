@@ -96,17 +96,24 @@ export function VerifyDoctor() {
 
   return (
     <div className="verify">
-      <div className="elig-form page-panel">
-        <div className="picker-block">
-          <div className="elig-grid" style={{ marginBottom: "0.4rem" }}>
+      <form
+        className="elig-form page-panel verify-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void onVerify();
+        }}
+        aria-busy={loading}
+      >
+        <div className="verify-section">
+          <div className="elig-grid verify-grid">
             <div className="field">
               <label htmlFor="v-zip">Your ZIP (to search doctors by name)</label>
-              <input id="v-zip" inputMode="numeric" pattern="\d{5}" maxLength={5} placeholder="ZIP code"
+              <input id="v-zip" name="zip" type="text" inputMode="numeric" autoComplete="postal-code" pattern="\d{5}" maxLength={5} placeholder="ZIP code"
                 value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, ""))} />
             </div>
             <div className="field">
               <label htmlFor="v-npi">…or paste an NPI directly</label>
-              <input id="v-npi" inputMode="numeric" maxLength={10} placeholder="10-digit NPI"
+              <input id="v-npi" name="npi" type="text" inputMode="numeric" autoComplete="off" maxLength={10} placeholder="10-digit NPI"
                 value={npiDirect} onChange={(e) => { setNpiDirect(e.target.value.replace(/\D/g, "")); setDoctor(null); }} />
             </div>
           </div>
@@ -118,14 +125,14 @@ export function VerifyDoctor() {
           />
           {doctor && (
             <ul className="chips" aria-label="Selected doctor">
-              <li className="chip">{doctor.label}
+              <li className="chip"><span>{doctor.label}</span>
                 <button type="button" aria-label={`Remove ${doctor.label}`} onClick={() => setDoctor(null)}>×</button>
               </li>
             </ul>
           )}
         </div>
 
-        <div className="picker-block">
+        <div className="verify-section">
           <Typeahead
             label="Your plan"
             placeholder="Search plan or network name, e.g. SuperMed"
@@ -136,7 +143,7 @@ export function VerifyDoctor() {
               setEinDirect("");
             }}
           />
-          <div style={{ marginTop: "0.5rem" }}>
+          <div className="verify-stack">
             <Typeahead
               label="…or search your employer"
               placeholder="Employer name, e.g. Kroger"
@@ -147,26 +154,28 @@ export function VerifyDoctor() {
               }}
             />
           </div>
-          <div className="field" style={{ marginTop: "0.5rem" }}>
+          <div className="field verify-stack">
             <label htmlFor="v-ein">…or your employer&rsquo;s EIN (on your W-2, box b)</label>
-            <input id="v-ein" inputMode="numeric" maxLength={9} placeholder="9-digit EIN"
+            <input id="v-ein" name="ein" type="text" inputMode="numeric" autoComplete="off" maxLength={9} placeholder="9-digit EIN"
               value={einDirect} onChange={(e) => { setEinDirect(e.target.value.replace(/\D/g, "")); setPlan(null); }}
               aria-describedby="ein-help" />
             <p id="ein-help" className="field-help">Employer plans are keyed by the employer&rsquo;s tax ID. Stays private — never stored.</p>
           </div>
           {planSel && (
             <ul className="chips" aria-label="Selected plan">
-              <li className="chip">{planSel.label}
+              <li className="chip"><span>{planSel.label}</span>
                 <button type="button" aria-label={`Remove ${planSel.label}`} onClick={() => { setPlan(null); setEinDirect(""); }}>×</button>
               </li>
             </ul>
           )}
         </div>
 
-        <button type="button" className="primary primary-lg" disabled={loading || !npi || !planSel} onClick={onVerify}>
-          {loading ? "Checking the issuer's file…" : "Verify coverage"}
-        </button>
-      </div>
+        <div className="form-actions">
+          <button type="submit" className="primary primary-lg" disabled={loading || !npi || !planSel}>
+            {loading ? "Checking the issuer's file…" : "Verify coverage"}
+          </button>
+        </div>
+      </form>
 
       {error && <p className="elig-error" role="alert">{error}</p>}
 
