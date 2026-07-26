@@ -110,3 +110,18 @@ income / providers / medications are set locally in `.env` and never committed.
   live TiC table-of-contents and records in-network file counts + schema (v1 references / v2 inline) —
   the evidence table that sizes a national build before any multi-TB download. Unresolved issuers are
   honest recorded gaps, never dropped. SPEC-9 (resolve the live index URLs) queued next.
+
+## Sizing the national build (2026-07-09)
+
+- **SPEC-9, live index URLs resolved.** The issuer registry stops being a list of names and becomes real
+  evidence: each Transparency-in-Coverage index is fetched and confirmed to be a live table of contents,
+  with in-network file counts and schema (v1 references / v2 inline) recorded. Unresolved issuers stay
+  honest recorded gaps rather than quietly disappearing.
+- **SPEC-10, parse-throughput benchmark** (`tools/tic-ingest`, Codex to spec). Bounded measurement, not
+  the build: stream-parse the giant shared-network files (UHC 8.9 GB, Cigna 1.5 GB gz) and measure MB/s,
+  membership yield, and the employer-to-shared-file dedup ratio, turning the rough monthly infrastructure
+  estimate into measured numbers for a go/no-go. The fan-out ingest pipeline remains a later, gated spec.
+
+## Interface refinement (2026-07-15)
+
+- Light-interface pass across the app surfaces.
