@@ -1,10 +1,11 @@
 import { createReadStream } from "node:fs";
-import { Readable, PassThrough } from "node:stream";
+import { Readable, PassThrough, Transform } from "node:stream";
 import { createGunzip } from "node:zlib";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const { parser } = require("stream-json");
+const Ignore = require("stream-json/filters/Ignore");
 
 export type JsonToken = {
   name: string;
@@ -193,27 +194,62 @@ export function isScalarToken(token: JsonToken): boolean {
 
 export async function parseJsonTokens(
   stream: Readable,
-  onToken: (token: JsonToken) => void,
+  onToken: (token: JsonToken) => void | Promise<void>,
+  options: {
+    ignore?: (path: Array<string | number>, token: JsonToken) => boolean;
+  } = {},
 ): Promise<void> {
   await new Promise<void>((resolve, reject) => {
-    const jsonParser = parser();
+    // Consumers use the packed scalar tokens (keyValue/stringValue/numberValue).
+    // Disabling duplicate start/chunk/end scalar tokens cuts large TiC token volume substantially.
+    const jsonParser = parser({ streamValues: false });
+    const output = options.ignore
+      ? jsonParser.pipe(Ignore.ignore({ filter: options.ignore }))
+      : jsonParser;
     let settled = false;
+    let ended = false;
+    let pending = 0;
 
     const finish = (error?: unknown) => {
       if (settled) return;
       settled = true;
-      if (error) reject(error);
-      else resolve();
+      if (error) {
+        stream.destroy();
+        jsonParser.destroy();
+        if (output !== jsonParser) output.destroy();
+        reject(error);
+      } else {
+        resolve();
+      }
+    };
+
+    const maybeFinish = () => {
+      if (ended && pending === 0) finish();
     };
 
     stream.on("error", finish);
     jsonParser.on("error", finish);
-    jsonParser.on("end", () => finish());
-    jsonParser.on("data", (token: JsonToken) => {
+    if (output !== jsonParser) output.on("error", finish);
+    output.on("end", () => {
+      ended = true;
+      maybeFinish();
+    });
+    output.on("data", (token: JsonToken) => {
       try {
-        onToken(token);
+        const result = onToken(token);
+        if (result && typeof result.then === "function") {
+          pending += 1;
+          output.pause();
+          result.then(
+            () => {
+              pending -= 1;
+              if (!settled) output.resume();
+              maybeFinish();
+            },
+            (error) => finish(error),
+          );
+        }
       } catch (error) {
-        jsonParser.destroy(error as Error);
         finish(error);
       }
     });
@@ -224,7 +260,12 @@ export async function parseJsonTokens(
 
 export async function openDecodedInput(
   input: string,
-  options: { tolerate404?: boolean; method?: "GET" | "HEAD" } = {},
+  options: {
+    tolerate404?: boolean;
+    method?: "GET" | "HEAD";
+    onBytes?: (totalBytes: number) => void;
+    signal?: AbortSignal;
+  } = {},
 ): Promise<{ stream: Readable | null; status?: number; headers?: Headers }> {
   if (/^https?:\/\//i.test(input)) {
     return openHttpInput(input, options);
@@ -234,19 +275,25 @@ export async function openDecodedInput(
     return { stream: null, status: 200, headers: new Headers() };
   }
 
-  return { stream: await sniffGzip(createReadStream(input)) };
+  const source = observeBytes(createReadStream(input), options.onBytes);
+  return { stream: await sniffGzip(source) };
 }
 
 async function openHttpInput(
   input: string,
-  options: { tolerate404?: boolean; method?: "GET" | "HEAD" },
+  options: {
+    tolerate404?: boolean;
+    method?: "GET" | "HEAD";
+    onBytes?: (totalBytes: number) => void;
+    signal?: AbortSignal;
+  },
 ): Promise<{ stream: Readable | null; status: number; headers: Headers }> {
   const method = options.method ?? "GET";
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
-      const response = await fetch(input, { method, redirect: "follow" });
+      const response = await fetch(input, { method, redirect: "follow", signal: options.signal });
       if (response.status === 404 && options.tolerate404) {
         return { stream: null, status: 404, headers: response.headers };
       }
@@ -268,18 +315,35 @@ async function openHttpInput(
         throw new Error(`empty response body for ${input}`);
       }
 
+      const source = observeBytes(Readable.fromWeb(response.body as never), options.onBytes);
       return {
-        stream: await sniffGzip(Readable.fromWeb(response.body as never)),
+        stream: await sniffGzip(source),
         status: response.status,
         headers: response.headers,
       };
     } catch (error) {
       lastError = error;
+      if (options.signal?.aborted) throw error;
       if (attempt < 3) await delay(250 * attempt);
     }
   }
 
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
+}
+
+function observeBytes(stream: Readable, onBytes?: (totalBytes: number) => void): Readable {
+  if (!onBytes) return stream;
+
+  let totalBytes = 0;
+  const counter = new Transform({
+    transform(chunk: Buffer | string, _encoding, callback) {
+      totalBytes += Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(chunk);
+      onBytes(totalBytes);
+      callback(null, chunk);
+    },
+  });
+  stream.on("error", (error) => counter.destroy(error));
+  return stream.pipe(counter);
 }
 
 async function sniffGzip(stream: Readable): Promise<Readable> {

@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { createServer } from "node:http";
-import { createWriteStream, promises as fs } from "node:fs";
+import { createReadStream, createWriteStream, promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +8,7 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { createGzip, gzipSync } from "node:zlib";
 import test from "node:test";
+import { runExtract } from "./tic-extract.ts";
 
 const toolRoot = fileURLToPath(new URL(".", import.meta.url));
 const tsxBin = join(toolRoot, "node_modules", ".bin", "tsx");
@@ -25,7 +26,7 @@ test("fixture invocations produce byte-identical expected files", async () => {
   await assertSameFile(join(toolRoot, "fixtures/expected-manifest.csv"), join(work, "out-manifest.csv"));
 });
 
-test("v1 references after in_network are resolved by the second pass", async () => {
+test("v1 references after in_network are resolved without ordering assumptions", async () => {
   const work = await makeTempDir("tic-v1-reordered-");
   const fixturePath = join(work, "v1-refs-after.json");
   const fixture = JSON.parse(await fs.readFile(join(toolRoot, "fixtures/tic-in-network-v1-sample.json"), "utf8"));
@@ -137,6 +138,84 @@ test("large repeated gzip completes under a 256 MB old-space ceiling", { timeout
   assert.equal(summary.schema, "v2");
   assert.equal(summary.pairs_emitted, 3);
   assert.equal((await readNdjson(outPath)).length, 3);
+});
+
+test("tic-extract resumes a checkpointed parse without duplicate output", { timeout: 120_000 }, async () => {
+  const work = await makeTempDir("tic-resume-");
+  try {
+    const input = join(work, "resume-v2.json.gz");
+    const baselineOut = join(work, "baseline.ndjson");
+    const resumedOut = join(work, "resumed.ndjson");
+    const resumeWork = join(work, "resume-work");
+    await writeDistinctV2Fixture(input, 20_000);
+
+    await runExtract({ input, out: baselineOut, progress: false });
+
+    const controller = new AbortController();
+    const interrupted = runExtract({
+      input,
+      out: resumedOut,
+      workDir: resumeWork,
+      keepWork: true,
+      progress: false,
+      checkpointUnitInterval: 100,
+      signal: controller.signal,
+    });
+    const timer = setTimeout(() => controller.abort(new Error("intentional checkpoint interruption")), 20);
+    await assert.rejects(interrupted, /intentional checkpoint interruption/);
+    clearTimeout(timer);
+
+    const checkpoint = JSON.parse(await fs.readFile(join(resumeWork, "checkpoint.json"), "utf8"));
+    assert.ok(checkpoint.completed.v2Groups > 0);
+    assert.ok(checkpoint.completed.v2Groups < 20_000);
+    assert.equal(checkpoint.parseComplete, false);
+
+    const summary = await runExtract({
+      input,
+      out: resumedOut,
+      workDir: resumeWork,
+      progress: false,
+    });
+    assert.equal(summary.resumed, true);
+    assert.ok(summary.replayed_units > 0);
+    assert.equal(summary.pairs_emitted, 20_000);
+    await assertSameFile(baselineOut, resumedOut);
+    await assert.rejects(fs.access(resumeWork));
+  } finally {
+    await fs.rm(work, { recursive: true, force: true });
+  }
+});
+
+test("high-cardinality extraction stays below the 512 MB RSS ceiling", { timeout: 300_000 }, async () => {
+  const work = await makeTempDir("tic-cardinality-");
+  try {
+    const input = join(work, "distinct-v2.json.gz");
+    const outPath = join(work, "out.ndjson");
+    const pairs = Number(process.env.TIC_DISTINCT_PAIRS ?? "250000");
+    await writeDistinctV2Fixture(input, pairs);
+
+    const result = await runNode(
+      [
+        "--max-old-space-size=96",
+        tsxBin,
+        "tic-extract.ts",
+        "--in",
+        input,
+        "--out",
+        outPath,
+        "--sort-memory",
+        "32M",
+      ],
+      { timeoutMs: 300_000 },
+    );
+    const summary = parseSummary(result.stderr);
+    assert.equal(summary.pairs_emitted, pairs);
+    assert.equal(summary.npis_emitted, pairs);
+    assert.ok(Number(summary.peak_rss_mb) < 512, `peak RSS was ${summary.peak_rss_mb} MB`);
+    assert.equal(await countFileLines(outPath), pairs);
+  } finally {
+    await fs.rm(work, { recursive: true, force: true });
+  }
 });
 
 test("nppes fixture produces byte-identical allowlist outputs", async () => {
@@ -593,6 +672,31 @@ async function writeRepeatedV2Fixture(path: string, totalEntries: number): Promi
   await once(output, "finish");
 }
 
+async function writeDistinctV2Fixture(path: string, totalPairs: number): Promise<void> {
+  await fs.mkdir(dirname(path), { recursive: true });
+  const gzip = createGzip({ level: 1 });
+  const output = createWriteStream(path);
+  gzip.pipe(output);
+
+  const write = async (chunk: string) => {
+    if (!gzip.write(chunk)) await once(gzip, "drain");
+  };
+
+  await write(
+    '{"reporting_entity_name":"Distinct Memory Health","last_updated_on":"2026-07-01","version":"2.0.0","in_network":[{"negotiated_rates":[{"provider_groups":[',
+  );
+  for (let index = 0; index < totalPairs; index += 1) {
+    if (index > 0) await write(",");
+    const npi = String(1_000_000_000 + index);
+    await write(`{"npi":[${npi}],"tin":{"type":"ein","value":"900000000"}}`);
+  }
+  await write(
+    '],"negotiated_prices":[{"negotiated_type":"negotiated","negotiated_rate":1,"service_code":["11"]}]}]}]}',
+  );
+  gzip.end();
+  await once(output, "finish");
+}
+
 async function writeRepeatedNppesCsv(path: string, targetBytes: number): Promise<void> {
   await fs.mkdir(dirname(path), { recursive: true });
   const output = createWriteStream(path);
@@ -745,6 +849,16 @@ async function readNdjson(path: string): Promise<Record<string, unknown>[]> {
 async function readLines(path: string): Promise<string[]> {
   const text = await fs.readFile(path, "utf8");
   return text.trim().split("\n").filter(Boolean);
+}
+
+async function countFileLines(path: string): Promise<number> {
+  let lines = 0;
+  for await (const chunk of createReadStream(path)) {
+    for (const byte of chunk as Buffer) {
+      if (byte === 0x0a) lines += 1;
+    }
+  }
+  return lines;
 }
 
 function parseSummary(stderr: string): Record<string, unknown> {

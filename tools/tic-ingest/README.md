@@ -29,3 +29,18 @@ assume it.
 
 **Acceptance:** each spec has fixtures + exact expected outputs (in `fixtures/`) and a memory ceiling
 test. All must pass via `npm test` in the tool dir.
+
+## `tic-extract` national-worker behavior
+
+`tic-extract` keeps its original `--in`, `--allowlist`, and `--out` CLI contract, but extraction is now
+disk-backed. Candidate pairs and v1 reference tables are appended under `<out>.work/`, resolved with
+bounded external sorts, and only then written to the final NDJSON path atomically. No file-wide pair or
+provider-reference map is retained in the Node heap.
+
+- Interrupted parses resume automatically from `checkpoint.json`; completed provider groups and reference
+  records are replay-skipped and their spool data is reused. A single-member gzip must still be decompressed
+  from byte zero to reach the checkpoint, so resume preserves work but cannot seek into the compressed stream.
+- `--work-dir <path>` relocates checkpoint/spool files, `--fresh` discards a checkpoint, and `--keep-work`
+  preserves successful intermediates for inspection. Successful runs otherwise remove the work directory.
+- `--sort-memory <size>` caps each external `sort` process (default `64M`). Progress now includes compressed
+  input MB, RSS MB, phase, and the latest durable checkpoint unit.
