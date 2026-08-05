@@ -5,9 +5,9 @@ import { VerifyPartD } from "@/components/VerifyPartD";
 import { getCoverageReadiness } from "@/lib/coverage-readiness";
 
 export const metadata: Metadata = {
-  title: "Check Medicare drugs",
+  title: "Compare Medicare drug formularies",
   description:
-    "Check whether medications appear on a Medicare Part D formulary, including tiers and reported utilization requirements.",
+    "Shortlist standalone Medicare Part D plans by medication coverage, tiers, and reported utilization requirements.",
 };
 
 export const dynamic = "force-dynamic";
@@ -18,10 +18,10 @@ export default async function VerifyMedicareDrug() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Check medications on a Medicare plan</h1>
+        <h1 className="page-title">Find Medicare drug plans that list your medications</h1>
         <p className="page-subtitle">
-          See whether your medications appear on a plan&rsquo;s CMS-published formulary, their tiers, and whether
-          the plan reports prior authorization, step therapy, or quantity limits.
+          Compare statewide standalone Part D formularies, or check a plan you already know. Every result
+          includes tiers and reported prior authorization, step therapy, and quantity limits.
         </p>
       </div>
 

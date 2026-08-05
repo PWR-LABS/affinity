@@ -44,6 +44,7 @@
     "employers:load": "tsx scripts/employers-load.ts",
     "eval:tic-reconcile": "tsx scripts/eval-tic-reconcile.ts",
     "partd:load": "tsx scripts/partd-load.ts",
+    "partd:region-backfill": "tsx scripts/partd-region-backfill.ts",
     "eval:partd-reconcile": "tsx scripts/eval-partd-reconcile.ts"
   },
   "dependencies": {

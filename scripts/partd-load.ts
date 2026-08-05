@@ -64,6 +64,10 @@ async function main(): Promise<void> {
         planName: String(p.plan_name ?? ""),
         formularyId: String(p.formulary_id ?? ""),
         state: typeof p.state === "string" && p.state.trim() ? p.state.trim() : null,
+        pdpRegionCode:
+          String(p.contract_id ?? "").startsWith("S") && typeof p.region === "string" && p.region.trim()
+            ? p.region.trim()
+            : null,
       })),
       skipDuplicates: true,
     });

@@ -198,10 +198,13 @@ model PartDPlan {
   formularyId String
   /// State/region when the layout carries it (regional PDPs may not).
   state       String?
+  /// CMS PDP region code for stand-alone Part D plans (S contracts).
+  pdpRegionCode String?
 
   @@unique([contractId, planId, segmentId, contractYear])
   @@index([formularyId])
   @@index([state])
+  @@index([pdpRegionCode])
 }
 
 /// One (formulary, drug) row from the basic-drugs-formulary file. Booleans are nullable:

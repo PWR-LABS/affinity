@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { pdpRegionCodeForState } from "@/lib/partd/shortlist";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -17,10 +18,19 @@ export async function GET(req: Request) {
   }
 
   try {
+    const pdpRegionCode = state ? pdpRegionCodeForState(state) : null;
     const plans = await prisma.partDPlan.findMany({
       where: {
         contractYear,
-        ...(state ? { OR: [{ state }, { state: null }] } : {}),
+        ...(state
+          ? {
+              OR: [
+                { state },
+                ...(pdpRegionCode ? [{ pdpRegionCode }] : []),
+                { state: null, pdpRegionCode: null },
+              ],
+            }
+          : {}),
         AND: [
           {
             OR: [

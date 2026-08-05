@@ -697,6 +697,44 @@ body {
   gap: 1rem;
   align-items: end;
 }
+.partd-mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.site .partd-mode-switch button[type="button"] {
+  min-width: 0;
+  min-height: 2.45rem;
+  border: 0;
+  border-radius: 5px;
+  padding: 0.5rem 0.7rem;
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+}
+.site .partd-mode-switch button[type="button"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  color: var(--text);
+}
+.site .partd-mode-switch button[type="button"][aria-pressed="true"] {
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  color: var(--accent);
+}
+.site .partd-mode-switch button[type="button"]:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.partd-state-field { max-width: 20rem; }
 
 .coverage-tabs {
   display: flex;
@@ -825,6 +863,119 @@ body {
 }
 .partd-result-card .partd-facts {
   max-width: none;
+}
+.partd-shortlist {
+  display: grid;
+  gap: 0.8rem;
+}
+.partd-shortlist-row[data-complete="true"] {
+  border-color: color-mix(in srgb, var(--ok) 42%, var(--border));
+  box-shadow: var(--shadow-1), inset 3px 0 0 var(--ok);
+}
+.partd-shortlist-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.partd-shortlist-head > div { min-width: 0; }
+.partd-shortlist-rank {
+  margin: 0 0 0.18rem;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.partd-shortlist-head h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.98rem;
+  font-weight: 650;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.partd-shortlist-id {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.partd-shortlist-coverage {
+  flex: 0 0 auto;
+  margin: 0;
+  text-align: right;
+}
+.partd-shortlist-coverage strong {
+  display: block;
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 650;
+  line-height: 1.1;
+}
+.partd-shortlist-coverage span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+.partd-shortlist-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0.9rem 0 0;
+  border-top: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
+}
+.partd-shortlist-metrics > div {
+  min-width: 0;
+  padding: 0.65rem 0.7rem;
+  border-right: 1px solid var(--divider);
+}
+.partd-shortlist-metrics > div:first-child { padding-left: 0; }
+.partd-shortlist-metrics > div:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+.partd-shortlist-metrics dt {
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.3;
+}
+.partd-shortlist-metrics dd {
+  margin: 0.16rem 0 0;
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+.partd-shortlist-drugs {
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.partd-shortlist-drugs li {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1.5fr) minmax(6rem, 0.5fr) minmax(10rem, 1fr);
+  gap: 0.7rem;
+  align-items: baseline;
+  min-width: 0;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--divider);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+.partd-shortlist-drugs li:last-child { border-bottom: 0; }
+.partd-shortlist-drugs li[data-listed="false"] { color: var(--bad); }
+.partd-shortlist-drug-name {
+  min-width: 0;
+  color: var(--text);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.partd-shortlist-drug-tier { color: inherit; font-weight: 600; }
+.partd-shortlist-drug-restrictions { color: var(--muted); }
+.partd-shortlist-source {
+  max-width: 46rem;
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.5;
 }
 
 .typeahead { position: relative; display: flex; min-width: 0; flex-direction: column; gap: 0.4rem; }
@@ -1064,6 +1215,22 @@ body {
   .plan-row { padding: 0.9rem; }
   .coverage-tabs { gap: 1rem; }
   .partd-plan-grid { grid-template-columns: 1fr; }
+  .partd-results-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .partd-results-summary { text-align: left; }
+  .partd-shortlist-head {
+    align-items: stretch;
+  }
+  .partd-shortlist-coverage { text-align: right; }
+  .partd-shortlist-drugs li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.15rem 0.65rem;
+  }
+  .partd-shortlist-drug-restrictions {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 460px) {
@@ -1074,4 +1241,10 @@ body {
   .truecost { text-align: left; }
   .coverage-row { align-items: flex-start; }
   .partd-facts { grid-template-columns: 1fr; }
+  .partd-mode-switch { grid-template-columns: 1fr; }
+  .partd-shortlist-head { flex-direction: column; }
+  .partd-shortlist-coverage { text-align: left; }
+  .partd-shortlist-metrics > div { padding: 0.55rem 0.35rem; }
+  .partd-shortlist-metrics > div:first-child { padding-left: 0; }
+  .partd-shortlist-metrics > div:last-child { padding-right: 0; }
 }
