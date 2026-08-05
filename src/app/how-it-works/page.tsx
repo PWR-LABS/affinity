@@ -44,11 +44,20 @@ export default function HowItWorks() {
           the final word belongs to your state Medicaid office and the official Marketplace.
         </p>
 
+        <h2>4. Verify other coverage</h2>
+        <p>
+          The verification tools extend the same honest answer shape beyond Marketplace plans. Employer-plan
+          doctor checks use issuer Transparency-in-Coverage network files. Medicare drug checks use the CMS Part
+          D formulary index and include the reported tier, prior authorization, step therapy, and quantity-limit
+          flags. Each tool is available only when its source index is loaded.
+        </p>
+
         <h2>Honest limits</h2>
         <p>
           Plan rankings here lead with net premium and whether your doctors/meds are covered; a fuller expected
-          annual-cost estimate (deductible + copays + drug tiers) is coming. Subsidy figures are estimates — confirm
-          on the official Marketplace.
+          annual-cost estimate (deductible + copays + drug tiers) is coming. Employer verification is doctors-only,
+          and the Medicare tool checks formulary coverage rather than comparing plan costs. Subsidy figures are
+          estimates — confirm on the official Marketplace.
         </p>
       </div>
     </div>

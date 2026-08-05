@@ -5,7 +5,7 @@ import { buildPartDAnswer } from "@/lib/partd/adapter";
 
 const NOW = "2026-07-06T12:00:00.000Z";
 
-test("drug on formulary → yes, with tier + the PA flag the Marketplace API hides", () => {
+test("drug on formulary → yes, with tier + the Part D PUF's PA field", () => {
   const { answer, um } = buildPartDAnswer({
     rxcui: "1593856",
     formularyIndexed: true,

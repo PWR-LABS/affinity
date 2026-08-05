@@ -1,8 +1,8 @@
 /**
  * Part D adapter — turns the CMS Part D formulary index into doctrine-shaped CoverageAnswers, and
- * surfaces the utilization-management flags (prior auth / step therapy / quantity limit) the live
- * Marketplace API withholds. Same shape as the TiC adapter: pure core (unit-testable, eval-able without
- * a DB) + a thin Prisma edge.
+ * surfaces the utilization-management fields (prior auth / step therapy / quantity limit) published in
+ * the CMS Part D PUF. Same shape as the TiC adapter: pure core (unit-testable, eval-able without a DB) +
+ * a thin Prisma edge.
  *
  * Semantics:
  *   - Plan's formulary lists the RxCUI          → "yes" (on formulary), with tier + UM flags.

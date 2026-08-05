@@ -88,7 +88,7 @@ income / providers / medications are set locally in `.env` and never committed.
   confidence meter. Honest limits on-page: one source, doctors-only for commercial, confirm before
   relying. Off the main nav until the index is provisioned in production.
 
-## Medicare Part D — the formulary + hidden-flags layer (2026-07-05)
+## Medicare Part D — the formulary + restriction-detail layer (2026-07-05)
 
 - **S7 — Part D ingest** (`tools/tic-ingest/partd-formulary`, Codex to spec, verified): the monthly CMS
   Part D PUF (a zip-of-zips) → formulary + plan NDJSON, constant-memory. Real June 2026 file →
@@ -97,9 +97,12 @@ income / providers / medications are set locally in `.env` and never committed.
 - **`CMS_PARTD` source + adapter.** New source tag (base confidence 0.65) flowing through the same N-way
   `reconcileMany()` core; `buildPartDAnswer` emits doctrine answers (on-formulary→yes w/ tier ·
   indexed-but-absent→no · unindexed→honest unknown). New `eval:partd-reconcile`; readiness bundle now 11 gates.
-- **The flag the official tools hide.** The adapter surfaces the **prior-authorization / step-therapy /
-  quantity-limit** utilization-management flags that HealthCare.gov's own consumer API withholds — proven
-  live: AARP Medicare Rx Preferred, RxCUI 1000048, on formulary at tier 4 **with PA required**.
+- **Restriction detail from the CMS source.** The adapter surfaces the **prior-authorization /
+  step-therapy / quantity-limit** utilization-management fields published in the CMS Part D PUF. A live
+  check found AARP Medicare Rx Preferred, RxCUI 1000048, on formulary at tier 4 **with PA required**.
+  Correction (2026-08-05): the earlier wording said official consumer tools hide these fields. Medicare
+  Plan Finder has long displayed drug restrictions; the HealthCare.gov developer API is an ACA product
+  and is not the Medicare comparator. See `docs/PARTD_DISCLOSURE_AUDIT.md`.
 - **`/api/partd/verify`.** POST (drug/plan never land in URLs), doctrine-shaped result plus the UM flags,
   503-degrades when the index isn't provisioned. Medicare is now queryable end-to-end.
 

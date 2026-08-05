@@ -1,6 +1,6 @@
 /**
  * eval:partd-reconcile — the Medicare segment gate: Part D formulary answers fuse with other sources
- * through the N-way reconciler, and the PA flag the Marketplace API withholds is preserved.
+ * through the N-way reconciler, and the PUF's PA field is preserved.
  * Deterministic (no network, no DB). Exit code is the gate: 0 pass, 1 fail.
  */
 import { buildPartDAnswer } from "@/lib/partd/adapter";
@@ -22,7 +22,7 @@ console.log("eval:partd-reconcile — CMS Part D formulary through the N-way rec
   const { answer: partd, um } = buildPartDAnswer({ rxcui: "1593856", formularyIndexed: true, drug: { tier: 3, priorAuthorization: true }, fetchedAt: NOW, sourceLastUpdated: "2026-06-10" });
   const r = reconcileMany({ kind: "DRUG", subjectKey: "1593856", planId: "S1234-001", answers: [api, partd] });
   check("API∪PartD agreement compounds above either alone", r.verdict === "AGREE" && r.reconciledConfidence > Math.max(api.confidence, partd.confidence), `${r.verdict} @ ${r.reconciledConfidence}`);
-  check("the PA flag the Marketplace hides is preserved by Part D", um.priorAuthorization === true);
+  check("the Part D PUF's PA field is preserved", um.priorAuthorization === true);
 }
 
 // 2. Part D 'not on formulary' vs API 'covered' → CONFLICT, collapsed, surfaced.

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
+import { CoverageTabs, CoverageUnavailable } from "@/components/CoverageTabs";
 import { VerifyDoctor } from "@/components/VerifyDoctor";
+import { getCoverageReadiness } from "@/lib/coverage-readiness";
 
 export const metadata: Metadata = {
   title: "Verify a doctor (beta)",
@@ -10,7 +12,9 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function Verify() {
+export default async function Verify() {
+  const readiness = await getCoverageReadiness();
+
   return (
     <div>
       <div className="page-header">
@@ -22,7 +26,17 @@ export default function Verify() {
           issuer by issuer.
         </p>
       </div>
-      <VerifyDoctor />
+
+      <CoverageTabs active="employer" readiness={readiness} />
+
+      {readiness.employer ? (
+        <VerifyDoctor />
+      ) : (
+        <CoverageUnavailable>
+          The checker is built, but this environment does not currently hold both the commercial plan links and
+          provider memberships it needs. No network answer will be guessed from an empty index.
+        </CoverageUnavailable>
+      )}
     </div>
   );
 }

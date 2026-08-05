@@ -83,7 +83,8 @@ is ready.
    to confirm public-free-consumer use + attribution (see [`docs/COMPLIANCE_NOTES.md`](docs/COMPLIANCE_NOTES.md)).
 
 Live, the tool is: **/** the Medicaid-or-Marketplace eligibility check · **/plans** the doctor/drug-aware plan
-board · **/how-it-works**. Free, neutral, no accounts, no stored PII.
+board · **/verify** the readiness-gated employer doctor checker · **/verify/medicare-drug** the readiness-gated
+CMS Part D formulary checker · **/how-it-works**. Free, neutral, no accounts, no stored PII.
 
 ## Doctrine
 

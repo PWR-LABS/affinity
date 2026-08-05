@@ -5,8 +5,9 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 const NAV = [
-  { href: "/", label: "Check coverage", match: (p: string) => p === "/" },
-  { href: "/plans", label: "See plans", match: (p: string) => p.startsWith("/plans") },
+  { href: "/", label: "Check", match: (p: string) => p === "/" },
+  { href: "/plans", label: "Plans", match: (p: string) => p.startsWith("/plans") },
+  { href: "/verify", label: "Verify", match: (p: string) => p.startsWith("/verify") },
   { href: "/how-it-works", label: "How it works", match: (p: string) => p.startsWith("/how-it-works") },
 ];
 

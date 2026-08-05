@@ -9,8 +9,8 @@ export const dynamic = "force-dynamic";
  * Medicare Part D verify — "is this drug (RxCUI) on this Part D plan's formulary, at what tier, and does
  * it carry prior-auth / step-therapy / quantity-limit?" Answered from the CMS Part D index and returned
  * ONLY in doctrine shape (tri-state value + source + freshness + confidence + confirm guidance), PLUS the
- * utilization-management flags — the fields HealthCare.gov's own consumer API withholds. POST (not GET) so
- * the drug/plan pair never lands in URLs or request logs. Nothing is stored.
+ * utilization-management fields from the CMS Part D PUF. POST (not GET) so the drug/plan pair never lands
+ * in URLs or request logs. Nothing is stored.
  */
 export async function POST(req: Request) {
   let body: unknown;
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       formularyTier: answer.formularyTier ?? null,
       source: answer.provenance.source,
       sourceUpdated: answer.provenance.sourceLastUpdated ?? null,
-      // The utilization-management flags the Marketplace API hides. Present only when on formulary.
+      // CMS Part D utilization-management fields. Present only when the drug is on-formulary.
       utilizationManagement: um,
       rendered: renderCoverageAnswer(answer),
       needsConfirmation: needsConfirmation(answer),
