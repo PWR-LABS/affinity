@@ -84,7 +84,7 @@ const PLAN_COLUMNS: ColumnSpec<PlanColumnKey>[] = [
 const GEO_COLUMNS: ColumnSpec<GeoColumnKey>[] = [
   { key: "state", names: ["STATE"] },
   { key: "county_code", names: ["COUNTY_CODE"] },
-  { key: "region", names: ["REGION", "REGION_CODE"] },
+  { key: "region", names: ["PDP_REGION_CODE", "MA_REGION_CODE", "REGION", "REGION_CODE"] },
 ];
 
 async function main(): Promise<void> {

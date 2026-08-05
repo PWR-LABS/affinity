@@ -84,7 +84,8 @@ is ready.
 
 Live, the tool is: **/** the Medicaid-or-Marketplace eligibility check · **/plans** the doctor/drug-aware plan
 board · **/verify** the readiness-gated employer doctor checker · **/verify/medicare-drug** the readiness-gated
-CMS Part D formulary checker · **/how-it-works**. Free, neutral, no accounts, no stored PII.
+CMS Part D formulary shortlist and exact-plan checker · **/how-it-works**. Free, neutral, no accounts, no
+stored PII.
 
 ## Doctrine
 

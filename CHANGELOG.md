@@ -105,6 +105,17 @@ income / providers / medications are set locally in `.env` and never committed.
   and is not the Medicare comparator. See `docs/PARTD_DISCLOSURE_AUDIT.md`.
 - **`/api/partd/verify`.** POST (drug/plan never land in URLs), doctrine-shaped result plus the UM flags,
   503-degrades when the index isn't provisioned. Medicare is now queryable end-to-end.
+- **Medication-first Part D shortlist (2026-08-05).** A user can enter a state and up to 20 exact drug
+  products, then compare the loaded statewide standalone Part D formularies without knowing a plan name.
+  Results rank medications listed first, then reported restriction burden and average tier. Medicare
+  Advantage is deliberately excluded from discovery because availability is county-specific; the exact-plan
+  checker remains available for a plan the user already knows. This is a formulary-fit shortlist, not a
+  premium or pharmacy-price ranking.
+- **PDP geography repair.** The CMS plan file uses `PDP_REGION_CODE` for standalone plans rather than the
+  `STATE` field used by local Medicare Advantage plans. The ingest alias, Prisma model, loader, and an
+  idempotent plan-only backfill now retain that region code; the app maps a state to CMS's published PDP
+  region before comparing plans. The fix updates 367 standalone plan records without reloading the 1.1
+  million-row formulary table.
 
 ## Nationwide groundwork (2026-07-05)
 
