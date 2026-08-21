@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 
+import { medicaidChangeUrl, medicaidResourceByCode, STATE_MEDICAID_RESOURCES } from "@/lib/medicaid/states";
+import { stateBasedMarketplace } from "@/lib/marketplace/states";
+
 interface Result {
   county?: string;
   state?: string;
-  verdict: "medicaid" | "marketplace" | "coverage_gap" | "state_marketplace" | "unknown";
+  verdict: "medicaid" | "marketplace" | "coverage_gap" | "state_marketplace" | "official_handoff" | "unknown";
   aptcMonthly: number;
   planCount?: number;
   headline: string;
@@ -17,11 +20,13 @@ const VERDICT_LABEL: Record<Result["verdict"], string> = {
   medicaid: "Likely Medicaid (free)",
   marketplace: "Likely Marketplace",
   coverage_gap: "Possible coverage gap",
-  state_marketplace: "Your state's marketplace",
+  state_marketplace: "Use your state service",
+  official_handoff: "Official state decision",
   unknown: "Needs review",
 };
 
 export function EligibilityCheck() {
+  const [state, setState] = useState("");
   const [zip, setZip] = useState("");
   const [income, setIncome] = useState("");
   const [householdSize, setHouseholdSize] = useState("1");
@@ -40,6 +45,7 @@ export function EligibilityCheck() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          state,
           zip: zip.trim(),
           income: Number(income),
           householdSize: Number(householdSize),
@@ -57,10 +63,22 @@ export function EligibilityCheck() {
     }
   }
 
+  const officialResource = medicaidResourceByCode(result?.state ?? state);
+  const officialMarketplace = stateBasedMarketplace(result?.state ?? state);
+
   return (
-    <div className="elig">
+    <div className="elig" id="coverage-check">
       <form className="elig-form page-panel" onSubmit={onSubmit} noValidate aria-busy={loading}>
         <div className="elig-grid">
+          <div className="field">
+            <label htmlFor="state">State</label>
+            <select id="state" name="state" autoComplete="address-level1" value={state} onChange={(event) => setState(event.target.value)} required>
+              <option value="">Select a state</option>
+              {STATE_MEDICAID_RESOURCES.map((resource) => (
+                <option key={resource.code} value={resource.code}>{resource.state}</option>
+              ))}
+            </select>
+          </div>
           <div className="field">
             <label htmlFor="zip">ZIP code</label>
             <input id="zip" name="zip" type="text" inputMode="numeric" autoComplete="postal-code" pattern="\d{5}" maxLength={5}
@@ -108,6 +126,18 @@ export function EligibilityCheck() {
             </>
           )}
           {result.notes.map((n, i) => <p key={i} className="verdict-note">{n}</p>)}
+          {officialResource ? (
+            <div className="verdict-official-actions" aria-label={`Official ${officialResource.state} resources`}>
+              <a className="cta" href={officialResource.applyUrl} target="_blank" rel="noreferrer">
+                Apply or renew with {officialResource.program} ↗
+              </a>
+              <a href={`tel:${officialResource.phone.replace(/[^\d+]/g, "")}`}>Call {officialResource.phone}</a>
+              <a href={medicaidChangeUrl(officialResource.code)} target="_blank" rel="noreferrer">See Medicaid changes ↗</a>
+              {officialMarketplace ? (
+                <a href={`https://${officialMarketplace.url}`} target="_blank" rel="noreferrer">Open {officialMarketplace.name} ↗</a>
+              ) : null}
+            </div>
+          ) : null}
         </section>
       )}
     </div>

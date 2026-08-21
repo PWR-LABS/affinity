@@ -21,7 +21,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 const DESCRIPTION =
-  "Losing Medicaid? Find out in 30 seconds whether you qualify for free Medicaid or a subsidized Marketplace plan — and which plans actually cover your doctors and medications. Free, private, neutral.";
+  "Losing Medicaid? Get a nationwide, state-specific Medicaid handoff, track the 2027 rule changes, and check whether you may qualify for Medicaid or a subsidized Marketplace plan. Free, private, neutral.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://affinity.pwr-labs.ai"),

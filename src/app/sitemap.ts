@@ -5,6 +5,7 @@ const BASE = "https://affinity.pwr-labs.ai";
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${BASE}/`, changeFrequency: "monthly", priority: 1 },
+    { url: `${BASE}/medicaid`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${BASE}/plans`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${BASE}/verify`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/verify/medicare-drug`, changeFrequency: "monthly", priority: 0.7 },

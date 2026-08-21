@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { MedicaidStateGuide } from "@/components/MedicaidStateGuide";
+import {
+  FEATURED_MEDICAID_CHANGES,
+  medicaidChangeUrl,
+  medicaidResourceByCode,
+} from "@/lib/medicaid/states";
+
 export const metadata: Metadata = {
   title: "Medicaid changes by state",
   description:
@@ -12,7 +19,7 @@ export default function MedicaidPage() {
     <div className="medicaid-page">
       <div className="page-header medicaid-hero">
         <p className="medicaid-eyebrow">Nationwide Medicaid desk</p>
-        <h1 className="page-title">Keep your Medicaid through the rule changes.</h1>
+        <h1 className="page-title">Find—and keep—your Medicaid through the rule changes.</h1>
         <p className="page-subtitle">
           Medicaid is run state by state. We turn the changing federal rules into a clear next step for
           where you live—starting with New York and Ohio.
@@ -22,6 +29,8 @@ export default function MedicaidPage() {
           <a className="notice-link" href="#state-watch">See state updates</a>
         </div>
       </div>
+
+      <MedicaidStateGuide />
 
       <section className="medicaid-change" aria-labelledby="national-change-title">
         <p className="medicaid-change-kicker">Federal change · begins January 1, 2027</p>
@@ -44,45 +53,30 @@ export default function MedicaidPage() {
         </div>
 
         <div className="medicaid-state-grid">
-          <article className="medicaid-state-card">
-            <div className="medicaid-state-card-head">
-              <span className="medicaid-state-code">NY</span>
-              <div>
-                <h3>New York</h3>
-                <p>Renewal protections are narrowing.</p>
-              </div>
-            </div>
-            <ul>
-              <li>Most adults are returning to standard renewal checks after twelve-month continuous eligibility ended.</li>
-              <li>Some children under six are also returning to standard renewals.</li>
-              <li>The new federal work and community-engagement rules are expected January 1, 2027.</li>
-            </ul>
-            <p className="medicaid-action"><strong>Do now:</strong> update your contact information and respond to every NY State of Health renewal notice.</p>
-            <div className="medicaid-card-links">
-              <a href="https://nystateofhealth.ny.gov/" target="_blank" rel="noreferrer">Apply or renew in New York ↗</a>
-              <a href="https://www.health.ny.gov/health_care/medicaid/" target="_blank" rel="noreferrer">Official NY updates ↗</a>
-            </div>
-          </article>
-
-          <article className="medicaid-state-card">
-            <div className="medicaid-state-card-head">
-              <span className="medicaid-state-code">OH</span>
-              <div>
-                <h3>Ohio</h3>
-                <p>More frequent checks are already in state law.</p>
-              </div>
-            </div>
-            <ul>
-              <li>Ohio law calls for Medicaid expansion eligibility to be reviewed every six months when federal law allows.</li>
-              <li>CMS says affected adults should prepare to document work, school, training, or volunteer hours.</li>
-              <li>People who meet an exclusion should gather medical, caregiving, or other supporting records.</li>
-            </ul>
-            <p className="medicaid-action"><strong>Do now:</strong> update your Ohio Benefits account, save monthly records, and watch for a state notice.</p>
-            <div className="medicaid-card-links">
-              <a href="https://ssp.benefits.ohio.gov/" target="_blank" rel="noreferrer">Apply or renew in Ohio ↗</a>
-              <a href="https://www.medicaid.gov/renew-info/OH" target="_blank" rel="noreferrer">Official Ohio change guide ↗</a>
-            </div>
-          </article>
+          {FEATURED_MEDICAID_CHANGES.map((change) => {
+            const resource = medicaidResourceByCode(change.code)!;
+            return (
+              <article className="medicaid-state-card" key={change.code}>
+                <div className="medicaid-state-card-head">
+                  <span className="medicaid-state-code">{change.code}</span>
+                  <div>
+                    <h3>{resource.state}</h3>
+                    <p>{change.dek}</p>
+                  </div>
+                </div>
+                <p className="medicaid-card-timing">{change.timing}</p>
+                <ul>
+                  {change.facts.map((fact) => <li key={fact}>{fact}</li>)}
+                </ul>
+                <p className="medicaid-action"><strong>Do now:</strong> {change.action}</p>
+                <div className="medicaid-card-links">
+                  <a href={resource.applyUrl} target="_blank" rel="noreferrer">Apply or renew in {resource.state} ↗</a>
+                  <a href={change.sourceUrl} target="_blank" rel="noreferrer">State source ↗</a>
+                  <a href={medicaidChangeUrl(change.code)} target="_blank" rel="noreferrer">Federal guide ↗</a>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
 

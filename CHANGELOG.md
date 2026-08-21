@@ -139,3 +139,14 @@ income / providers / medications are set locally in `.env` and never committed.
 ## Interface refinement (2026-07-15)
 
 - Light-interface pass across the app surfaces.
+
+## Nationwide Medicaid navigation (2026-08-21)
+
+- **All 50 states + D.C.** The coverage check now asks for state explicitly and attaches the official state
+  Medicaid application or renewal entry point, member phone number, and CMS eligibility-change guide. State-based
+  marketplaces fail safely into their own official service rather than receiving a federal-data guess.
+- **`/medicaid` change desk.** A nationwide state selector explains the federal work and community-engagement
+  requirements scheduled for January 1, 2027, common exclusions, and immediate keep-coverage steps.
+- **New York + Ohio state watch.** Source-backed cards distinguish enacted/current renewal changes from the
+  January 2027 federal requirement: New York's discontinued continuous-eligibility authorities and Ohio's
+  six-month expansion-group review law. The copy stays decision support; only the state makes a determination.

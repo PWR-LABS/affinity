@@ -1,15 +1,17 @@
 /**
  * Live eligibility check — the highest-value, simplest answer the tool gives: are you likely eligible
- * for free Medicaid, or for a subsidized Marketplace plan, at your income? Needs only ZIP + income +
- * household (no doctors/meds), so it works for anyone. Server-side only (uses the Marketplace API key).
+ * for free Medicaid, or for a subsidized Marketplace plan, at your income? Needs only state + ZIP +
+ * income + household (no doctors/meds), so it works for anyone. Server-side only (uses the Marketplace API key).
  *
  * Decision support, not a determination: the verdict mirrors HealthCare.gov's own eligibility estimate;
  * the final call belongs to the state Medicaid agency and the official Marketplace.
  */
 import { MarketplaceClient } from "@/lib/marketplace/client";
 import { stateBasedMarketplace } from "@/lib/marketplace/states";
+import { medicaidResourceByCode } from "@/lib/medicaid/states";
 
 export interface EligibilityInput {
+  state: string;
   zip: string;
   /** Annual household income (MAGI), whole dollars. */
   income: number;
@@ -19,7 +21,7 @@ export interface EligibilityInput {
   year: number;
 }
 
-export type EligibilityVerdict = "medicaid" | "marketplace" | "coverage_gap" | "state_marketplace" | "unknown";
+export type EligibilityVerdict = "medicaid" | "marketplace" | "coverage_gap" | "state_marketplace" | "official_handoff" | "unknown";
 
 export interface EligibilityResult {
   zip: string;
@@ -43,15 +45,63 @@ export interface EligibilityResult {
 
 const usd = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
+/** Honest nationwide fallback when the live federal estimate is unavailable. */
+export function officialStateHandoff(state: string, zip: string): EligibilityResult {
+  const resource = medicaidResourceByCode(state);
+  if (!resource) throw new Error("Unsupported state code.");
+  return {
+    zip,
+    state: resource.code,
+    verdict: "official_handoff",
+    medicaidEligible: false,
+    aptcMonthly: 0,
+    inCoverageGap: false,
+    headline: `${resource.program} can make the official coverage decision—we won't guess while the live estimate is unavailable.`,
+    nextSteps: [
+      `Apply, renew, or check your case through ${resource.program} using the official link below.`,
+      "If you received a renewal notice, respond by the deadline even if you think the state already has your information.",
+    ],
+    notes: ["No eligibility verdict or subsidy amount was produced. Your state application checks income and every coverage category that may apply."],
+  };
+}
+
 export async function checkEligibility(input: EligibilityInput): Promise<EligibilityResult> {
+  const requestedState = input.state.toUpperCase();
+  const stateResource = medicaidResourceByCode(requestedState);
+  if (!stateResource) throw new Error("Unsupported state code.");
+
+  // Full state-based marketplaces are outside the federal Marketplace API. The explicit state field
+  // lets us make a safe nationwide handoff before touching that API, so the result still works when a
+  // ZIP lookup or federal API key cannot serve the state.
+  const requestedMarketplace = stateBasedMarketplace(requestedState);
+  if (requestedMarketplace) {
+    return {
+      zip: input.zip,
+      state: requestedState,
+      verdict: "state_marketplace",
+      medicaidEligible: false,
+      aptcMonthly: 0,
+      inCoverageGap: false,
+      headline: `${requestedMarketplace.state} makes its own Medicaid and Marketplace decisions, so we won't guess from federal-only data.`,
+      nextSteps: [
+        `Apply or renew through ${stateResource.program} using the official link below.`,
+        `For private-plan eligibility and subsidies, use ${requestedMarketplace.name}.`,
+      ],
+      notes: [
+        "No eligibility verdict is shown here because the federal Marketplace feed does not carry this state's live determination. The state application checks every category that may apply to you.",
+      ],
+    };
+  }
+
   const client = new MarketplaceClient();
-  if (!client.isLive) throw new Error("Marketplace API key not configured.");
+  if (!client.isLive) return officialStateHandoff(requestedState, input.zip);
 
   const counties = await client.countiesByZip(input.zip);
   const county = counties[0];
   if (!county) {
     return {
       zip: input.zip,
+      state: requestedState,
       verdict: "unknown",
       medicaidEligible: false,
       aptcMonthly: 0,
@@ -61,26 +111,18 @@ export async function checkEligibility(input: EligibilityInput): Promise<Eligibi
       notes: [],
     };
   }
-  // State-Based Marketplaces aren't on the federal API — answer honestly and send them to their own
-  // exchange instead of letting the eligibility call 400 into a misleading "try again" error.
-  const sbm = stateBasedMarketplace(county.state);
-  if (sbm) {
+  if (county.state !== requestedState) {
     return {
       zip: input.zip,
       county: county.name,
-      state: county.state,
-      verdict: "state_marketplace",
+      state: requestedState,
+      verdict: "unknown",
       medicaidEligible: false,
       aptcMonthly: 0,
       inCoverageGap: false,
-      headline: `${sbm.state} runs its own health marketplace, so we can't pull live plans here — but you likely still qualify for help.`,
-      nextSteps: [
-        `Check your plans and subsidies at ${sbm.name} — ${sbm.url}.`,
-        "For Medicaid or free in-person help, see localhelp.healthcare.gov.",
-      ],
-      notes: [
-        `This tool reads the federal HealthCare.gov data, which covers about 30 states. ${sbm.state} isn't one of them — its own marketplace has your exact plans and subsidy amount.`,
-      ],
+      headline: `That ZIP appears to be in ${county.state}, not ${requestedState}.`,
+      nextSteps: ["Choose the state that matches your home address, then check again."],
+      notes: ["We stop here rather than use the wrong state's Medicaid rules."],
     };
   }
 
@@ -117,7 +159,7 @@ export async function checkEligibility(input: EligibilityInput): Promise<Eligibi
   const loc = `${county.name}, ${county.state}`;
   // Navigator help is national by default — localhelp.healthcare.gov finds free, unbiased in-person help
   // in every state. Ohio (the tool's home base) gets its specific Medicaid + Navigator links.
-  const isOhio = county.state === "OH";
+  const isOhio = requestedState === "OH";
   const navigator = isOhio ? "getcoveredohio.org" : "localhelp.healthcare.gov";
   let headline: string;
   const nextSteps: string[] = [];
@@ -126,9 +168,7 @@ export async function checkEligibility(input: EligibilityInput): Promise<Eligibi
   if (verdict === "medicaid") {
     headline = `At this income you likely qualify for Medicaid — free coverage — in ${loc}.`;
     nextSteps.push(
-      isOhio
-        ? "Apply or confirm Medicaid in Ohio at ssp.benefits.ohio.gov, or get free help from a Navigator — getcoveredohio.org / (833) 628-4467."
-        : "Apply or confirm Medicaid with your state's Medicaid agency, or get free in-person help from a Navigator — localhelp.healthcare.gov.",
+      `Apply or confirm through ${stateResource.program}; the official application and phone number are below.`,
       "A subsidized Marketplace plan gives $0 here, so don't buy one unless your income rises above the Medicaid line.",
     );
   } else if (verdict === "marketplace") {

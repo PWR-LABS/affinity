@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "[affinity.] — Medicaid or Marketplace? Find your coverage in 30 seconds.";
+export const alt = "[affinity.] — Medicaid help for every state, plus Marketplace plan decisions.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -26,10 +26,10 @@ export default function OpengraphImage() {
           <span style={{ color: "#8f8aa3", fontWeight: 500, marginLeft: 10 }}>]</span>
         </div>
         <div style={{ display: "flex", fontSize: 54, fontWeight: 700, color: "#2a2620", marginTop: 30, lineHeight: 1.15, maxWidth: 940 }}>
-          Medicaid or Marketplace? Find your coverage in 30 seconds.
+          Medicaid help for every state. No wrong-door handoffs.
         </div>
         <div style={{ display: "flex", fontSize: 30, color: "#6f665a", marginTop: 28, maxWidth: 940 }}>
-          Free, private, neutral — and it checks which plans actually keep your doctors and meds.
+          Track rule changes, apply or renew, and find your next coverage step.
         </div>
       </div>
     ),

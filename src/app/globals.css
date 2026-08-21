@@ -136,6 +136,21 @@ body {
 }
 .page-subtitle { margin: 0; max-width: 40rem; font-size: 1.02rem; line-height: 1.55; color: var(--muted); }
 .page-subtitle strong { color: var(--text); }
+.medicaid-home-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin: -0.35rem 0 1.15rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, var(--border));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--warn) 7%, var(--surface));
+  font-size: 0.82rem;
+}
+.medicaid-home-alert span { color: var(--muted); }
+.medicaid-home-alert a { flex: 0 0 auto; color: var(--accent); font-weight: 700; text-decoration: none; }
+.medicaid-home-alert a:hover { text-decoration: underline; }
 
 /* ---- Notice pages (404 / error boundary) ------------------------------------ */
 .notice-page { max-width: 40rem; padding: 1.5rem 0 1rem; }
@@ -598,6 +613,7 @@ body {
 .verdict-card[data-verdict="marketplace"] { border-left-color: var(--accent); }
 .verdict-card[data-verdict="coverage_gap"] { border-left-color: var(--warn); }
 .verdict-card[data-verdict="state_marketplace"] { border-left-color: var(--accent); }
+.verdict-card[data-verdict="official_handoff"] { border-left-color: var(--accent); }
 .verdict-card[data-verdict="covered"] { border-left-color: var(--ok); }
 .verdict-card[data-verdict="not-covered"] { border-left-color: var(--warn); }
 .verdict-tag {
@@ -612,6 +628,7 @@ body {
 .verdict-card[data-verdict="medicaid"] .verdict-tag { color: var(--accent); }
 .verdict-card[data-verdict="marketplace"] .verdict-tag { color: var(--accent); }
 .verdict-card[data-verdict="state_marketplace"] .verdict-tag { color: var(--accent); }
+.verdict-card[data-verdict="official_handoff"] .verdict-tag { color: var(--accent); }
 .verdict-card[data-verdict="covered"] .verdict-tag { color: var(--accent); }
 .verdict-card[data-verdict="not-covered"] .verdict-tag { color: var(--warn); }
 /* Confidence meter — a claim's trust is always shown, never implied. */
@@ -655,6 +672,18 @@ body {
   line-height: 1.4;
   color: var(--muted);
 }
+.verdict-official-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--divider);
+}
+.verdict-official-actions a:not(.cta) { color: var(--accent); font-size: 0.84rem; font-weight: 600; text-decoration: none; }
+.verdict-official-actions a:not(.cta):hover { text-decoration: underline; }
+.verdict-official-actions .cta { text-align: center; }
 .elig-foot {
   max-width: 44rem;
   margin: 1.5rem 0 0;
@@ -1187,6 +1216,29 @@ body {
   text-transform: uppercase;
 }
 .medicaid-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 1.25rem; }
+.medicaid-state-guide { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(15rem, 0.8fr); gap: 1.25rem 1.75rem; align-items: end; }
+.medicaid-state-guide h2 { margin: 0; font-family: var(--font-display); font-size: 1.25rem; line-height: 1.3; }
+.medicaid-state-guide > div:first-child > p:last-child { margin: 0.4rem 0 0; color: var(--muted); font-size: 0.9rem; }
+.medicaid-state-picker { min-width: 0; }
+.site .medicaid-state-picker select,
+.site .elig-form select {
+  min-height: 2.85rem;
+  border-color: var(--border-strong);
+  border-radius: 7px;
+  background-color: var(--control-bg);
+  font-size: 1rem;
+}
+.site .medicaid-state-picker select:focus-visible,
+.site .elig-form select:focus-visible { border-color: color-mix(in srgb, var(--accent) 68%, var(--border)); box-shadow: var(--focus-ring); }
+.medicaid-state-result { grid-column: 1 / -1; padding-top: 1.15rem; border-top: 1px solid var(--divider); }
+.medicaid-state-result-head { display: flex; align-items: center; gap: 0.85rem; }
+.medicaid-state-result-head h3 { margin: 0; font-family: var(--font-display); font-size: 1.05rem; }
+.medicaid-state-result-head p { margin: 0.1rem 0 0; color: var(--muted); font-size: 0.84rem; }
+.medicaid-result-label { color: var(--accent) !important; font-size: 0.7rem !important; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.medicaid-state-alert { margin: 0.9rem 0 0; padding: 0.65rem 0.75rem; border-radius: 6px; background: color-mix(in srgb, var(--warn) 8%, var(--surface)); font-size: 0.85rem; }
+.medicaid-state-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem 1rem; margin-top: 1rem; }
+.medicaid-secondary-action { color: var(--accent); font-size: 0.86rem; font-weight: 600; text-decoration: none; }
+.medicaid-secondary-action:hover { text-decoration: underline; }
 .medicaid-change {
   padding: 1.3rem 1.4rem;
   border-left: 4px solid var(--warn);
@@ -1230,6 +1282,7 @@ body {
 }
 .medicaid-state-card h3 { font-size: 1.05rem; }
 .medicaid-state-card-head p { margin: 0.1rem 0 0; color: var(--muted); font-size: 0.82rem; }
+.medicaid-card-timing { margin: -0.35rem 0 0; color: var(--accent); font-size: 0.72rem; font-weight: 700; }
 .medicaid-state-card ul { display: grid; gap: 0.55rem; margin: 0; padding-left: 1.15rem; font-size: 0.9rem; }
 .medicaid-action { margin: auto 0 0; padding-top: 0.25rem; font-size: 0.88rem; }
 .medicaid-card-links { display: flex; flex-wrap: wrap; gap: 0.55rem 1rem; padding-top: 0.85rem; border-top: 1px solid var(--divider); font-size: 0.84rem; }
@@ -1263,6 +1316,7 @@ body {
   .page-title { font-size: 1.65rem; line-height: 1.22; }
   .page-subtitle { font-size: 0.98rem; line-height: 1.55; }
   .page-panel { padding: 1.1rem; }
+  .medicaid-home-alert { align-items: flex-start; flex-direction: column; }
   .elig-grid { gap: 0.95rem; }
   .picker-grid,
   .verify-section {
@@ -1299,6 +1353,7 @@ body {
     grid-column: 1 / -1;
   }
   .medicaid-state-grid { grid-template-columns: 1fr; }
+  .medicaid-state-guide { grid-template-columns: 1fr; align-items: stretch; }
   .medicaid-hero { padding: 1.15rem; }
 }
 

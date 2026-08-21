@@ -1,6 +1,6 @@
 # [affinity.]
 
-**PWR LABS product lane** — ACA marketplace plan selection with **network truth**: find the plan that actually covers *your* doctors and *your* medications, at its *true* annual cost — and how much to trust the network data behind that answer.
+**PWR LABS product lane** — nationwide Medicaid navigation plus ACA marketplace plan selection with **network truth**: get to the right state coverage decision, then find the plan that actually covers *your* doctors and *your* medications at its *true* annual cost.
 
 **Vision:** [`docs/AFFINITY_PRODUCT_VISION.md`](docs/AFFINITY_PRODUCT_VISION.md) · **Doctrine:** [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md) · **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 **Claude Code entry:** [`CLAUDE.md`](CLAUDE.md)
@@ -17,6 +17,7 @@ HealthCare.gov shows provider networks and formularies that are **documented to 
 | --- | --- |
 | `src/lib/provenance.ts` | The doctrine in code — every coverage answer carries source + freshness + confidence |
 | `src/lib/marketplace/` · `src/lib/mrf/` | Marketplace API client · issuer machine-readable-file layer |
+| `src/lib/medicaid/` · `src/app/medicaid/` | Official state application directory · nationwide change desk, with NY/OH watches |
 | `src/lib/reconcile.ts` | API↔MRF reconciliation — the network-truth moat |
 | `src/lib/matching/` | M1 — per-plan doctor in-network + drug formulary matching, ranked by coverage |
 | `src/lib/cost/` | M2 — subsidy (PTC + CSR) + expected OOP + drug costs → rank by **true annual cost** |
@@ -82,7 +83,8 @@ is ready.
 4. **Before public launch:** email the Marketplace API team (marketplace-api@cms-provider-directory.uservoice.com)
    to confirm public-free-consumer use + attribution (see [`docs/COMPLIANCE_NOTES.md`](docs/COMPLIANCE_NOTES.md)).
 
-Live, the tool is: **/** the Medicaid-or-Marketplace eligibility check · **/plans** the doctor/drug-aware plan
+Live, the tool is: **/** the Medicaid-or-Marketplace eligibility check · **/medicaid** the 50-state + D.C.
+application, renewal, and rule-change desk · **/plans** the doctor/drug-aware plan
 board · **/verify** the readiness-gated employer doctor checker · **/verify/medicare-drug** the readiness-gated
 CMS Part D formulary shortlist and exact-plan checker · **/how-it-works**. Free, neutral, no accounts, no
 stored PII.
