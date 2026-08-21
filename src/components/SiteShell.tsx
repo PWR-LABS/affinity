@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 const NAV = [
   { href: "/", label: "Check", match: (p: string) => p === "/" },
+  { href: "/medicaid", label: "Medicaid", match: (p: string) => p.startsWith("/medicaid") },
   { href: "/plans", label: "Plans", match: (p: string) => p.startsWith("/plans") },
   { href: "/verify", label: "Verify", match: (p: string) => p.startsWith("/verify") },
   { href: "/how-it-works", label: "How it works", match: (p: string) => p.startsWith("/how-it-works") },
