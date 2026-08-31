@@ -18,8 +18,10 @@ eligibility data. Findings (CMS developer docs, reviewed 2026-06-30):
   whole data set to be extracted.**" → Architecture invariant: query **live per user request**; do NOT
   pre-download/mirror the full plan or MRF dataset. Our model (per-request) is compliant; keep caching short
   and per-query (not a bulk mirror).
-- ⚠️ **Rate limited.** The limit is returned in response headers; the key rotates every 60 days. A public tool
-  must respect it — implement per-query caching, handle 429s, and email the team
+- ⚠️ **Rate limited.** The limit is returned in response headers. CMS's August 2026 operator notice postponed
+  the planned October 26, 2026 key rotation until after Open Enrollment; the replacement date is TBD in 2027.
+  Treat rotation as notice-driven and update the deployed secret promptly when CMS supplies the new date. A public
+  tool must respect the limit — implement per-query caching, handle 429s, and email the team
   (marketplace-api@cms-provider-directory.uservoice.com) to raise the limit if needed.
 - ☐ **One item to confirm before public launch:** the full formal Terms of Use / attribution requirements are
   not posted on the public dev pages (the key-request form captures intended use). Email the Marketplace API

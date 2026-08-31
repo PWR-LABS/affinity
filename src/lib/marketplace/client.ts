@@ -7,7 +7,8 @@
  * hit the network throw a clear, catchable {@link MarketplaceConfigError} when `MARKETPLACE_API_KEY`
  * is unset, so callers (and the eval harness) can branch to fixtures instead of failing hard.
  *
- * Request a key at developer.cms.gov/marketplace-api (free, rotates every 60 days).
+ * Request a free key at developer.cms.gov/marketplace-api. Rotation is notice-driven; CMS postponed
+ * the planned 2026-10-26 rotation until after Open Enrollment, with the 2027 date still TBD.
  */
 import { cached } from "@/lib/cache";
 import { makeCoverageAnswer, type CoverageAnswer } from "@/lib/provenance";

@@ -44,7 +44,7 @@ network truth*. Healthpilot does doctor/drug matching but is **Medicare**; Healt
 
 | Source | Role |
 | --- | --- |
-| **Marketplace API** (`developer.cms.gov/marketplace-api`) | Plan search, doctor/facility/drug coverage, OOP utilization, Medicaid/CHIP eligibility estimate. Free key (60-day rotation). |
+| **Marketplace API** (`developer.cms.gov/marketplace-api`) | Plan search, doctor/facility/drug coverage, OOP utilization, Medicaid/CHIP eligibility estimate. Free key; rotation is notice-driven (the October 26, 2026 rotation is postponed to a date TBD in 2027). |
 | **QHP Provider & Formulary MRFs** (`CMSgov/QHP-provider-formulary-APIs`) | Raw `providers.json` / `drugs.json` / `plans.json` per issuer (the second source to diff the API against). |
 | **KFF subsidy calculator** | Validation oracle for the subsidy/CSR math. |
 

@@ -61,7 +61,7 @@ set these in `.env` (all documented inline in [`.env.example`](.env.example)):
 
 | Variable | What it unlocks |
 | --- | --- |
-| `MARKETPLACE_API_KEY` | Live plan/provider/drug/eligibility data (free key, `developer.cms.gov/marketplace-api`, 60-day rotation). Flips the moat + match evals from fixture to **LIVE**. |
+| `MARKETPLACE_API_KEY` | Live plan/provider/drug/eligibility data (free key, `developer.cms.gov/marketplace-api`; CMS postponed the October 26, 2026 rotation to a date TBD in 2027). Flips the moat + match evals from fixture to **LIVE**. |
 | `AFFINITY_EVAL_ZIP`, `AFFINITY_EVAL_NPIS`, `AFFINITY_EVAL_RXCUIS` | Your ZIP + your doctors' NPIs + your meds' RxCUIs — the household to match. |
 | `AFFINITY_EVAL_MRF_PROVIDERS_URL`, `AFFINITY_EVAL_MRF_DRUGS_URL` | One issuer's `providers.json` / `drugs.json` — the second source the API is diffed against. |
 | `AFFINITY_EVAL_INCOME`, `AFFINITY_EVAL_AGES` | Household income + ages for the subsidy/true-cost estimate. |
@@ -77,7 +77,8 @@ is ready.
 
 1. Render → **New → Blueprint** → point at `PWR-LABS/affinity`. It builds (`npm ci --include=dev && npm run build`)
    and serves (`npm run start`), health-checked at `/api/health`.
-2. In the service&rsquo;s env, set **`MARKETPLACE_API_KEY`** (the free key; rotates every 60 days).
+2. In the service&rsquo;s env, set **`MARKETPLACE_API_KEY`** (the free key; follow CMS rotation notices—the
+   October 26, 2026 rotation is postponed to a date TBD in 2027).
 3. Service **Settings → Custom Domains** → add `affinity.pwr-labs.ai`; add a **CNAME** on `pwr-labs.ai` → the
    Render hostname.
 4. **Before public launch:** email the Marketplace API team (marketplace-api@cms-provider-directory.uservoice.com)

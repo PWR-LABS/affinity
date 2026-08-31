@@ -23,7 +23,7 @@ services:
         value: production
       # --- Marketplace API: flips the board from demo to live data. Set in the dashboard. ---
       - key: MARKETPLACE_API_KEY
-        sync: false # developer.cms.gov/marketplace-api (free, 60-day rotation)
+        sync: false # free; 2026-10-26 rotation postponed to a TBD 2027 date
       - key: MARKETPLACE_API_BASE
         value: https://marketplace.api.healthcare.gov/api/v1
       # --- Optional: persist saved profiles. Add a managed Postgres + set DATABASE_URL to enable.

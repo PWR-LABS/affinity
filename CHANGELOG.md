@@ -150,3 +150,9 @@ income / providers / medications are set locally in `.env` and never committed.
 - **New York + Ohio state watch.** Source-backed cards distinguish enacted/current renewal changes from the
   January 2027 federal requirement: New York's discontinued continuous-eligibility authorities and Ohio's
   six-month expansion-group review law. The copy stays decision support; only the state makes a determination.
+
+## Marketplace API key rotation update (2026-08-31)
+
+- CMS postponed the planned October 26, 2026 Marketplace API key rotation until after Open Enrollment. The new
+  rotation date is TBD in 2027. Operator docs and configuration comments were updated without storing any key
+  value or identifier.
