@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
 
@@ -27,6 +27,8 @@ const covWord = (c: boolean | null, kind: "doctor" | "drug") => c === true
     : "not answered by the Marketplace";
 
 export function PlanFinder() {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const [zip, setZip] = useState("");
   const [income, setIncome] = useState("");
   const [age, setAge] = useState("");
@@ -86,7 +88,7 @@ export function PlanFinder() {
 
   return (
     <div className="finder">
-      <form className="elig-form page-panel" onSubmit={onSubmit} aria-busy={loading}>
+      <form className="elig-form page-panel" method="post" onSubmit={onSubmit} aria-busy={loading}>
         <div className="elig-grid">
           <div className="field">
             <label htmlFor="f-zip">ZIP code</label>
@@ -152,7 +154,7 @@ export function PlanFinder() {
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="primary primary-lg" disabled={loading}>
+          <button type="submit" className="primary primary-lg" disabled={!hydrated || loading}>
             {loading ? "Finding your plans…" : "Find my plans"}
           </button>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { medicaidChangeUrl, medicaidResourceByCode, STATE_MEDICAID_RESOURCES } from "@/lib/medicaid/states";
 import { stateBasedMarketplace } from "@/lib/marketplace/states";
@@ -27,6 +27,8 @@ const VERDICT_LABEL: Record<Result["verdict"], string> = {
 };
 
 export function EligibilityCheck() {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const [state, setState] = useState("");
   const [zip, setZip] = useState("");
   const [income, setIncome] = useState("");
@@ -70,7 +72,7 @@ export function EligibilityCheck() {
 
   return (
     <div className="elig" id="coverage-check">
-      <form className="elig-form page-panel" onSubmit={onSubmit} aria-busy={loading}>
+      <form className="elig-form page-panel" method="post" onSubmit={onSubmit} aria-busy={loading}>
         <div className="elig-grid">
           <div className="field">
             <label htmlFor="state">State</label>
@@ -106,7 +108,7 @@ export function EligibilityCheck() {
           </div>
         </div>
         <div className="form-actions">
-          <button type="submit" className="primary primary-lg" disabled={loading}>
+          <button type="submit" className="primary primary-lg" disabled={!hydrated || loading}>
             {loading ? "Checking…" : "Check my coverage"}
           </button>
         </div>

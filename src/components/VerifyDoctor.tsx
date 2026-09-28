@@ -98,6 +98,7 @@ export function VerifyDoctor() {
     <div className="verify">
       <form
         className="elig-form page-panel verify-form"
+        method="post"
         onSubmit={(event) => {
           event.preventDefault();
           void onVerify();
