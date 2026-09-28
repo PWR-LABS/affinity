@@ -188,8 +188,12 @@ export function VerifyDoctor() {
             <div className="conf-meter-fill" style={{ width: `${Math.round(result.confidence * 100)}%` }} />
           </div>
           <p className="verdict-sub">
-            Confidence {Math.round(result.confidence * 100)}% · one source (the issuer&rsquo;s federally mandated
-            Transparency-in-Coverage file{result.sourceUpdated ? `, updated ${result.sourceUpdated.slice(0, 10)}` : ""}).
+            {result.value === "unknown" ? (
+              <>No issuer file for this plan is in our commercial index. The {Math.round(result.confidence * 100)}% score reflects limited evidence, not a likelihood of coverage.</>
+            ) : (
+              <>Confidence {Math.round(result.confidence * 100)}% · one source (the issuer&rsquo;s federally mandated
+              Transparency-in-Coverage file{result.sourceUpdated ? `, updated ${result.sourceUpdated.slice(0, 10)}` : ""}).</>
+            )}
           </p>
           <p className="verdict-note">
             {result.value === "unknown"

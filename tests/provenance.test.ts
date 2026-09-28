@@ -33,6 +33,8 @@ test("render of 'unknown' says unknown and asks to confirm", () => {
   const s = renderCoverageAnswer(a);
   assert.match(s, /unknown/i);
   assert.match(s, /confirm/i);
+  assert.match(s, /no verified answer available from the issuer's machine-readable file/i);
+  assert.doesNotMatch(s, /unknown per/i);
 });
 
 test("a conflicted claim renders the conflict and a confirm prompt", () => {

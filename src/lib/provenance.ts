@@ -129,6 +129,9 @@ export function renderCoverageAnswer(a: CoverageAnswer): string {
     ? ` ⚠️ conflicts with ${a.conflictsWith.map(sourceLabel).join(", ")}`
     : "";
   const confirm = needsConfirmation(a) ? " — confirm with the provider's office before enrolling." : "";
+  if (a.value === "unknown") {
+    return `${subject}coverage unknown; no verified answer available from ${src}${fresh} (${conf})${conflict}.${confirm}`;
+  }
   return `${subject}${verb} per ${src}${fresh} (${conf})${conflict}.${confirm}`;
 }
 
