@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "How it works",
   description:
-    "How affinity. works: a free, neutral tool that checks your Medicaid/Marketplace eligibility and which plans actually keep your doctors and medications covered. No commissions, no ads, nothing stored.",
+    "How [affinity.] works: no-cost Medicaid and Marketplace screening, plan comparison, and source-labeled coverage checks. No commissions, ads, or stored answers.",
 };
 
 export default function HowItWorks() {
@@ -20,10 +20,10 @@ export default function HowItWorks() {
       <div className="prose">
         <h2>1. First: Medicaid or Marketplace?</h2>
         <p>
-          Many people losing Medicaid actually still qualify for it — or qualify for a subsidized plan. So the home
+          Some people losing Medicaid still qualify for it — or qualify for a subsidized plan. So the home
           page asks your state, ZIP, age, and income. In states served by the federal Marketplace feed, it checks
           <strong> HealthCare.gov&rsquo;s own estimate</strong>: you&rsquo;ll see whether you may qualify for
-          <strong> free Medicaid</strong> or for a Marketplace subsidy. In states with their own marketplace, it
+          <strong> Medicaid</strong> or for a Marketplace subsidy. In states with their own marketplace, it
           avoids a federal-data guess and sends you to the state&rsquo;s official application instead.
         </p>
 
@@ -38,16 +38,15 @@ export default function HowItWorks() {
         <p>
           On <strong>See your plans</strong>, add your doctors and medications. We pull your real plans from the
           official Marketplace and show, for each one, the <strong>net premium after your subsidy</strong>, the
-          deductible and out-of-pocket max, and — the part HealthCare.gov makes hard — <strong>which plans actually
-          keep your doctors in-network and cover your meds</strong>. Plans that keep <em>all</em> your doctors rise to
-          the top.
+          deductible and out-of-pocket max, and <strong>what the Marketplace reports about doctor networks and
+          medication coverage</strong>. Plans listing <em>all</em> your selected doctors rise to the top.
         </p>
 
         <h2>4. Coverage you can trust — and what to confirm</h2>
         <p>
-          Provider directories are documented to be 30–40% wrong, so we never present &ldquo;in-network&rdquo; as a
-          guarantee. Coverage shown here comes from the Marketplace&rsquo;s data; always confirm with the
-          provider&rsquo;s office before you enroll. This is <strong>decision support, not insurance advice</strong> —
+          Provider directories and formularies can change, so we never present a source-reported match as a
+          guarantee. Coverage shown here comes from the Marketplace&rsquo;s data; confirm with the provider&rsquo;s
+          office and insurer before you enroll. This is <strong>decision support, not insurance advice</strong> —
           the final word belongs to your state Medicaid office and the official Marketplace.
         </p>
 
@@ -61,12 +60,13 @@ export default function HowItWorks() {
 
         <h2>Honest limits</h2>
         <p>
-          Plan rankings here lead with net premium and whether your doctors/meds are covered; a fuller expected
+          Plan rankings here lead with net premium and source-reported doctor and medication coverage; a fuller expected
           annual-cost estimate (deductible + copays + drug tiers) is coming. Medicaid results are screening or
           navigation—not a state eligibility determination—and special categories such as pregnancy, disability,
           long-term care, and CHIP require the official state application. Employer verification is doctors-only,
           and the Medicare tool checks formulary coverage rather than comparing plan costs. Subsidy figures are
-          estimates — confirm on the official Marketplace.
+          estimates — confirm on the official Marketplace. For households of two or more, we do not calculate an
+          estimate from one person&rsquo;s age; use the official application for a full household estimate.
         </p>
       </div>
     </div>

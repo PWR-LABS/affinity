@@ -20,7 +20,11 @@ interface Board {
 
 const usd = (n?: number) => (typeof n === "number" ? `$${Math.round(n).toLocaleString()}` : "—");
 const covMark = (c: boolean | null) => (c === true ? "✓" : c === false ? "✕" : "?");
-const covWord = (c: boolean | null) => (c === true ? "in-network" : c === false ? "not covered" : "unknown");
+const covWord = (c: boolean | null, kind: "doctor" | "drug") => c === true
+  ? kind === "doctor" ? "listed in-network by the Marketplace" : "listed as covered by the Marketplace"
+  : c === false
+    ? kind === "doctor" ? "reported out-of-network by the Marketplace" : "reported not covered by the Marketplace"
+    : "not answered by the Marketplace";
 
 export function PlanFinder() {
   const [zip, setZip] = useState("");
@@ -53,8 +57,9 @@ export function PlanFinder() {
     return (d.items ?? []).map((x: { rxcui: string; label: string }) => ({ key: x.rxcui, label: x.label }));
   }, []);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!e.currentTarget.reportValidity()) return;
     setError(null);
     setBoard(null);
     setShowAll(false);
@@ -81,7 +86,7 @@ export function PlanFinder() {
 
   return (
     <div className="finder">
-      <form className="elig-form page-panel" onSubmit={onSubmit} noValidate aria-busy={loading}>
+      <form className="elig-form page-panel" onSubmit={onSubmit} aria-busy={loading}>
         <div className="elig-grid">
           <div className="field">
             <label htmlFor="f-zip">ZIP code</label>
@@ -102,6 +107,7 @@ export function PlanFinder() {
             <label htmlFor="f-size">People in household</label>
             <input id="f-size" name="householdSize" type="text" inputMode="numeric" autoComplete="off" placeholder="1" value={householdSize}
               onChange={(e) => setHouseholdSize(e.target.value.replace(/\D/g, ""))} required />
+            <p className="field-help">This estimate supports one person. For larger households, <a href="https://www.healthcare.gov/see-plans/" target="_blank" rel="noreferrer">use the official Marketplace ↗</a>.</p>
           </div>
         </div>
 
@@ -159,21 +165,21 @@ export function PlanFinder() {
           {board.medicaidEligible && (
             <div className="demo-banner" style={{ borderColor: "var(--ok)" }}>
               <span aria-hidden>◆</span>
-              <span><strong>You may qualify for free Medicaid</strong> at this income — these Marketplace plans would cost full price. <a href="/" style={{ color: "var(--accent)" }}>Check Medicaid first →</a></span>
+              <span><strong>You may qualify for Medicaid</strong> at this income. Check with your state before relying on these Marketplace price estimates. <a href="/" style={{ color: "var(--accent)" }}>Check Medicaid first →</a></span>
             </div>
           )}
           <p className="board-summary">
             {board.doctorsTotal > 0 ? (
               <>
                 <strong>{board.plansKeepingAllDoctors}</strong> of <strong>{board.totalPlans}</strong> plans in{" "}
-                {board.county}, {board.state} keep {board.doctorsTotal === 1 ? "your doctor" : `all ${board.doctorsTotal} of your doctors`} in-network
+                {board.county}, {board.state} list {board.doctorsTotal === 1 ? "your doctor" : `all ${board.doctorsTotal} of your doctors`} in-network in the Marketplace data
                 {board.aptcMonthly > 0 ? `, with a ${usd(board.aptcMonthly)}/mo subsidy applied` : ""}.
               </>
             ) : (
               <>
                 Showing your <strong>{board.totalPlans}</strong> plans in {board.county}, {board.state} by net premium
                 {board.aptcMonthly > 0 ? ` (${usd(board.aptcMonthly)}/mo subsidy applied)` : ""}.{" "}
-                <strong>Add your doctors and medications above</strong> to see which plans actually cover them.
+                <strong>Add your doctors and medications above</strong> to see what the Marketplace reports about coverage.
               </>
             )}
           </p>
@@ -208,19 +214,19 @@ export function PlanFinder() {
                   </div>
                 </div>
                 <div className="plan-row-meta">
-                  {p.keepsAllDoctors && p.doctorsTotal > 0 && <span className="keep-badge">✓ keeps all your doctors</span>}
+                  {p.keepsAllDoctors && p.doctorsTotal > 0 && <span className="keep-badge">✓ Marketplace lists all your doctors</span>}
                   <span>Deductible {usd(p.deductible)} · OOP max {usd(p.oopMax)}</span>
                 </div>
                 {(p.doctors.length > 0 || p.drugs.length > 0) && (
                   <div className="cov-pills">
                     {p.doctors.map((d) => (
-                      <span key={d.key} className="cov-pill" data-cov={d.covered === true ? "y" : d.covered === false ? "n" : "u"} title={`${d.label}: ${covWord(d.covered)}`}>
+                      <span key={d.key} className="cov-pill" data-cov={d.covered === true ? "y" : d.covered === false ? "n" : "u"} title={`${d.label}: ${covWord(d.covered, "doctor")}`}>
                         {covMark(d.covered)} {(d.label ?? d.key).replace(/^DR\.?\s+/i, "").replace(/\s+(M\.?D\.?|D\.?O\.?).*$/i, "")}
                       </span>
                     ))}
                     {p.drugs.map((d) => (
                       <span key={d.key} className="cov-pill" data-cov={d.covered === true ? "y" : d.covered === false ? "n" : "u"}
-                        title={`${d.label}: ${covWord(d.covered)}${d.priorAuth ? " — this plan requires prior authorization" : ""}`}>
+                        title={`${d.label}: ${covWord(d.covered, "drug")}${d.priorAuth ? " — this plan requires prior authorization" : ""}`}>
                         {covMark(d.covered)} {d.label ?? d.key}
                         {d.priorAuth && <span className="pa-note" aria-label="prior authorization required">⚠ PA</span>}
                       </span>

@@ -1,8 +1,7 @@
 /**
- * Live plan board — for people who are Marketplace-bound: their real plans, ranked by what matters,
- * with which of THEIR doctors and meds each plan actually covers. Generic (no health-system config
- * needed): the headline is "which plans keep ALL your doctors in-network," answered per doctor from the
- * live API. Coverage is API-sourced (one source); confirm with the office before enrolling.
+ * Live plan board — for one-person households in federal Marketplace states. It ranks returned
+ * plans by source-reported doctor/medication coverage and estimated net premium. Coverage is
+ * API-sourced (one source); confirm with the office and plan before enrolling.
  *
  * Per the API ToS we query live per request and never pull the whole dataset. Server-side only.
  */
@@ -201,7 +200,7 @@ export async function runLivePlans(input: LivePlansInput): Promise<LivePlansResu
     plans: rows, // all ranked plans; the client reveals them progressively
     notes: [
       "Coverage is from the Marketplace API (one source) — confirm with the provider's office before enrolling.",
-      medicaidEligible ? "Note: at this income you may qualify for free Medicaid — a Marketplace plan would cost full price." : "",
+      medicaidEligible ? "At this income you may qualify for Medicaid. Confirm eligibility and Marketplace savings through the official application." : "",
     ].filter(Boolean),
   };
 }

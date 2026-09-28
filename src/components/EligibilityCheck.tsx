@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { medicaidChangeUrl, medicaidResourceByCode, STATE_MEDICAID_RESOURCES } from "@/lib/medicaid/states";
@@ -17,7 +18,7 @@ interface Result {
 }
 
 const VERDICT_LABEL: Record<Result["verdict"], string> = {
-  medicaid: "Likely Medicaid (free)",
+  medicaid: "May qualify for Medicaid",
   marketplace: "Likely Marketplace",
   coverage_gap: "Possible coverage gap",
   state_marketplace: "Use your state service",
@@ -35,8 +36,9 @@ export function EligibilityCheck() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!e.currentTarget.reportValidity()) return;
     setError(null);
     setResult(null);
     setLoading(true);
@@ -68,7 +70,7 @@ export function EligibilityCheck() {
 
   return (
     <div className="elig" id="coverage-check">
-      <form className="elig-form page-panel" onSubmit={onSubmit} noValidate aria-busy={loading}>
+      <form className="elig-form page-panel" onSubmit={onSubmit} aria-busy={loading}>
         <div className="elig-grid">
           <div className="field">
             <label htmlFor="state">State</label>
@@ -100,6 +102,7 @@ export function EligibilityCheck() {
             <label htmlFor="householdSize">People in household</label>
             <input id="householdSize" name="householdSize" type="text" inputMode="numeric" autoComplete="off" placeholder="1" value={householdSize}
               onChange={(e) => setHouseholdSize(e.target.value.replace(/\D/g, ""))} required />
+            <p className="field-help">For two or more people, we&rsquo;ll direct you to the official application rather than estimate from one age.</p>
           </div>
         </div>
         <div className="form-actions">
@@ -126,6 +129,12 @@ export function EligibilityCheck() {
             </>
           )}
           {result.notes.map((n, i) => <p key={i} className="verdict-note">{n}</p>)}
+          {result.verdict === "marketplace" ? (
+            <div className="verdict-official-actions" aria-label="Marketplace next steps">
+              <Link className="cta" href="/plans">Compare 2026 Marketplace plans →</Link>
+              <a href="https://www.healthcare.gov/see-plans/" target="_blank" rel="noreferrer">See official plans and prices ↗</a>
+            </div>
+          ) : null}
           {officialResource ? (
             <div className="verdict-official-actions" aria-label={`Official ${officialResource.state} resources`}>
               <a className="cta" href={officialResource.applyUrl} target="_blank" rel="noreferrer">
@@ -135,6 +144,8 @@ export function EligibilityCheck() {
               <a href={medicaidChangeUrl(officialResource.code)} target="_blank" rel="noreferrer">See Medicaid changes ↗</a>
               {officialMarketplace ? (
                 <a href={`https://${officialMarketplace.url}`} target="_blank" rel="noreferrer">Open {officialMarketplace.name} ↗</a>
+              ) : result.verdict === "official_handoff" ? (
+                <a href="https://www.healthcare.gov/see-plans/" target="_blank" rel="noreferrer">Open the official Marketplace ↗</a>
               ) : null}
             </div>
           ) : null}

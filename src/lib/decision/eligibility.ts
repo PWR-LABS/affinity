@@ -1,7 +1,8 @@
 /**
  * Live eligibility check — the highest-value, simplest answer the tool gives: are you likely eligible
- * for free Medicaid, or for a subsidized Marketplace plan, at your income? Needs only state + ZIP +
- * income + household (no doctors/meds), so it works for anyone. Server-side only (uses the Marketplace API key).
+ * for Medicaid, or for a subsidized Marketplace plan, at your income? Needs only state + ZIP +
+ * income + household (no doctors/meds). Multi-person households need an official handoff until
+ * we collect each member's age. Server-side only (uses the Marketplace API key).
  *
  * Decision support, not a determination: the verdict mirrors HealthCare.gov's own eligibility estimate;
  * the final call belongs to the state Medicaid agency and the official Marketplace.
@@ -62,6 +63,26 @@ export function officialStateHandoff(state: string, zip: string): EligibilityRes
       "If you received a renewal notice, respond by the deadline even if you think the state already has your information.",
     ],
     notes: ["No eligibility verdict or subsidy amount was produced. Your state application checks income and every coverage category that may apply."],
+  };
+}
+
+/** Avoid a fabricated household estimate when we only collected one member's age. */
+export function multiPersonHouseholdHandoff(state: string, zip: string): EligibilityResult {
+  const resource = medicaidResourceByCode(state);
+  if (!resource) throw new Error("Unsupported state code.");
+  return {
+    zip,
+    state: resource.code,
+    verdict: "official_handoff",
+    medicaidEligible: false,
+    aptcMonthly: 0,
+    inCoverageGap: false,
+    headline: "For a household of two or more, use the official application for an accurate coverage estimate.",
+    nextSteps: [
+      `Check Medicaid or CHIP through ${resource.program} using the official link below.`,
+      "The official Marketplace can collect each household member's details to estimate plan savings.",
+    ],
+    notes: ["We only ask for one age, so no multi-person eligibility or subsidy estimate was calculated here."],
   };
 }
 
@@ -136,7 +157,7 @@ export async function checkEligibility(input: EligibilityInput): Promise<Eligibi
   const aptcMonthly = Math.round((est.aptc ?? 0) as number);
   const inCoverageGap = Boolean((est as { in_coverage_gap?: boolean }).in_coverage_gap);
 
-  // Light plan context (one page) — count + cheapest premium. Never the whole dataset (ToS: no bulk).
+  // Light plan context (one page) — count + lowest premium in that sample. Never the whole dataset (ToS: no bulk).
   let planCount: number | undefined;
   let cheapestPremiumMonthly: number | undefined;
   try {
@@ -166,20 +187,20 @@ export async function checkEligibility(input: EligibilityInput): Promise<Eligibi
   const notes = ["This mirrors HealthCare.gov's own estimate at the income you entered — it's decision support, not a final determination."];
 
   if (verdict === "medicaid") {
-    headline = `At this income you likely qualify for Medicaid — free coverage — in ${loc}.`;
+    headline = `At this income you may qualify for Medicaid in ${loc}.`;
     nextSteps.push(
       `Apply or confirm through ${stateResource.program}; the official application and phone number are below.`,
-      "A subsidized Marketplace plan gives $0 here, so don't buy one unless your income rises above the Medicaid line.",
+      "The Marketplace estimate did not show a premium tax credit. Confirm your full eligibility with the state before choosing other coverage.",
     );
   } else if (verdict === "marketplace") {
     headline = aptcMonthly > 0
       ? `You likely qualify for a subsidy of about ${usd(aptcMonthly)}/month toward a Marketplace plan in ${loc}.`
-      : `You're likely in the Marketplace range (no Medicaid) in ${loc}.`;
+      : `Marketplace plans may be an option in ${loc}; confirm your eligibility through the official application.`;
     nextSteps.push(
-      "Compare plans by their TRUE annual cost — premium after subsidy, plus deductible, copays, and drug costs — not the sticker premium.",
-      "Check that your doctors and medications are covered before you enroll.",
+      "Compare estimated net premiums, deductibles, and out-of-pocket maximums—not just the sticker premium. Full annual-cost estimates are not available here yet.",
+      "Use the plan documents and confirm doctor and medication coverage before you enroll.",
     );
-    if (cheapestPremiumMonthly !== undefined) notes.push(`Cheapest sticker premium here is ${usd(cheapestPremiumMonthly)}/mo before subsidy.`);
+    if (cheapestPremiumMonthly !== undefined) notes.push(`The lowest sticker premium among the first 10 plans returned was ${usd(cheapestPremiumMonthly)}/mo before subsidy; this may not be the lowest available overall.`);
   } else if (verdict === "coverage_gap") {
     headline = `Your income may fall in a coverage gap in ${loc} — a Navigator can help.`;
     nextSteps.push(`Talk to a free Navigator (${navigator}) — gaps often have a fix once your real income is reviewed.`);

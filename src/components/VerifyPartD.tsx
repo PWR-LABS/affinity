@@ -207,7 +207,7 @@ function ShortlistResults({
           <p className="partd-results-kicker">Formulary-fit shortlist</p>
           <h2>
             {shortlist.plans.length
-              ? `${shortlist.plans.length} leading standalone plans in ${shortlist.state}`
+              ? `${shortlist.plans.length} matching indexed standalone plans in ${shortlist.state}`
               : `No standalone plans found for ${shortlist.state}`}
           </h2>
         </div>
@@ -499,7 +499,7 @@ export function VerifyPartD() {
         <div className="verify-section">
           {mode === "find" ? (
             <div className="field partd-state-field">
-              <label htmlFor="partd-state">State for standalone Part D plans</label>
+              <label htmlFor="partd-state">State code for standalone Part D plans</label>
               <input
                 id="partd-state"
                 name="state"
@@ -512,14 +512,14 @@ export function VerifyPartD() {
                 onChange={(event) => updateState(event.target.value)}
               />
               <span className="field-help">
-                Medicare Advantage plans are excluded because their availability is county-specific.
+                Enter a two-letter state code (for example, OH). Medicare Advantage plans are excluded because their availability is county-specific.
               </span>
             </div>
           ) : (
             <>
               <div className="partd-plan-grid">
                 <div className="field partd-state">
-                  <label htmlFor="partd-plan-state">State (optional)</label>
+                  <label htmlFor="partd-plan-state">State code (optional)</label>
                   <input
                     id="partd-plan-state"
                     name="plan-state"
