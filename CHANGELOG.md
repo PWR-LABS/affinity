@@ -156,3 +156,12 @@ income / providers / medications are set locally in `.env` and never committed.
 - CMS postponed the planned October 26, 2026 Marketplace API key rotation until after Open Enrollment. The new
   rotation date is TBD in 2027. Operator docs and configuration comments were updated without storing any key
   value or identifier.
+
+## Medicaid policy clarity (2026-09-28)
+
+- Split the federal policy explanation into two source-linked changes: six-month renewals for most adults in the
+  expansion group beginning with applicable 2027 renewals, and the separate community-engagement requirement
+  for certain adults. The page distinguishes the affected populations, timing, and state-specific next steps.
+- Refreshed the New York and Ohio state-watch cards against official state sources, and made the limits explicit:
+  [affinity.] helps people navigate and screen, but does not determine eligibility, submit renewals, or measure
+  coverage outcomes. The existing 50-state plus D.C. official-entry-point directory remains unchanged.

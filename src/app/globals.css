@@ -1240,16 +1240,24 @@ body {
 .medicaid-secondary-action { color: var(--accent); font-size: 0.86rem; font-weight: 600; text-decoration: none; }
 .medicaid-secondary-action:hover { text-decoration: underline; }
 .medicaid-change {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   padding: 1.3rem 1.4rem;
-  border-left: 4px solid var(--warn);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  background: color-mix(in srgb, var(--warn) 8%, var(--surface));
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
-.medicaid-change h2,
+.medicaid-federal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.medicaid-change h3,
 .medicaid-section-head h2,
 .medicaid-state-card h3 { margin: 0; color: var(--text); font-family: var(--font-display); }
-.medicaid-change h2 { font-size: 1.2rem; line-height: 1.3; }
-.medicaid-change > p:not(.medicaid-change-kicker) { max-width: 46rem; margin: 0.6rem 0 0.75rem; }
+.medicaid-change h3 { font-size: 1.12rem; line-height: 1.3; }
+.medicaid-change > p:not(.medicaid-change-kicker) { margin: 0.65rem 0 0; line-height: 1.5; }
+.medicaid-change-action { flex: 1; }
+.medicaid-change a { margin-top: 1rem; }
 .medicaid-change a,
 .medicaid-card-links a { color: var(--accent); font-weight: 600; text-decoration: none; }
 .medicaid-change a:hover,
@@ -1352,7 +1360,8 @@ body {
   .partd-shortlist-drug-restrictions {
     grid-column: 1 / -1;
   }
-  .medicaid-state-grid { grid-template-columns: 1fr; }
+  .medicaid-state-grid,
+  .medicaid-federal-grid { grid-template-columns: 1fr; }
   .medicaid-state-guide { grid-template-columns: 1fr; align-items: stretch; }
   .medicaid-hero { padding: 1.15rem; }
 }

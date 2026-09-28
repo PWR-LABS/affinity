@@ -17,7 +17,7 @@ export default function Home() {
       <div className="medicaid-home-alert">
         <div>
           <strong>Medicaid rules are changing.</strong>
-          <span> New federal requirements begin in 2027, with renewal changes already moving in New York and Ohio.</span>
+          <span> Six-month renewals for most expansion adults and separate community-engagement checks are coming in 2027.</span>
         </div>
         <Link href="/medicaid">See what changes for you →</Link>
       </div>

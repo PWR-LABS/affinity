@@ -83,33 +83,38 @@ export interface FeaturedMedicaidChange {
   dek: string;
   facts: readonly string[];
   action: string;
-  sourceUrl: string;
+  sources: readonly { label: string; url: string }[];
 }
 
 export const FEATURED_MEDICAID_CHANGES: readonly FeaturedMedicaidChange[] = [
   {
     code: "NY",
-    timing: "Renewal changes now · federal rules January 1, 2027",
-    dek: "Renewal protections are narrowing.",
+    timing: "2026 renewal changes · 2027 federal requirements",
+    dek: "Watch for a notice about your coverage.",
     facts: [
-      "Most adults are returning to standard renewal checks after twelve-month continuous eligibility ended.",
-      "Some children under six are also returning to standard renewals.",
-      "The new federal work and community-engagement rules are scheduled for January 1, 2027.",
+      "New York ended extended continuous-eligibility policies for affected adults and children under six; they return to standard renewal processes with notice.",
+      "The state says members who may be subject to community engagement will receive a notice by mail or email from mid-August through September 2026.",
+      "The federal six-month renewal rule begins with applicable renewals scheduled in 2027; your state notice controls your next step.",
     ],
-    action: "Update your contact information and respond to every NY State of Health renewal notice.",
-    sourceUrl: "https://www.health.ny.gov/health_care/medicaid/program/update/2026/no07_2026-06.htm",
+    action: "Keep your contact information current, check mail or email for state notices, and follow any official renewal instructions.",
+    sources: [
+      { label: "NY coverage update", url: "https://www.health.ny.gov/health_care/medicaid/program/update/2026/no07_2026-06.htm" },
+      { label: "NY community-engagement notice", url: "https://www.health.ny.gov/health_care/medicaid/program/update/2026/no08_2026-07.htm" },
+    ],
   },
   {
     code: "OH",
-    timing: "Six-month review law enacted · federal rules January 1, 2027",
-    dek: "More frequent eligibility checks are coming.",
+    timing: "Six-month review law enacted · federal implementation in 2027",
+    dek: "More frequent renewals are coming for expansion adults.",
     facts: [
-      "Ohio law calls for expansion eligibility to be reviewed every six months when federal law allows.",
-      "CMS says affected adults should prepare to document work, school, training, or volunteer hours.",
-      "People who meet an exclusion should gather medical, caregiving, or other supporting records.",
+      "Ohio law calls for six-month eligibility reviews for the expansion group to the extent federal law permits.",
+      "CMS says the federal six-month schedule begins with applicable renewals scheduled on or after January 1, 2027.",
+      "The separate community-engagement rule may apply to certain adults; exemptions and state notice procedures matter.",
     ],
-    action: "Update your Ohio Benefits account, save monthly records, and watch for a state notice.",
-    sourceUrl: "https://codes.ohio.gov/ohio-revised-code/section-5163.11",
+    action: "Check your Ohio Benefits contact details and respond to official notices. Call the state number below if your next step is unclear.",
+    sources: [
+      { label: "Ohio law", url: "https://codes.ohio.gov/ohio-revised-code/section-5163.11" },
+    ],
   },
 ];
 

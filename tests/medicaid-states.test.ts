@@ -8,6 +8,7 @@ import {
   medicaidChangeUrl,
   medicaidResourceByCode,
 } from "@/lib/medicaid/states";
+import { FEDERAL_MEDICAID_CHANGES, MEDICAID_GUIDANCE_REVIEWED } from "@/lib/medicaid/federal";
 
 test("covers all 50 states plus the District of Columbia exactly once", () => {
   assert.equal(STATE_MEDICAID_RESOURCES.length, 51);
@@ -35,7 +36,18 @@ test("state lookup and CMS change guides are case-insensitive", () => {
 
 test("New York and Ohio have dated, source-backed state watches", () => {
   assert.deepEqual(FEATURED_MEDICAID_CHANGES.map((change) => change.code), ["NY", "OH"]);
-  assert.match(featuredMedicaidChange("NY")?.sourceUrl ?? "", /^https:\/\/www\.health\.ny\.gov\//);
-  assert.match(featuredMedicaidChange("oh")?.sourceUrl ?? "", /^https:\/\/codes\.ohio\.gov\//);
+  assert.ok(featuredMedicaidChange("NY")?.sources.some((source) => source.url.startsWith("https://www.health.ny.gov/")));
+  assert.ok(featuredMedicaidChange("oh")?.sources.some((source) => source.url.startsWith("https://codes.ohio.gov/")));
   assert.equal(featuredMedicaidChange("CA"), undefined);
+});
+
+test("the two federal changes have separate scope, timing, and official sources", () => {
+  assert.equal(MEDICAID_GUIDANCE_REVIEWED, "September 28, 2026");
+  assert.deepEqual(FEDERAL_MEDICAID_CHANGES.map((change) => change.id), ["renewals", "community-engagement"]);
+  assert.match(FEDERAL_MEDICAID_CHANGES[0].summary, /adult expansion group/);
+  assert.match(FEDERAL_MEDICAID_CHANGES[1].summary, /Some adults/);
+  for (const change of FEDERAL_MEDICAID_CHANGES) {
+    assert.match(change.sourceUrl, /^https:\/\//);
+    assert.match(change.kicker, /2027/);
+  }
 });

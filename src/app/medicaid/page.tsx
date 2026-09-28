@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { MedicaidStateGuide } from "@/components/MedicaidStateGuide";
+import { FEDERAL_MEDICAID_CHANGES, MEDICAID_GUIDANCE_REVIEWED } from "@/lib/medicaid/federal";
 import {
   FEATURED_MEDICAID_CHANGES,
   medicaidChangeUrl,
@@ -19,10 +20,10 @@ export default function MedicaidPage() {
     <div className="medicaid-page">
       <div className="page-header medicaid-hero">
         <p className="medicaid-eyebrow">Nationwide Medicaid desk</p>
-        <h1 className="page-title">Find—and keep—your Medicaid through the rule changes.</h1>
+        <h1 className="page-title">Understand Medicaid changes. Find your official next step.</h1>
         <p className="page-subtitle">
-          Medicaid is run state by state. We turn the changing federal rules into a clear next step for
-          where you live—starting with New York and Ohio.
+          Medicaid decisions happen state by state. See what the federal rules say, then go directly to
+          your state&rsquo;s official application or renewal service.
         </p>
         <div className="medicaid-hero-actions">
           <Link className="cta" href="/#coverage-check">Check likely eligibility</Link>
@@ -32,17 +33,25 @@ export default function MedicaidPage() {
 
       <MedicaidStateGuide />
 
-      <section className="medicaid-change" aria-labelledby="national-change-title">
-        <p className="medicaid-change-kicker">Federal change · begins January 1, 2027</p>
-        <h2 id="national-change-title">Some adults will need to show 80 hours each month.</h2>
-        <p>
-          Work, school, job training, and community service can count. Many people are excluded or can
-          qualify for an exception—including people who are pregnant, disabled, caring for a young child
-          or a person with a disability, in substance-use treatment, or covered by Medicare.
-        </p>
-        <a href="https://www.medicaid.gov/renew-info" target="_blank" rel="noreferrer">
-          Read the official federal guide <span aria-hidden="true">↗</span>
-        </a>
+      <section className="medicaid-federal" aria-labelledby="federal-changes-title">
+        <div className="medicaid-section-head">
+          <p className="medicaid-eyebrow">Federal policy · reviewed {MEDICAID_GUIDANCE_REVIEWED}</p>
+          <h2 id="federal-changes-title">Two changes, with different rules about who is affected.</h2>
+          <p>Your state decides your eligibility and sends the notice that governs your next step.</p>
+        </div>
+        <div className="medicaid-federal-grid">
+          {FEDERAL_MEDICAID_CHANGES.map((change) => (
+            <article className="medicaid-change" key={change.id}>
+              <p className="medicaid-change-kicker">{change.kicker}</p>
+              <h3>{change.title}</h3>
+              <p>{change.summary}</p>
+              <p className="medicaid-change-action"><strong>What to do now:</strong> {change.nextStep}</p>
+              <a href={change.sourceUrl} target="_blank" rel="noreferrer">
+                {change.sourceLabel} <span aria-hidden="true">↗</span>
+              </a>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section id="state-watch" className="medicaid-state-watch" aria-labelledby="state-watch-title">
@@ -71,7 +80,9 @@ export default function MedicaidPage() {
                 <p className="medicaid-action"><strong>Do now:</strong> {change.action}</p>
                 <div className="medicaid-card-links">
                   <a href={resource.applyUrl} target="_blank" rel="noreferrer">Apply or renew in {resource.state} ↗</a>
-                  <a href={change.sourceUrl} target="_blank" rel="noreferrer">State source ↗</a>
+                  {change.sources.map((source) => (
+                    <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>{source.label} ↗</a>
+                  ))}
                   <a href={medicaidChangeUrl(change.code)} target="_blank" rel="noreferrer">Federal guide ↗</a>
                 </div>
               </article>
@@ -81,8 +92,9 @@ export default function MedicaidPage() {
       </section>
 
       <p className="medicaid-source-note">
-        Last reviewed August 21, 2026. This is decision support, not an eligibility determination.
-        Your state Medicaid agency makes the final decision.
+        Policy sources reviewed {MEDICAID_GUIDANCE_REVIEWED}. This is navigation and screening, not an
+        eligibility determination or a way to submit a renewal. Your state Medicaid agency makes the
+        final decision. Follow the date and instructions on your official notice.
       </p>
     </div>
   );
