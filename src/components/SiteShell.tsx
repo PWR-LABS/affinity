@@ -42,9 +42,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
 
       <footer className="site-footer">
         <p>
-          Free and neutral — no commissions, no ads, no accounts. Your answers aren&rsquo;t stored. This is decision
+          Free and neutral — no commissions, no ads, no accounts. We do not save your household answers. This is decision
           support, not insurance advice; the final word belongs to your state Medicaid office and the official
-          Marketplace. <Link href="/how-it-works">How it works</Link>.
+          Marketplace. <Link href="/how-it-works">How it works</Link>. <Link href="/privacy">Privacy and data flow</Link>.
         </p>
       </footer>
     </div>

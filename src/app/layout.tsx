@@ -1,16 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Space_Grotesk } from "next/font/google";
-import Script from "next/script";
 
 import { SiteShell } from "@/components/SiteShell";
 
 import "./globals.css";
-
-// Optional Google Analytics — renders nothing unless NEXT_PUBLIC_GA_MEASUREMENT_ID is set at
-// build time, so forks and self-hosts ship analytics-free by default. Pageview counting only;
-// no health/income data is ever in a URL, so nothing sensitive can reach the tag.
-const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 // Display face — the [PWR] LABS canon wordmark typeface. Body copy stays on the clean system stack.
 const spaceGrotesk = Space_Grotesk({
@@ -21,7 +15,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 const DESCRIPTION =
-  "Losing Medicaid? Get a nationwide, state-specific Medicaid handoff, track the 2027 rule changes, and check whether you may qualify for Medicaid or a subsidized Marketplace plan. Free, private, neutral.";
+  "Losing Medicaid? Get a nationwide, state-specific Medicaid handoff, track the 2027 rule changes, and check whether you may qualify for Medicaid or a subsidized Marketplace plan. Free and neutral.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://affinity.pwr-labs.ai"),
@@ -59,17 +53,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={spaceGrotesk.variable}>
       <body>
         <SiteShell>{children}</SiteShell>
-        {gaId ? (
-          <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
-            <Script id="ga-init" strategy="afterInteractive">
-              {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${gaId}');`}
-            </Script>
-          </>
-        ) : null}
       </body>
     </html>
   );

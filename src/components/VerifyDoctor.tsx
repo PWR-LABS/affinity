@@ -34,7 +34,9 @@ export function VerifyDoctor() {
   const fetchDoctors = useCallback(
     async (q: string): Promise<Suggestion[]> => {
       if (!/^\d{5}$/.test(zip)) return [];
-      const r = await fetch(`/api/providers/autocomplete?q=${encodeURIComponent(q)}&zip=${zip}`);
+      const r = await fetch("/api/providers/autocomplete", {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, zip }),
+      });
       const d = await r.json();
       return (d.items ?? []).map((p: { npi: string; name?: string; specialty?: string }) => ({
         key: p.npi,

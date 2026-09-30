@@ -114,7 +114,8 @@ export async function checkEligibility(input: EligibilityInput): Promise<Eligibi
     };
   }
 
-  const client = new MarketplaceClient();
+  // Avoid persisting ZIP-specific lookups from a person's screening flow.
+  const client = new MarketplaceClient({ useCache: false });
   if (!client.isLive) return officialStateHandoff(requestedState, input.zip);
 
   const counties = await client.countiesByZip(input.zip);

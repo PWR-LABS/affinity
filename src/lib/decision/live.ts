@@ -96,7 +96,9 @@ function pickCostShare(items?: MarketplaceCostShare[]): number | undefined {
 }
 
 export async function runLivePlans(input: LivePlansInput): Promise<LivePlansResult> {
-  const client = new MarketplaceClient();
+  // A user's provider/drug selections can shape GET coverage URLs. Never persist these responses
+  // in the on-disk source cache, even though the cache key is hashed.
+  const client = new MarketplaceClient({ useCache: false });
   if (!client.isLive) throw new Error("Marketplace API key not configured.");
 
   const counties = await client.countiesByZip(input.zip);

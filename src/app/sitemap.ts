@@ -10,5 +10,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/verify`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/verify/medicare-drug`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/how-it-works`, changeFrequency: "yearly", priority: 0.5 },
+    { url: `${BASE}/privacy`, changeFrequency: "yearly", priority: 0.4 },
   ];
 }

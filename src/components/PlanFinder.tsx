@@ -45,7 +45,9 @@ export function PlanFinder() {
   const fetchDoctors = useCallback(
     async (q: string): Promise<Suggestion[]> => {
       if (!/^\d{5}$/.test(zip)) return [];
-      const r = await fetch(`/api/providers/autocomplete?q=${encodeURIComponent(q)}&zip=${zip}`);
+      const r = await fetch("/api/providers/autocomplete", {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, zip }),
+      });
       const d = await r.json();
       return (d.items ?? []).map((p: { npi: string; name?: string; specialty?: string }) => ({
         key: p.npi, label: p.name ?? p.npi, sub: p.specialty,
@@ -54,7 +56,9 @@ export function PlanFinder() {
     [zip],
   );
   const fetchDrugs = useCallback(async (q: string): Promise<Suggestion[]> => {
-    const r = await fetch(`/api/drugs/autocomplete?q=${encodeURIComponent(q)}`);
+    const r = await fetch("/api/drugs/autocomplete", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q }),
+    });
     const d = await r.json();
     return (d.items ?? []).map((x: { rxcui: string; label: string }) => ({ key: x.rxcui, label: x.label }));
   }, []);

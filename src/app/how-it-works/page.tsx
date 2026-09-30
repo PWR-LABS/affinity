@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "How it works",
   description:
-    "How [affinity.] works: no-cost Medicaid and Marketplace screening, plan comparison, and source-labeled coverage checks. No commissions, ads, or stored answers.",
+    "How [affinity.] works: no-cost Medicaid and Marketplace screening, plan comparison, and source-labeled coverage checks. No commissions, ads, or saved household profiles.",
 };
 
 export default function HowItWorks() {
@@ -13,7 +14,8 @@ export default function HowItWorks() {
         <h1 className="page-title">How [affinity.] works</h1>
         <p className="page-subtitle">
           A free, neutral tool for people choosing health coverage — especially those losing Medicaid. No
-          commissions, no broker funnel, no ads. It works for you, not an insurer. Your answers aren&rsquo;t stored.
+          commissions, no broker funnel, no ads. It works for you, not an insurer. We do not save a
+          household profile; see our <Link href="/privacy">privacy and data flow</Link> explanation.
         </p>
       </div>
 

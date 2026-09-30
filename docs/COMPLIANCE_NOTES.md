@@ -5,7 +5,7 @@ or before presenting a number as authoritative. Nothing here is legal advice; th
 operator to verify. Mirrors the risks in `docs/AFFINITY_PRODUCT_VISION.md` §9 and the doctrine
 non-negotiables.
 
-## 1. Marketplace API Terms of Use — **CLEARED for a live, free consumer tool** (one item to confirm pre-launch)
+## 1. Marketplace API terms — live use, written confirmation still open
 
 The HealthCare.gov Marketplace API (`developer.cms.gov/marketplace-api`) powers plan/provider/drug/
 eligibility data. Findings (CMS developer docs, reviewed 2026-06-30):
@@ -23,12 +23,13 @@ eligibility data. Findings (CMS developer docs, reviewed 2026-06-30):
   Treat rotation as notice-driven and update the deployed secret promptly when CMS supplies the new date. A public
   tool must respect the limit — implement per-query caching, handle 429s, and email the team
   (marketplace-api@cms-provider-directory.uservoice.com) to raise the limit if needed.
-- ☐ **One item to confirm before public launch:** the full formal Terms of Use / attribution requirements are
-  not posted on the public dev pages (the key-request form captures intended use). Email the Marketplace API
-  team to confirm public-free-consumer use + our caching approach and ask whether attribution text is
-  required. **Low risk — does not block building; resolve before the public domain goes live.**
+- ☐ **Open despite the public deployment:** we have not recorded written confirmation of the complete
+  Terms of Use, attribution requirements, and permitted caching. Contact the Marketplace API team with
+  the current free consumer use, per-request architecture, and source-cache behavior. Record their
+  response before an institutional pilot or any commercial use. Do not describe this as cleared.
 
-**Net: green to build the live public tool** on a per-request model with caching + rate-limit handling.
+The public developer pages describe third-party applications and rate limits. They are not a substitute
+for the specific terms and attribution confirmation above.
 
 ## 2. Regulatory line: decision-support vs. enrollment — **design invariant**
 
@@ -52,11 +53,17 @@ eligibility data. Findings (CMS developer docs, reviewed 2026-06-30):
   placeholder math; validate the engine output against the **KFF calculator** before any dollar figure is
   shown to a user as more than an estimate.
 
-## 5. Privacy / PII — **doctrine**
+## 5. Privacy / PII — current controls and pilot gate
 
-- Health + income data is the user's. Minimize and protect it; **never put PII in URLs, query strings, or
-  logs**. Identifiers are cuids, never household data (schema-enforced).
+- Health and income data is the user's. The app does not store submitted household answers or deliberately
+  log request bodies. The public site has no accounts. Doctor and medication typeahead use POST to keep
+  search terms out of [affinity.] URLs. Analytics code was removed from the public site.
+- The server forwards relevant request data to CMS, and medication search terms to NLM RxTerms. Hosting
+  infrastructure processes connection metadata. The public `/privacy` page explains these boundaries;
+  it does not substitute for an institutional data-flow and retention review.
+- Before any UH-sponsored workflow or real patient information: inventory every processor and log,
+  settle retention and incident response, classify the data, and obtain UH privacy/security approval.
 
 ---
 
-_Last reviewed: 2026-06-17 (M0–M3 + hardening). Re-review before Phase-2 productization._
+_Updated: 2026-09-30. External terms and institutional privacy review remain open._

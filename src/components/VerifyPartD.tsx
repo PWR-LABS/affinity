@@ -330,7 +330,9 @@ export function VerifyPartD() {
   );
 
   const fetchDrugs = useCallback(async (q: string): Promise<Suggestion[]> => {
-    const response = await fetch(`/api/drugs/autocomplete?q=${encodeURIComponent(q)}`);
+    const response = await fetch("/api/drugs/autocomplete", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q }),
+    });
     const data = await response.json().catch(() => ({ items: [] }));
     if (!response.ok) return [];
     return (data.items ?? []).map((item: { rxcui: string; label: string }) => ({

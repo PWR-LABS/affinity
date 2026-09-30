@@ -5,14 +5,20 @@ import { MarketplaceClient } from "@/lib/marketplace/client";
 export const dynamic = "force-dynamic";
 
 /** Provider-name typeahead near a ZIP → NPIs. Key stays server-side. */
-export async function GET(req: Request) {
-  const sp = new URL(req.url).searchParams;
-  const q = sp.get("q")?.trim() ?? "";
-  const zip = sp.get("zip")?.trim() ?? "";
-  const year = Number(sp.get("year") ?? "2026");
+export async function POST(req: Request) {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ items: [] }, { status: 400 });
+  }
+  const input = (body ?? {}) as Record<string, unknown>;
+  const q = typeof input.q === "string" ? input.q.trim().slice(0, 100) : "";
+  const zip = typeof input.zip === "string" ? input.zip.trim() : "";
+  const year = Number(input.year ?? 2026);
   if (q.length < 2 || !/^\d{5}$/.test(zip)) return NextResponse.json({ items: [] });
   try {
-    const client = new MarketplaceClient();
+    const client = new MarketplaceClient({ useCache: false });
     const items = (await client.providersAutocomplete(q, zip, year)).slice(0, 12).map((p) => ({
       npi: p.npi,
       name: p.name,
