@@ -9,6 +9,7 @@ income / providers / medications are set locally in `.env` and never committed.
 - The live ACA board now shows annual net premium as twelve months of the displayed monthly quote, alongside the source-reported deductible and in-network out-of-pocket maximum. It distinguishes that premium from a full annual cost estimate and links to HealthCare.gov's total-cost explanation.
 - Missing or invalid source premiums remain unknown instead of appearing as $0; plans without a quoted premium sort after plans with one.
 - Public README claims distinguish the tested issuer-file reconciliation and full-cost engines from what the live consumer board serves.
+- The canonical product doctrine now makes the same live-versus-tested distinction; the Render Blueprint explicitly links production to `main` with commit-triggered auto-deploy.
 
 ---
 

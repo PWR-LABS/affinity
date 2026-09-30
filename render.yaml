@@ -12,12 +12,13 @@ services:
     runtime: node
     plan: starter
     region: ohio # co-located with the other [PWR] LABS services.
+    branch: main # production deploys only from main; feature branches stay local/PR-only.
     # --include=dev so build tools (prisma CLI, next, tailwind, typescript) install even though
     # Render sets NODE_ENV=production (which would otherwise skip devDependencies).
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run start
     healthCheckPath: /api/health
-    autoDeploy: true
+    autoDeployTrigger: commit # deploy each commit pushed to the linked main branch.
     envVars:
       - key: NODE_ENV
         value: production
