@@ -8,6 +8,7 @@
 import { MarketplaceClient } from "@/lib/marketplace/client";
 import { stateBasedMarketplace, StateNotSupportedError } from "@/lib/marketplace/states";
 import type { MarketplaceCostShare, MarketplaceDrugCoverage, MarketplacePlan } from "@/lib/marketplace/types";
+import { premiumAmounts } from "./premium";
 
 export interface LivePlansInput {
   zip: string;
@@ -33,8 +34,9 @@ export interface LivePlanRow {
   name: string;
   metal?: string;
   type?: string;
-  premiumMonthly: number;
-  netPremiumMonthly: number;
+  premiumMonthly?: number;
+  netPremiumMonthly?: number;
+  netPremiumAnnual?: number;
   deductible?: number;
   oopMax?: number;
   /** The plan's official issuer documents from the Marketplace API. */
@@ -155,19 +157,17 @@ export async function runLivePlans(input: LivePlansInput): Promise<LivePlansResu
     });
     const doctorsCovered = doctors.filter((x) => x.covered === true).length;
     const drugsCovered = drugs.filter((x) => x.covered === true).length;
-    const gross = p.premium ?? 0;
-    // APTC is a flat dollar credit applied to any plan's premium (capped at the premium). Compute net
-    // from the eligibility APTC — plan-search `premium_w_credit` isn't reliably credited per-request.
-    // Catastrophic plans can't receive APTC, so their net premium is the full sticker price.
-    const aptcEligible = !/catastrophic/i.test(p.metal_level ?? "");
-    const net = aptcEligible ? Math.max(0, gross - aptcMonthly) : gross;
+    // The plan-search `premium_w_credit` is not reliably credited per request. The eligibility APTC
+    // is applied to the source premium; an absent premium remains unknown, never a false $0 quote.
+    const premium = premiumAmounts(p.premium, aptcMonthly, p.metal_level);
     return {
       id: p.id,
       name: p.name,
       metal: p.metal_level,
       type: p.type,
-      premiumMonthly: Math.round(gross),
-      netPremiumMonthly: Math.round(net),
+      premiumMonthly: premium.grossMonthly,
+      netPremiumMonthly: premium.netMonthly,
+      netPremiumAnnual: premium.netAnnual,
       deductible: pickCostShare(p.deductibles),
       oopMax: pickCostShare(p.moops),
       docs: { sbc: p.benefits_url, brochure: p.brochure_url, formulary: p.formulary_url, network: p.network_url },
@@ -185,6 +185,8 @@ export async function runLivePlans(input: LivePlansInput): Promise<LivePlansResu
   rows.sort((a, b) => {
     if (a.keepsAllDoctors !== b.keepsAllDoctors) return a.keepsAllDoctors ? -1 : 1;
     if (a.drugsCovered !== b.drugsCovered) return b.drugsCovered - a.drugsCovered;
+    if (a.netPremiumMonthly === undefined) return b.netPremiumMonthly === undefined ? 0 : 1;
+    if (b.netPremiumMonthly === undefined) return -1;
     return a.netPremiumMonthly - b.netPremiumMonthly;
   });
 

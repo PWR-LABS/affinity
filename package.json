@@ -2,7 +2,7 @@
   "name": "affinity",
   "version": "0.1.0",
   "private": true,
-  "description": "Free, neutral ACA marketplace plan selection with network-truth verification \u2014 find the plan that actually covers your doctors and medications, at its true annual cost.",
+  "description": "Free, neutral Medicaid navigation and ACA Marketplace plan comparison with source-labeled coverage checks.",
   "license": "MIT",
   "author": "Christopher Nmai",
   "homepage": "https://affinity.pwr-labs.ai",

@@ -37,7 +37,7 @@ export default function HowItWorks() {
         <h2>3. If you&rsquo;re Marketplace-bound: your real plans</h2>
         <p>
           On <strong>See your plans</strong>, add your doctors and medications. We pull your real plans from the
-          official Marketplace and show, for each one, the <strong>net premium after your subsidy</strong>, the
+          official Marketplace and show, for each one, the <strong>monthly and annual net premium after your subsidy</strong>, the
           deductible and out-of-pocket max, and <strong>what the Marketplace reports about doctor networks and
           medication coverage</strong>. Plans listing <em>all</em> your selected doctors rise to the top.
         </p>
@@ -60,7 +60,8 @@ export default function HowItWorks() {
 
         <h2>Honest limits</h2>
         <p>
-          Plan rankings here lead with net premium and source-reported doctor and medication coverage; a fuller expected
+          Plan rankings here lead with net premium and source-reported doctor and medication coverage. Annual net premium
+          is twelve months of the displayed monthly estimate, not a forecast of care spending; a fuller expected
           annual-cost estimate (deductible + copays + drug tiers) is coming. Medicaid results are screening or
           navigation—not a state eligibility determination—and special categories such as pregnancy, disability,
           long-term care, and CHIP require the official state application. Employer verification is doctors-only,

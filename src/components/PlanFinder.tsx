@@ -7,7 +7,7 @@ import { Typeahead, type Suggestion } from "@/components/Typeahead";
 interface SubjectStatus { key: string; label?: string; covered: boolean | null; priorAuth?: boolean }
 interface PlanRow {
   id: string; name: string; metal?: string; type?: string;
-  premiumMonthly: number; netPremiumMonthly: number; deductible?: number; oopMax?: number;
+  premiumMonthly?: number; netPremiumMonthly?: number; netPremiumAnnual?: number; deductible?: number; oopMax?: number;
   docs?: { sbc?: string; brochure?: string; formulary?: string; network?: string };
   doctorsCovered: number; doctorsTotal: number; drugsCovered: number; drugsTotal: number;
   keepsAllDoctors: boolean; doctors: SubjectStatus[]; drugs: SubjectStatus[];
@@ -185,6 +185,11 @@ export function PlanFinder() {
               </>
             )}
           </p>
+          <p className="verdict-note">
+            Annual premium below is 12 months of the estimated net premium. It excludes the cost of care,
+            so it is not a total annual-cost forecast. The in-network out-of-pocket maximum excludes premiums,
+            non-covered services, and out-of-network care. <a href="https://www.healthcare.gov/choose-a-plan/your-total-costs/" target="_blank" rel="noopener noreferrer">How to compare total costs ↗</a>
+          </p>
 
           <div className="board-rows">
             {(showAll ? board.plans : board.plans.slice(0, PAGE)).map((p) => {
@@ -212,12 +217,12 @@ export function PlanFinder() {
                   </div>
                   <div className="truecost">
                     <div className="truecost-figure">{usd(p.netPremiumMonthly)}<span style={{ fontSize: "0.7rem", fontWeight: 400 }}>/mo</span></div>
-                    <span className="truecost-label">after subsidy</span>
+                    <span className="truecost-label">{p.netPremiumMonthly === undefined ? "premium unavailable" : "after subsidy"}</span>
                   </div>
                 </div>
                 <div className="plan-row-meta">
                   {p.keepsAllDoctors && p.doctorsTotal > 0 && <span className="keep-badge">✓ Marketplace lists all your doctors</span>}
-                  <span>Deductible {usd(p.deductible)} · OOP max {usd(p.oopMax)}</span>
+                  <span>Annual net premium {usd(p.netPremiumAnnual)} · Deductible {usd(p.deductible)} · In-network OOP max {usd(p.oopMax)}</span>
                 </div>
                 {(p.doctors.length > 0 || p.drugs.length > 0) && (
                   <div className="cov-pills">

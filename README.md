@@ -1,6 +1,6 @@
 # [affinity.]
 
-**PWR LABS product lane** — nationwide Medicaid navigation plus ACA marketplace plan selection with **network truth**: get to the right state coverage decision, then find the plan that actually covers *your* doctors and *your* medications at its *true* annual cost.
+**[PWR] LABS product lane** — nationwide Medicaid navigation plus ACA Marketplace plan comparison: get to the right state coverage decision, then compare net premiums and what the Marketplace reports about *your* doctors and *your* medications. Confirm coverage before enrolling.
 
 **Vision:** [`docs/AFFINITY_PRODUCT_VISION.md`](docs/AFFINITY_PRODUCT_VISION.md) · **Doctrine:** [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md) · **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 **Claude Code entry:** [`CLAUDE.md`](CLAUDE.md)
@@ -9,7 +9,7 @@
 
 ## The wedge
 
-HealthCare.gov shows provider networks and formularies that are **documented to be 30–40% wrong** ("ghost networks" — litigated; a Dec 2025 medRxiv analysis found ~59,899 import errors across issuer machine-readable files). If you trust "in-network" blindly, you can get **locked into a plan you can't actually use**. [affinity.] reconciles the official Marketplace data against the raw issuer files, scores how fresh/trustworthy each claim is, and tells you what to confirm before you enroll.
+Provider networks and formularies can change or disagree across sources. If you trust an "in-network" label blindly, you may choose a plan that does not work for your care. The live [affinity.] ACA board identifies Marketplace-reported matches and tells users what to confirm before enrollment. Independent issuer-file reconciliation exists in the tested engine, but is not yet wired into the public ACA experience. The board shows net monthly and annual premiums, deductibles, and out-of-pocket maximums; it does not yet estimate full annual care spending.
 
 ## Repo map
 
