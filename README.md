@@ -2,7 +2,7 @@
 
 **[PWR] LABS product lane** — nationwide Medicaid navigation plus ACA Marketplace plan comparison: get to the right state coverage decision, then compare net premiums and what the Marketplace reports about *your* doctors and *your* medications. Confirm coverage before enrolling.
 
-**Vision:** [`docs/AFFINITY_PRODUCT_VISION.md`](docs/AFFINITY_PRODUCT_VISION.md) · **Doctrine:** [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md) · **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
+**Vision:** [`docs/AFFINITY_PRODUCT_VISION.md`](docs/AFFINITY_PRODUCT_VISION.md) · **Doctrine:** [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md) · **Outside-In evaluation:** [`docs/PILOT_EVALUATION.md`](docs/PILOT_EVALUATION.md) · **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 **Claude Code entry:** [`CLAUDE.md`](CLAUDE.md)
 
 **Bucket:** green healthcare/biotech family. Brand accent green `#2d9c4a`.
@@ -22,7 +22,7 @@ Provider networks and formularies can change or disagree across sources. If you 
 | `src/lib/matching/` | M1 — per-plan doctor in-network + drug formulary matching, ranked by coverage |
 | `src/lib/cost/` | M2 — subsidy (PTC + CSR) + expected OOP + drug costs → rank by **true annual cost** |
 | `src/lib/verify/` | M3 — graded network-confidence + freshness + the "what to confirm" checklist |
-| `src/lib/decision/` · `src/app/` · `src/components/` | M4 — web shell: ranked-by-true-cost decision board ([PWR] LABS design language; `src/app/pwr-labs.css` foundation) |
+| `src/lib/decision/` · `src/app/` · `src/components/` | Live web shell: source-reported coverage and premium-led ACA board; the true-cost board remains a tested engine, not a live consumer result |
 | `render.yaml` | Render web-service blueprint → **affinity.pwr-labs.ai** (web only, no desktop) |
 | `prisma/schema.prisma` | `Profile` / `Plan` / `CoverageClaim` spine |
 | `scripts/eval-*.ts` | Headless eval gates (`eval:m0-smoke`, `eval:api-mrf-diff`, `eval:production-readiness`) |
@@ -30,6 +30,7 @@ Provider networks and formularies can change or disagree across sources. If you 
 | [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md) | Operating manual + non-negotiables |
 | [`CHANGELOG.md`](CHANGELOG.md) | Build log / changelog |
 | [`docs/COMPLIANCE_NOTES.md`](docs/COMPLIANCE_NOTES.md) | Legal / regulatory / data notes |
+| [`docs/PILOT_EVALUATION.md`](docs/PILOT_EVALUATION.md) | Synthetic-first Outside-In protocol and gates before any UH-sponsored use |
 
 ## Quickstart (app)
 
