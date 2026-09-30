@@ -1098,6 +1098,7 @@ body {
 
 .board { margin-top: 1.4rem; }
 .board-summary { font-size: 0.98rem; line-height: 1.5; color: var(--text); margin: 0 0 1rem; }
+.board-cost-note { max-width: 78ch; margin: 0 0 1.15rem; font-size: 0.86rem; line-height: 1.5; color: var(--muted); }
 .board-rows { display: flex; flex-direction: column; gap: 0.9rem; }
 .plan-row {
   position: relative;
