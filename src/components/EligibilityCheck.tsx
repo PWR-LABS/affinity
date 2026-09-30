@@ -98,7 +98,7 @@ export function EligibilityCheck() {
             <input id="income" name="income" type="text" inputMode="numeric" autoComplete="off" placeholder="Annual income"
               value={income} onChange={(e) => setIncome(e.target.value.replace(/[^\d]/g, ""))} required
               aria-describedby="income-help" />
-            <p id="income-help" className="field-help">Your best estimate for this year. Stays private — never stored.</p>
+            <p id="income-help" className="field-help">Your best estimate for this year. Used for screening, not saved as a profile.</p>
           </div>
           <div className="field">
             <label htmlFor="householdSize">People in household</label>

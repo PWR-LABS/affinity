@@ -162,7 +162,7 @@ export function VerifyDoctor() {
             <input id="v-ein" name="ein" type="text" inputMode="numeric" autoComplete="off" maxLength={9} placeholder="9-digit EIN"
               value={einDirect} onChange={(e) => { setEinDirect(e.target.value.replace(/\D/g, "")); setPlan(null); }}
               aria-describedby="ein-help" />
-            <p id="ein-help" className="field-help">Employer plans are keyed by the employer&rsquo;s tax ID. Stays private — never stored.</p>
+            <p id="ein-help" className="field-help">Employer plans are keyed by the employer&rsquo;s tax ID. Used for lookup, not saved as a profile.</p>
           </div>
           {planSel && (
             <ul className="chips" aria-label="Selected plan">

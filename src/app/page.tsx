@@ -10,7 +10,7 @@ export default function Home() {
         <h1 className="page-title">Where should you start: Medicaid or a Marketplace plan?</h1>
         <p className="page-subtitle">
           Get a live screening estimate where the official feed supports it—and a safe route to the
-          right Medicaid decision in every state. Free, private, and neutral.
+          right Medicaid decision in every state. Free and neutral; see how we handle your inputs.
         </p>
       </div>
 
