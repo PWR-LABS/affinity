@@ -21,6 +21,8 @@ Run `npm run eval:pilot-preflight` before freezing a candidate deployment. It ex
 
 The [October 1 Medicaid handoff audit](./evaluation/2026-10-01-medicaid-handoffs.md) probed all 51 configured state/D.C. links and compared them with the current CMS directory. It documents one corrected California destination plus unresolved source differences and access checks. HTTP reachability and CMS URL agreement do not establish that a person can complete an application; human click-through and the source-paired profiles below remain open.
 
+A separate [five-case live Marketplace source-pair method check](./evaluation/2026-10-01-marketplace-source-pair.md) matched the app's eligibility fields to direct CMS API responses for five synthetic profiles. It does not replace the 30-profile matrix or the per-plan, comprehension, and accessibility checks below.
+
 ## Synthetic evaluation sequence
 
 1. Freeze the deployed Git commit, plan year, official source URLs, test date, and expected outputs. Use synthetic profiles only.

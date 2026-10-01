@@ -1,0 +1,186 @@
+{
+  "evaluatedAt": "2026-10-01T18:08:53.676Z",
+  "app": "https://affinity.pwr-labs.ai",
+  "source": "https://developer.cms.gov/marketplace-api/api-spec",
+  "sourceApi": "https://marketplace.api.healthcare.gov/api/v1",
+  "year": 2026,
+  "scope": "Five synthetic one-person eligibility profiles; direct official API response versus live app; not full plan-board, enrollment, or human-use validation",
+  "counts": {
+    "planned": 5,
+    "paired": 5,
+    "mismatched": 0,
+    "unavailable": 0
+  },
+  "cases": [
+    {
+      "id": "oh-low-income",
+      "input": {
+        "id": "oh-low-income",
+        "state": "OH",
+        "zip": "44106",
+        "income": 16000,
+        "age": 30,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "OH",
+        "county": "Cuyahoga County",
+        "medicaidEligible": true,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": 119,
+        "cheapestPremiumMonthly": 354.35,
+        "verdict": "medicaid"
+      },
+      "observed": {
+        "state": "OH",
+        "county": "Cuyahoga County",
+        "verdict": "medicaid",
+        "medicaidEligible": true,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": 119,
+        "cheapestPremiumMonthly": 354.35
+      },
+      "differences": [],
+      "pairedAt": "2026-10-01T18:08:50.124Z"
+    },
+    {
+      "id": "oh-mid-income",
+      "input": {
+        "id": "oh-mid-income",
+        "state": "OH",
+        "zip": "44106",
+        "income": 45000,
+        "age": 50,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "OH",
+        "county": "Cuyahoga County",
+        "medicaidEligible": false,
+        "aptcMonthly": 324,
+        "inCoverageGap": false,
+        "planCount": 119,
+        "cheapestPremiumMonthly": 557.6,
+        "verdict": "marketplace"
+      },
+      "observed": {
+        "state": "OH",
+        "county": "Cuyahoga County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 324,
+        "inCoverageGap": false,
+        "planCount": 119,
+        "cheapestPremiumMonthly": 557.6
+      },
+      "differences": [],
+      "pairedAt": "2026-10-01T18:08:51.173Z"
+    },
+    {
+      "id": "fl-low-income",
+      "input": {
+        "id": "fl-low-income",
+        "state": "FL",
+        "zip": "33101",
+        "income": 12000,
+        "age": 35,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "FL",
+        "county": "Miami-Dade County",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": true,
+        "planCount": 189,
+        "cheapestPremiumMonthly": 479.72,
+        "verdict": "coverage_gap"
+      },
+      "observed": {
+        "state": "FL",
+        "county": "Miami-Dade County",
+        "verdict": "coverage_gap",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": true,
+        "planCount": 189,
+        "cheapestPremiumMonthly": 479.72
+      },
+      "differences": [],
+      "pairedAt": "2026-10-01T18:08:52.095Z"
+    },
+    {
+      "id": "tx-mid-income",
+      "input": {
+        "id": "tx-mid-income",
+        "state": "TX",
+        "zip": "77002",
+        "income": 48000,
+        "age": 45,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "TX",
+        "county": "Harris County",
+        "medicaidEligible": false,
+        "aptcMonthly": 271,
+        "inCoverageGap": false,
+        "planCount": 119,
+        "cheapestPremiumMonthly": 423.15,
+        "verdict": "marketplace"
+      },
+      "observed": {
+        "state": "TX",
+        "county": "Harris County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 271,
+        "inCoverageGap": false,
+        "planCount": 119,
+        "cheapestPremiumMonthly": 423.15
+      },
+      "differences": [],
+      "pairedAt": "2026-10-01T18:08:53.107Z"
+    },
+    {
+      "id": "wi-high-income",
+      "input": {
+        "id": "wi-high-income",
+        "state": "WI",
+        "zip": "53703",
+        "income": 100000,
+        "age": 60,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "WI",
+        "county": "Dane County",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": 48,
+        "cheapestPremiumMonthly": 749.15,
+        "verdict": "marketplace"
+      },
+      "observed": {
+        "state": "WI",
+        "county": "Dane County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": 48,
+        "cheapestPremiumMonthly": 749.15
+      },
+      "differences": [],
+      "pairedAt": "2026-10-01T18:08:53.676Z"
+    }
+  ]
+}
