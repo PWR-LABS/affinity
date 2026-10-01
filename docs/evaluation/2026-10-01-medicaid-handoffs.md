@@ -24,7 +24,7 @@ The five automated-probe exceptions were opened in a normal browser using the co
 | [New Jersey](https://www.njhelps.gov/) | NJHelps rendered and named NJ FamilyCare/Medicaid and an application path. | Did not screen or apply. |
 | [D.C.](https://www.dchealthlink.com/individuals/medicaid) | DC Health Link's Medicaid page rendered after its normal automatic security check. It links District Direct for application and renewal and lists **202-727-5355** for help with those tasks; the app previously showed DC Health Link's broader **855-532-5465** number. | Did not follow through to District Direct or apply. |
 
-The two verified applicant-help numbers were corrected in code. A browser rendering the destination does not establish a completed handoff, phone reachability, or universal accessibility. The other 49 displayed phone numbers have **not** undergone the same program-specific review.
+The two verified applicant-help numbers were corrected in code. A browser rendering the destination does not establish a completed handoff, phone reachability, or universal accessibility. CMS directory agreement is not, by itself, a program-specific phone review.
 
 ## Phone-directory comparison (same day)
 
@@ -36,7 +36,9 @@ The repeatable `npm run eval:medicaid-handoffs` audit was extended to capture th
 | Missouri | 855-373-9994 | 573-751-3425 | The [state application page](https://dss.mo.gov/healthcare/apply) says to use 855-373-9994 to apply by phone; the CMS-listed number is different. |
 | New Hampshire | 844-275-3447 | 800-735-2964 | The live [NH EASY portal](https://nheasy.nh.gov/) displays 1-844-ASK-DHHS as its main contact. State [DHHS material](https://www.dhhs.nh.gov/sites/g/files/ehbemt476/files/inline-documents/sonh/small-stakeholder-meeting-02242023.pdf) identifies 800-735-2964 as TDD access rather than the primary voice line. |
 
-This is a **directory agreement check**, not a call test or a full audit of which number handles a particular renewal question. The 48 matching numbers still need program-specific confirmation before a human pilot freeze.
+An Ohio-focused follow-up found that the displayed **800-324-8680** is the general [Ohio Medicaid consumer hotline](https://medicaid.ohio.gov/), while the state's [Medicaid renewal form](https://dam.assets.ohio.gov/image/upload/medicaid.ohio.gov/Stakeholders%2C%20Partners/Unwinding/OBWP%20Medicaid%20Renewal%20Form.pdf) directs applications and renewals to **844-640-6446**. The app now shows the latter for its Ohio handoff. A repeat directory comparison at 2026-10-01T19:58:14Z found **47/51** numbers listed by CMS and four explained differences: AL, MO, NH, and OH. The first 48/51 result above remains the true result of the pre-Ohio run; it was not retroactively rewritten.
+
+This is a **directory agreement check**, not a call test or a full audit of which number handles a particular renewal question. Matching numbers still need program-specific confirmation before a human pilot freeze.
 
 ## Review of the 14 URL differences (same day)
 
@@ -65,9 +67,9 @@ The app CTA now says **"Open official state site"** everywhere instead of promis
 
 - Recheck the 14 alternative destinations when state programs or CMS listings change. Their entry pages were browser-reviewed above, but deeper application and renewal paths remain untested.
 - The initial direct probe's D.C. 403 and Alabama/Maine/Montana/New Jersey failures were browser-reachable in the follow-up above. Account creation, action-path completion, and recurring rechecks remain unverified.
-- Audit the remaining 49 displayed phone numbers against current program-specific help lines; CMS directory agreement alone does not prove that a particular line handles application or renewal questions.
+- Audit other displayed phone numbers against current program-specific help lines; CMS directory agreement alone does not prove that a particular line handles application or renewal questions.
 - Human review must confirm that the official-site button lands on an appropriate application or account path for all 51, including portals requiring a login, and that renewal instructions are findable where relevant. This audit did not submit forms or create accounts.
 
 ## Next gate
 
-The [30-case live eligibility matrix](./2026-10-01-pilot-live-matrix.md) has since run with separately labeled direct CMS, official exchange-list, and app-contract evidence. The 49 phones not yet checked against program-specific state guidance, deeper application/renewal action paths, intended-reviewer comprehension, and accessibility checks remain under [the pilot protocol](../PILOT_EVALUATION.md). Do not promote browser-render counts into a claim of pilot readiness or enrollment success.
+The [30-case live eligibility matrix](./2026-10-01-pilot-live-matrix.md) has since run with separately labeled direct CMS, official exchange-list, and app-contract evidence. Other phones not yet checked against program-specific state guidance, deeper application/renewal action paths, intended-reviewer comprehension, and accessibility checks remain under [the pilot protocol](../PILOT_EVALUATION.md). Do not promote browser-render counts into a claim of pilot readiness or enrollment success.
