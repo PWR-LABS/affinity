@@ -93,6 +93,6 @@ stored PII.
 
 ## Doctrine
 
-Live doctrine: **[[affinity.] product doctrine](https://www.notion.so/p/38250bc7783281338c31f0232753d51f)**.
+Live doctrine: **[[affinity.] product doctrine](https://rna.pwr-labs.ai/affinity)**.
 
 Part of the **[PWR] LABS** portfolio — the green **biotech + healthcare** family, on the shared **[nucleus.]** design language.

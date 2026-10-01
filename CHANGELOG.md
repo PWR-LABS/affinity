@@ -4,6 +4,14 @@ Public, chronological record of what shipped. The durable doctrine lives in
 [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md). No personal data appears here — live runs are described against a **demo profile** whose ZIP /
 income / providers / medications are set locally in `.env` and never committed.
 
+## Synthetic Outside-In evaluation candidate (2026-10-01)
+
+- Added a synthetic-first [evaluation protocol](docs/PILOT_EVALUATION.md) with explicit UH governance, human-use, accessibility, and Marketplace API terms gates. It is not UH pilot authorization or a real-data deployment plan.
+- Recorded a 31-case fixture preflight, a 30-case mixed-basis live eligibility replay with no compared-field differences, and a two-profile/20-row same-feed plan-board source comparison with no sampled differences. These denominators and evidence bases remain separate; none proves enrollment benefit or independent network accuracy.
+- Tightened 2026 state-exchange and ambiguous ZIP routing, Medicaid application versus renewal guidance, cost-share scope, error visibility, keyboard focus, and privacy/log handling. The public ACA board still has one coverage source and annualized premium is not full annual cost.
+
+---
+
 ## Annual premium visibility and source honesty (2026-09-30)
 
 - The live ACA board now shows annual net premium as twelve months of the displayed monthly quote, alongside the source-reported deductible and in-network out-of-pocket maximum. It distinguishes that premium from a full annual cost estimate and links to HealthCare.gov's total-cost explanation.
