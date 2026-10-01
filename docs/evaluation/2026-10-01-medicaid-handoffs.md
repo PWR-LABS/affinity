@@ -26,11 +26,23 @@ The five automated-probe exceptions were opened in a normal browser using the co
 
 The two verified applicant-help numbers were corrected in code. A browser rendering the destination does not establish a completed handoff, phone reachability, or universal accessibility. The other 49 displayed phone numbers have **not** undergone the same program-specific review.
 
+## Phone-directory comparison (same day)
+
+The repeatable `npm run eval:medicaid-handoffs` audit was extended to capture the telephone numbers shown in each state section of the live CMS directory. The 2026-10-01T19:32:10Z run parsed all 51 state/D.C. sections: **48 app numbers matched a CMS-listed number; 3 differed**. A mismatch is a review signal, not evidence of a bad number. All three exceptions have a state-source explanation:
+
+| State | App number | CMS directory number | State-source interpretation |
+| --- | --- | --- | --- |
+| Alabama | 800-362-1504 | 334-242-5000 | The [state application page](https://medicaid.alabama.gov/content/3.0_Apply/) lists 800-362-1504 as the Recipient Call Center; CMS labels 334-242-5000 "General Questions." |
+| Missouri | 855-373-9994 | 573-751-3425 | The [state application page](https://dss.mo.gov/healthcare/apply) says to use 855-373-9994 to apply by phone; the CMS-listed number is different. |
+| New Hampshire | 844-275-3447 | 800-735-2964 | The live [NH EASY portal](https://nheasy.nh.gov/) displays 1-844-ASK-DHHS as its main contact. State [DHHS material](https://www.dhhs.nh.gov/sites/g/files/ehbemt476/files/inline-documents/sonh/small-stakeholder-meeting-02242023.pdf) identifies 800-735-2964 as TDD access rather than the primary voice line. |
+
+This is a **directory agreement check**, not a call test or a full audit of which number handles a particular renewal question. The 48 matching numbers still need program-specific confirmation before a human pilot freeze.
+
 ## Remaining manual-review queue
 
 - The 14 CMS URL differences need semantic review against the respective state program. No automatic replacement is justified by string mismatch alone.
 - The initial direct probe's D.C. 403 and Alabama/Maine/Montana/New Jersey failures were browser-reachable in the follow-up above. Account creation, action-path completion, and recurring rechecks remain unverified.
-- Audit the remaining 49 displayed phone numbers against current program-specific help lines; an agency switchboard or marketplace line may be less useful than an applicant/renewal line.
+- Audit the remaining 49 displayed phone numbers against current program-specific help lines; CMS directory agreement alone does not prove that a particular line handles application or renewal questions.
 - Human review must confirm that the official-site button lands on an appropriate application or account path for all 51, including portals requiring a login, and that renewal instructions are findable where relevant. This audit did not submit forms or create accounts.
 
 ## Next gate
