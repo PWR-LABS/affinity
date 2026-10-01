@@ -51,7 +51,7 @@ export const STATE_MEDICAID_RESOURCES: readonly StateMedicaidResource[] = [
   { code: "NY", state: "New York", program: "New York State Medicaid", applyUrl: "https://nystateofhealth.ny.gov/", phone: "855-355-5777" },
   { code: "NC", state: "North Carolina", program: "NC Medicaid", applyUrl: "https://epass.nc.gov/", phone: "888-245-0179" },
   { code: "ND", state: "North Dakota", program: "North Dakota Medicaid", applyUrl: "https://www.hhs.nd.gov/healthcare/medicaid/apply", phone: "800-755-2604" },
-  { code: "OH", state: "Ohio", program: "Ohio Medicaid", applyUrl: "https://ssp.benefits.ohio.gov/", phone: "800-324-8680" },
+  { code: "OH", state: "Ohio", program: "Ohio Medicaid", applyUrl: "https://ssp.benefits.ohio.gov/", phone: "844-640-6446" },
   { code: "OK", state: "Oklahoma", program: "SoonerCare", applyUrl: "https://oklahoma.gov/ohca/individuals/mysoonercare/apply-for-soonercare-online/where-to-apply.html", phone: "800-987-7767" },
   { code: "OR", state: "Oregon", program: "Oregon Health Plan", applyUrl: "https://one.oregon.gov/", phone: "800-699-9075" },
   { code: "PA", state: "Pennsylvania", program: "Medical Assistance", applyUrl: "https://www.compass.dhs.pa.gov/", phone: "800-692-7462" },
