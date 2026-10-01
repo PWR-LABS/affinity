@@ -10,6 +10,7 @@ import { POST as checkPlans } from "@/app/api/plans/route";
 type MockScenario = {
   countyState?: string;
   noCounty?: boolean;
+  multiCounty?: boolean;
   outage?: boolean;
   medicaid?: boolean;
   aptc?: number;
@@ -50,6 +51,7 @@ const federalCases: SyntheticCase[] = [
   { id: "federal-no-estimate", input: { ...base, state: "MI", zip: "48201" }, status: 200, verdict: "unknown", mock: { planCount: 0 } },
   { id: "federal-zip-state-mismatch", input: { ...base }, status: 200, verdict: "unknown", mock: { countyState: "PA" } },
   { id: "federal-county-missing", input: { ...base }, status: 200, verdict: "unknown", mock: { noCounty: true } },
+  { id: "federal-county-ambiguous", input: { ...base, state: "TX", zip: "77449" }, status: 200, verdict: "official_handoff", mock: { multiCounty: true } },
   { id: "federal-upstream-outage", input: { ...base }, status: 200, verdict: "official_handoff", mock: { outage: true } },
 ];
 
@@ -63,8 +65,8 @@ const invalidCases: SyntheticCase[] = [
 ];
 
 const cases = [...stateMarketplaceCases, ...multiPersonCases, ...federalCases, ...invalidCases];
-assert.equal(cases.length, 30);
-assert.equal(new Set(cases.map((item) => item.id)).size, 30);
+assert.equal(cases.length, 31);
+assert.equal(new Set(cases.map((item) => item.id)).size, 31);
 
 function mockTransport(scenario: MockScenario, state: string, calls: string[]): typeof fetch {
   return (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -76,7 +78,9 @@ function mockTransport(scenario: MockScenario, state: string, calls: string[]): 
     });
     if (scenario.outage) return json({ error: "fixture outage" }, 503);
     if (url.pathname.includes("/counties/by/zip/")) {
-      return json({ counties: scenario.noCounty ? [] : [{ fips: "39035", state: scenario.countyState ?? state, name: "Fixture County" }] });
+      return json({ counties: scenario.noCounty ? [] : scenario.multiCounty
+        ? [{ fips: "48201", state, name: "Harris County" }, { fips: "48157", state, name: "Fort Bend County" }]
+        : [{ fips: "39035", state: scenario.countyState ?? state, name: "Fixture County" }] });
     }
     if (url.pathname.endsWith("/households/eligibility/estimates")) {
       return json({ estimates: [{ is_medicaid_chip: scenario.medicaid ?? false, aptc: scenario.aptc ?? 0, in_coverage_gap: scenario.gap ?? false }] });
@@ -118,8 +122,13 @@ async function main(): Promise<void> {
           assert.equal(body.aptcMonthly, 0, "handoff cannot invent a subsidy");
           assert.equal(body.medicaidEligible, false, "handoff cannot invent eligibility");
         }
+        if (item.mock?.multiCounty) {
+          assert.match(String(body.headline), /multiple counties/i);
+          assert.equal(body.planCount, undefined, "ambiguous ZIP cannot show a plan count");
+          assert.deepEqual(calls, ["GET /api/v1/counties/by/zip/77449"], "no estimate or plan search after ambiguity");
+        }
         if (!item.mock) assert.equal(calls.length, 0, "no upstream call expected");
-        if (item.mock && !item.mock.outage && !item.mock.noCounty && !item.mock.countyState) {
+        if (item.mock && !item.mock.outage && !item.mock.noCounty && !item.mock.multiCounty && !item.mock.countyState) {
           assert.equal(calls.length, 3, "county, estimate, and plan-context calls expected");
         }
         if (item.mock?.outage) {
@@ -156,6 +165,23 @@ async function main(): Promise<void> {
       failures.push(`plan-board-failure-log-redaction: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       console.error = priorConsoleError;
+    }
+    const ambiguousPlanCalls: string[] = [];
+    globalThis.fetch = mockTransport({ multiCounty: true }, "TX", ambiguousPlanCalls);
+    try {
+      const request = new Request("https://affinity.invalid/api/plans", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...base, state: "TX", zip: "77449", doctors: [], drugs: [] }),
+      });
+      const response = await checkPlans(request);
+      const body = await response.json() as Record<string, unknown>;
+      assert.equal(response.status, 409);
+      assert.equal(body.code, "county_ambiguous");
+      assert.deepEqual(ambiguousPlanCalls, ["GET /api/v1/counties/by/zip/77449"]);
+      console.log("PASS plan-board-county-ambiguous");
+    } catch (error) {
+      failures.push(`plan-board-county-ambiguous: ${error instanceof Error ? error.message : String(error)}`);
     }
   } finally {
     globalThis.fetch = originalFetch;
