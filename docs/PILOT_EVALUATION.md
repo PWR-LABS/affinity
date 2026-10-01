@@ -19,6 +19,8 @@ The public ACA board has one coverage source. The tested issuer-file reconciliat
 
 Run `npm run eval:pilot-preflight` before freezing a candidate deployment. It exercises 30 synthetic route and validation cases using an injected Marketplace transport, plus a plan-board failure-log check. It covers state-marketplace and larger-household handoffs, federal estimate branches, ZIP errors, upstream outage behavior, and rejected inputs. It does not make live CMS requests or verify official state links, current plan figures, comprehension, or accessibility. Its 30 fixture cases are **not** the 30 source-paired profiles proposed below.
 
+The [October 1 Medicaid handoff audit](./evaluation/2026-10-01-medicaid-handoffs.md) probed all 51 configured state/D.C. links and compared them with the current CMS directory. It documents one corrected California destination plus unresolved source differences and access checks. HTTP reachability and CMS URL agreement do not establish that a person can complete an application; human click-through and the source-paired profiles below remain open.
+
 ## Synthetic evaluation sequence
 
 1. Freeze the deployed Git commit, plan year, official source URLs, test date, and expected outputs. Use synthetic profiles only.

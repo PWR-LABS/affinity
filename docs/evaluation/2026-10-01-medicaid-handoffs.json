@@ -1,0 +1,526 @@
+{
+  "evaluatedAt": "2026-10-01T18:00:48.854Z",
+  "cmsDirectory": "https://www.medicaid.gov/about-us/where-can-people-get-help-medicaid-chip",
+  "cmsDirectoryHttpStatus": 200,
+  "scope": "Link inventory and HTTP probe only; not application completion, eligibility, or human-use validation",
+  "counts": {
+    "total": 51,
+    "cmsSameDestination": 37,
+    "cmsDifferent": 14,
+    "http2xx": 46,
+    "httpNon2xx": 1,
+    "probeError": 4
+  },
+  "rows": [
+    {
+      "code": "AL",
+      "state": "Alabama",
+      "appUrl": "https://medicaid.alabama.gov/content/3.0_Apply/",
+      "cmsEnrollmentUrl": "https://medicaid.alabama.gov/content/3.0_Apply/",
+      "cmsSameDestination": true,
+      "httpStatus": null,
+      "finalUrl": null,
+      "error": "TypeError"
+    },
+    {
+      "code": "AK",
+      "state": "Alaska",
+      "appUrl": "https://www.medicaidalaska.com/portals/wps/portal/enterprise/memberpublic/",
+      "cmsEnrollmentUrl": "https://www.medicaidalaska.com/portals/wps/portal/enterprise/memberpublic/",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://www.medicaidalaska.com/portals/wps/portal/enterprise/memberpublic/",
+      "error": null
+    },
+    {
+      "code": "AZ",
+      "state": "Arizona",
+      "appUrl": "https://azahcccs.gov/Members/GetCovered/apply.html",
+      "cmsEnrollmentUrl": "https://azahcccs.gov/Members/GetCovered/apply.html",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://azahcccs.gov/Members/GetCovered/apply.html",
+      "error": null
+    },
+    {
+      "code": "AR",
+      "state": "Arkansas",
+      "appUrl": "https://humanservices.arkansas.gov/apply-for-services/",
+      "cmsEnrollmentUrl": "https://humanservices.arkansas.gov/apply-for-services/",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://humanservices.arkansas.gov/apply-for-services/",
+      "error": null
+    },
+    {
+      "code": "CA",
+      "state": "California",
+      "appUrl": "https://www.dhcs.ca.gov/medi-cal/apply/",
+      "cmsEnrollmentUrl": "https://www.dhcs.ca.gov/Pages/Keep-Your-Medi-Cal.aspx",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://www.dhcs.ca.gov/medi-cal/apply/",
+      "error": null
+    },
+    {
+      "code": "CO",
+      "state": "Colorado",
+      "appUrl": "https://www.healthfirstcolorado.com/apply-now/",
+      "cmsEnrollmentUrl": "https://www.healthfirstcolorado.com/apply-now/",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://www.healthfirstcolorado.gov/apply-now/",
+      "error": null
+    },
+    {
+      "code": "CT",
+      "state": "Connecticut",
+      "appUrl": "https://portal.ct.gov/DSS/Common-Elements/How-to-Apply-for-Services/How-to-Apply-for-Services",
+      "cmsEnrollmentUrl": "https://portal.ct.gov/DSS/Common-Elements/How-to-Apply-for-Services/How-to-Apply-for-Services",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://portal.ct.gov/dss/how-to-apply",
+      "error": null
+    },
+    {
+      "code": "DE",
+      "state": "Delaware",
+      "appUrl": "https://assist.dhss.delaware.gov/",
+      "cmsEnrollmentUrl": "https://assist.dhss.delaware.gov/",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://assist.dhss.delaware.gov/",
+      "error": null
+    },
+    {
+      "code": "DC",
+      "state": "District of Columbia",
+      "appUrl": "https://www.dchealthlink.com/individuals/medicaid",
+      "cmsEnrollmentUrl": "https://www.dchealthlink.com/individuals/medicaid",
+      "cmsSameDestination": true,
+      "httpStatus": 403,
+      "finalUrl": "https://www.dchealthlink.com/individuals/medicaid",
+      "error": null
+    },
+    {
+      "code": "FL",
+      "state": "Florida",
+      "appUrl": "https://www.myflfamilies.com/services/public-assistance",
+      "cmsEnrollmentUrl": "https://www.myflfamilies.com/services/public-assistance",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://www.myflfamilies.com/services/public-assistance",
+      "error": null
+    },
+    {
+      "code": "GA",
+      "state": "Georgia",
+      "appUrl": "https://medicaid.georgia.gov/how-apply",
+      "cmsEnrollmentUrl": "https://medicaid.georgia.gov/how-apply",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://medicaid.georgia.gov/how-apply",
+      "error": null
+    },
+    {
+      "code": "HI",
+      "state": "Hawaii",
+      "appUrl": "https://medical.mybenefits.hawaii.gov/web/kolea/home-page",
+      "cmsEnrollmentUrl": "https://medquest.hawaii.gov/staywell",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://medical.mybenefits.hawaii.gov/home.html",
+      "error": null
+    },
+    {
+      "code": "ID",
+      "state": "Idaho",
+      "appUrl": "https://healthandwelfare.idaho.gov/services-programs/medicaid-health",
+      "cmsEnrollmentUrl": "https://healthandwelfare.idaho.gov/services-programs/medicaid-health",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://healthandwelfare.idaho.gov/services-programs/medicaid-health",
+      "error": null
+    },
+    {
+      "code": "IL",
+      "state": "Illinois",
+      "appUrl": "https://abe.illinois.gov/access/",
+      "cmsEnrollmentUrl": "https://abe.illinois.gov/access/",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://abe.illinois.gov/access/",
+      "error": null
+    },
+    {
+      "code": "IN",
+      "state": "Indiana",
+      "appUrl": "https://fssabenefits.in.gov/bp/#/",
+      "cmsEnrollmentUrl": "https://fssabenefits.in.gov/bp/#/",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://fssabenefits.in.gov/bp/",
+      "error": null
+    },
+    {
+      "code": "IA",
+      "state": "Iowa",
+      "appUrl": "https://hhsservices.iowa.gov/apspssp/ssp.portal",
+      "cmsEnrollmentUrl": "https://hhsservices.iowa.gov/apspssp/ssp.portal",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://hhsservices.iowa.gov/apspssp/ssp.portal",
+      "error": null
+    },
+    {
+      "code": "KS",
+      "state": "Kansas",
+      "appUrl": "https://www.kancare.ks.gov/apply-now",
+      "cmsEnrollmentUrl": "https://www.kancare.ks.gov/apply-now",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://www.kancare.ks.gov/apply-now",
+      "error": null
+    },
+    {
+      "code": "KY",
+      "state": "Kentucky",
+      "appUrl": "https://kynect.ky.gov/benefits/s/?language=en_US",
+      "cmsEnrollmentUrl": "https://kynect.ky.gov/benefits/s/?language=en_US",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://kynect.ky.gov/benefits/s/?language=en_US",
+      "error": null
+    },
+    {
+      "code": "LA",
+      "state": "Louisiana",
+      "appUrl": "https://ldh.la.gov/subhome/48",
+      "cmsEnrollmentUrl": "https://ldh.la.gov/subhome/48",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://ldh.la.gov/microsite/48",
+      "error": null
+    },
+    {
+      "code": "ME",
+      "state": "Maine",
+      "appUrl": "https://apps1.web.maine.gov/benefits/account/login.html",
+      "cmsEnrollmentUrl": "https://apps1.web.maine.gov/benefits/account/login.html",
+      "cmsSameDestination": true,
+      "httpStatus": null,
+      "finalUrl": null,
+      "error": "TypeError"
+    },
+    {
+      "code": "MD",
+      "state": "Maryland",
+      "appUrl": "https://health.maryland.gov/mmcp/eligibility/Pages/apply.aspx",
+      "cmsEnrollmentUrl": "https://health.maryland.gov/mmcp/eligibility/Pages/apply.aspx",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://health.maryland.gov/mmcp/eligibility/Pages/apply.aspx",
+      "error": null
+    },
+    {
+      "code": "MA",
+      "state": "Massachusetts",
+      "appUrl": "https://www.mass.gov/information-for-masshealth-applicants",
+      "cmsEnrollmentUrl": "https://www.mass.gov/information-for-masshealth-applicants",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://www.mass.gov/information-for-masshealth-applicants",
+      "error": null
+    },
+    {
+      "code": "MI",
+      "state": "Michigan",
+      "appUrl": "https://newmibridges.michigan.gov/s/isd-landing-page?language=en_US",
+      "cmsEnrollmentUrl": "https://newmibridges.michigan.gov/s/isd-landing-page?language=en_US",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://newmibridges.michigan.gov/s/isd-landing-page?language=en_US",
+      "error": null
+    },
+    {
+      "code": "MN",
+      "state": "Minnesota",
+      "appUrl": "https://mn.gov/dhs/health-care/apply/",
+      "cmsEnrollmentUrl": "https://mn.gov/dhs/renewmycoverage/",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "http://validate.perfdrive.com/d5bd5333eafe8b0ccd6023ba818d1aa6/?ssa=3e94725b-49f1-4e5e-b35f-90faf3a2a004&ssb=30321242157&ssc=https%3A%2F%2Fmn.gov%2Fdhs%2Fhealth-care%2Fapply%2F&ssi=21563857-bf56-4957-9534-ccc9d53e03ac&ssk=support@shieldsquare.com&ssm=99395219187463867100029423990679&ssn=4ce1b35aea1f5a0fa9c9aadf41d2ba2a7fa363226647-7792-4b51-8c1dd5&sso=71f07d09-47befda68264f4046a1ffd796692cc138b734802eb37f225&ssp=71732951901790876264179081413823179&ssq=42927927765381755294877653513608580168468&ssr=MjA4Ljg3LjIzNC4yMDI=&sst=Mozilla/5.0%20(compatible;%20affinity-handoff-audit/1.0)&ssu=&ssv=&ssw=&ssx=W10=",
+      "error": null
+    },
+    {
+      "code": "MS",
+      "state": "Mississippi",
+      "appUrl": "https://medicaid.ms.gov/medicaid-coverage/how-to-apply/",
+      "cmsEnrollmentUrl": "https://medicaid.ms.gov/medicaid-coverage/how-to-apply/",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://medicaid.ms.gov/how-to-apply-2/",
+      "error": null
+    },
+    {
+      "code": "MO",
+      "state": "Missouri",
+      "appUrl": "https://mydss.mo.gov/healthcare/apply",
+      "cmsEnrollmentUrl": "https://mydss.mo.gov/renew",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://dss.mo.gov/healthcare/apply",
+      "error": null
+    },
+    {
+      "code": "MT",
+      "state": "Montana",
+      "appUrl": "https://apply.mt.gov/",
+      "cmsEnrollmentUrl": "https://apply.mt.gov/",
+      "cmsSameDestination": true,
+      "httpStatus": null,
+      "finalUrl": null,
+      "error": "TypeError"
+    },
+    {
+      "code": "NE",
+      "state": "Nebraska",
+      "appUrl": "https://dhhs.ne.gov/pages/accessnebraska.aspx",
+      "cmsEnrollmentUrl": "https://dhhs.ne.gov/pages/accessnebraska.aspx",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://dhhs.ne.gov/pages/accessnebraska.aspx",
+      "error": null
+    },
+    {
+      "code": "NV",
+      "state": "Nevada",
+      "appUrl": "https://accessnevada.nv.gov/public/landing-page",
+      "cmsEnrollmentUrl": "https://accessnevada.nv.gov/public/landing-page",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://accessnevada.nv.gov/public/landing-page",
+      "error": null
+    },
+    {
+      "code": "NH",
+      "state": "New Hampshire",
+      "appUrl": "https://nheasy.nh.gov/",
+      "cmsEnrollmentUrl": "https://www.dhhs.nh.gov/medicaid-changes",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://nheasy.nh.gov/",
+      "error": null
+    },
+    {
+      "code": "NJ",
+      "state": "New Jersey",
+      "appUrl": "https://www.njhelps.gov/",
+      "cmsEnrollmentUrl": "https://www.njhelps.gov/",
+      "cmsSameDestination": true,
+      "httpStatus": null,
+      "finalUrl": null,
+      "error": "TypeError"
+    },
+    {
+      "code": "NM",
+      "state": "New Mexico",
+      "appUrl": "https://www.yes.state.nm.us/yesnm/home/index",
+      "cmsEnrollmentUrl": "https://www.yes.state.nm.us/yesnm/home/index",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://yes.nm.gov/nmhr/s/?language=en_US",
+      "error": null
+    },
+    {
+      "code": "NY",
+      "state": "New York",
+      "appUrl": "https://nystateofhealth.ny.gov/",
+      "cmsEnrollmentUrl": "https://www.health.ny.gov/health_care/medicaid/",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://nystateofhealth.ny.gov/",
+      "error": null
+    },
+    {
+      "code": "NC",
+      "state": "North Carolina",
+      "appUrl": "https://epass.nc.gov/",
+      "cmsEnrollmentUrl": "https://ncgov.servicenowservices.com/sp_beneficiary?id=bnf_index",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://epass.nc.gov/",
+      "error": null
+    },
+    {
+      "code": "ND",
+      "state": "North Dakota",
+      "appUrl": "https://www.hhs.nd.gov/healthcare/medicaid/apply",
+      "cmsEnrollmentUrl": "https://www.hhs.nd.gov/healthcare/medicaid/apply",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://www.hhs.nd.gov/healthcare/medicaid/apply",
+      "error": null
+    },
+    {
+      "code": "OH",
+      "state": "Ohio",
+      "appUrl": "https://ssp.benefits.ohio.gov/",
+      "cmsEnrollmentUrl": "https://benefits.ohio.gov/",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://ssp.benefits.ohio.gov/apspssp/ssp.portal",
+      "error": null
+    },
+    {
+      "code": "OK",
+      "state": "Oklahoma",
+      "appUrl": "https://oklahoma.gov/ohca/individuals/mysoonercare/apply-for-soonercare-online/where-to-apply.html",
+      "cmsEnrollmentUrl": "https://oklahoma.gov/ohca/individuals/mysoonercare/apply-for-soonercare-online/where-to-apply.html",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://oklahoma.gov/ohca/individuals/mysoonercare/apply-for-soonercare-online/where-to-apply.html",
+      "error": null
+    },
+    {
+      "code": "OR",
+      "state": "Oregon",
+      "appUrl": "https://one.oregon.gov/",
+      "cmsEnrollmentUrl": "https://one.oregon.gov/UserRegistration/SettingUpAccount",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://one.oregon.gov/",
+      "error": null
+    },
+    {
+      "code": "PA",
+      "state": "Pennsylvania",
+      "appUrl": "https://www.compass.dhs.pa.gov/",
+      "cmsEnrollmentUrl": "https://www.compass.dhs.pa.gov/",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://www.compass.dhs.pa.gov/",
+      "error": null
+    },
+    {
+      "code": "RI",
+      "state": "Rhode Island",
+      "appUrl": "https://healthyrhode.ri.gov/",
+      "cmsEnrollmentUrl": "https://healthyrhode.ri.gov/HIXWebI3/CreateGenericUserAccount.action?accountFlow=true&request_locale=enUS",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://healthyrhode.ri.gov/",
+      "error": null
+    },
+    {
+      "code": "SC",
+      "state": "South Carolina",
+      "appUrl": "https://apply.scdhhs.gov/CitizenPortal/application.do",
+      "cmsEnrollmentUrl": "https://apply.scdhhs.gov/CitizenPortal/application.do",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://apply.scdhhs.gov/CitizenPortal/",
+      "error": null
+    },
+    {
+      "code": "SD",
+      "state": "South Dakota",
+      "appUrl": "https://dss.sd.gov/applyonline/default.aspx",
+      "cmsEnrollmentUrl": "https://dss.sd.gov/applyonline/default.aspx",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://eaportal.sd.gov/",
+      "error": null
+    },
+    {
+      "code": "TN",
+      "state": "Tennessee",
+      "appUrl": "https://tenncareconnect.tn.gov/",
+      "cmsEnrollmentUrl": "https://tenncareconnect.tn.gov",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://tenncareconnect.tn.gov/index.html",
+      "error": null
+    },
+    {
+      "code": "TX",
+      "state": "Texas",
+      "appUrl": "https://yourtexasbenefits.com/",
+      "cmsEnrollmentUrl": "https://yourtexasbenefits.com/Learn/Home#login",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://yourtexasbenefits.com/",
+      "error": null
+    },
+    {
+      "code": "UT",
+      "state": "Utah",
+      "appUrl": "https://medicaid.utah.gov/apply-medicaid/",
+      "cmsEnrollmentUrl": "https://medicaid.utah.gov/apply-medicaid/",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://medicaid.utah.gov/apply-medicaid/",
+      "error": null
+    },
+    {
+      "code": "VT",
+      "state": "Vermont",
+      "appUrl": "https://portal.healthconnect.vermont.gov/VTHBELand/welcome.action",
+      "cmsEnrollmentUrl": "https://portal.healthconnect.vermont.gov/VTHBELand/welcome.action",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://portal.healthconnect.vermont.gov/VTHBELand/welcome.action",
+      "error": null
+    },
+    {
+      "code": "VA",
+      "state": "Virginia",
+      "appUrl": "https://coverva.dmas.virginia.gov/apply/",
+      "cmsEnrollmentUrl": "https://www.dmas.virginia.gov/for-applicants/applying-for-medicaid/",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://coverva.dmas.virginia.gov/apply/",
+      "error": null
+    },
+    {
+      "code": "WA",
+      "state": "Washington",
+      "appUrl": "https://www.wahealthplanfinder.org/",
+      "cmsEnrollmentUrl": "https://www.hca.wa.gov/health-care-services-supports/apple-health-medicaid-coverage/apply-or-renew-coverage",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://www.wahealthplanfinder.org/",
+      "error": null
+    },
+    {
+      "code": "WV",
+      "state": "West Virginia",
+      "appUrl": "https://www.wvpath.wv.gov/",
+      "cmsEnrollmentUrl": "https://www.wvpath.wv.gov/application",
+      "cmsSameDestination": false,
+      "httpStatus": 200,
+      "finalUrl": "https://www.wvpath.wv.gov/",
+      "error": null
+    },
+    {
+      "code": "WI",
+      "state": "Wisconsin",
+      "appUrl": "https://access.wi.gov/",
+      "cmsEnrollmentUrl": "https://access.wi.gov/",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://access.wi.gov/s/?language=en_US",
+      "error": null
+    },
+    {
+      "code": "WY",
+      "state": "Wyoming",
+      "appUrl": "https://health.wyo.gov/healthcarefin/apply/",
+      "cmsEnrollmentUrl": "https://health.wyo.gov/healthcarefin/apply/",
+      "cmsSameDestination": true,
+      "httpStatus": 200,
+      "finalUrl": "https://health.wyo.gov/healthcarefin/apply/",
+      "error": null
+    }
+  ]
+}

@@ -1,9 +1,10 @@
 /**
  * Official Medicaid application and renewal entry points for the 50 states plus D.C.
  *
- * Source: CMS's state Medicaid contact directory, reviewed 2026-08-21. These are navigation
- * resources, not encoded eligibility rules: states make final determinations and can change their
- * programs independently.
+ * Source: CMS's state Medicaid contact directory, rechecked 2026-10-01. California's
+ * application hub is from DHCS directly because the CMS enrollment link is renewal-focused.
+ * These are navigation resources, not encoded eligibility rules: states make final
+ * determinations and can change their programs independently.
  */
 export interface StateMedicaidResource {
   code: string;
@@ -18,7 +19,7 @@ export const STATE_MEDICAID_RESOURCES: readonly StateMedicaidResource[] = [
   { code: "AK", state: "Alaska", program: "Alaska Medicaid", applyUrl: "https://www.medicaidalaska.com/portals/wps/portal/enterprise/memberpublic/", phone: "800-478-7778" },
   { code: "AZ", state: "Arizona", program: "Arizona Health Care Cost Containment System (AHCCCS)", applyUrl: "https://azahcccs.gov/Members/GetCovered/apply.html", phone: "800-654-8713" },
   { code: "AR", state: "Arkansas", program: "Arkansas Medicaid", applyUrl: "https://humanservices.arkansas.gov/apply-for-services/", phone: "800-482-8988" },
-  { code: "CA", state: "California", program: "Medi-Cal", applyUrl: "https://www.dhcs.ca.gov/Pages/Keep-Your-Medi-Cal.aspx", phone: "800-541-5555" },
+  { code: "CA", state: "California", program: "Medi-Cal", applyUrl: "https://www.dhcs.ca.gov/medi-cal/apply/", phone: "800-541-5555" },
   { code: "CO", state: "Colorado", program: "Health First Colorado", applyUrl: "https://www.healthfirstcolorado.com/apply-now/", phone: "800-221-3943" },
   { code: "CT", state: "Connecticut", program: "HUSKY Health", applyUrl: "https://portal.ct.gov/DSS/Common-Elements/How-to-Apply-for-Services/How-to-Apply-for-Services", phone: "855-805-4325" },
   { code: "DE", state: "Delaware", program: "Delaware Medicaid & Medical Assistance", applyUrl: "https://assist.dhss.delaware.gov/", phone: "866-843-7212" },

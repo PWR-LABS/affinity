@@ -30,6 +30,7 @@ test("every state has an official secure entry point and phone number", () => {
 test("state lookup and CMS change guides are case-insensitive", () => {
   assert.equal(medicaidResourceByCode("ny")?.program, "New York State Medicaid");
   assert.equal(medicaidResourceByCode("oh")?.phone, "800-324-8680");
+  assert.equal(medicaidResourceByCode("CA")?.applyUrl, "https://www.dhcs.ca.gov/medi-cal/apply/");
   assert.equal(medicaidResourceByCode("XX"), undefined);
   assert.equal(medicaidChangeUrl("ca"), "https://www.medicaid.gov/renew-info/CA");
 });
