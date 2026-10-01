@@ -23,6 +23,21 @@ export function parseCmsEnrollmentLinks(html: string): Map<string, string> {
   return links;
 }
 
+export function parseCmsListedPhones(html: string): Map<string, string[]> {
+  const headings = [...html.matchAll(/<h3\s+id="([A-Z]{2})">/g)];
+  const phones = new Map<string, string[]>();
+  for (let index = 0; index < headings.length; index += 1) {
+    const heading = headings[index];
+    const section = html.slice(heading.index, headings[index + 1]?.index ?? html.length);
+    const listed = [...section.matchAll(/<a\s+href="tel:[^"]+"[^>]*>([^<]+)<\/a>/gi)]
+      .map((match) => match[1].replace(/\D/g, ""))
+      .map((digits) => digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits)
+      .filter((digits) => digits.length === 10);
+    phones.set(heading[1], [...new Set(listed)]);
+  }
+  return phones;
+}
+
 export function sameDestination(left: string, right: string): boolean {
   const a = new URL(left);
   const b = new URL(right);
@@ -56,7 +71,9 @@ async function main(): Promise<void> {
   const fetchedAt = new Date().toISOString();
   const directoryResponse = await fetch(CMS_DIRECTORY, { signal: AbortSignal.timeout(20_000) });
   if (!directoryResponse.ok) throw new Error(`CMS directory returned HTTP ${directoryResponse.status}`);
-  const cmsLinks = parseCmsEnrollmentLinks(await directoryResponse.text());
+  const directoryHtml = await directoryResponse.text();
+  const cmsLinks = parseCmsEnrollmentLinks(directoryHtml);
+  const cmsPhones = parseCmsListedPhones(directoryHtml);
   const missing = STATE_MEDICAID_RESOURCES.filter((row) => !cmsLinks.has(row.code));
   if (missing.length) throw new Error(`CMS enrollment links missing for ${missing.map((row) => row.code).join(", ")}`);
 
@@ -67,12 +84,16 @@ async function main(): Promise<void> {
       const index = cursor++;
       const resource = STATE_MEDICAID_RESOURCES[index];
       const cmsEnrollmentUrl = cmsLinks.get(resource.code)!;
+      const cmsListedPhoneNumbers = cmsPhones.get(resource.code) ?? [];
       rows[index] = {
         code: resource.code,
         state: resource.state,
         appUrl: resource.applyUrl,
         cmsEnrollmentUrl,
         cmsSameDestination: sameDestination(resource.applyUrl, cmsEnrollmentUrl),
+        appPhone: resource.phone,
+        cmsListedPhoneNumbers,
+        appPhoneListedByCms: cmsListedPhoneNumbers.includes(resource.phone.replace(/\D/g, "")),
         ...await probe(resource.applyUrl),
       };
     }
@@ -86,7 +107,7 @@ async function main(): Promise<void> {
     cmsDirectory: CMS_DIRECTORY,
     cmsDirectoryHttpStatus: directoryResponse.status,
     scope: "Link inventory and HTTP probe only; not application completion, eligibility, or human-use validation",
-    counts: { total: rows.length, cmsSameDestination: sameAsCms, cmsDifferent: rows.length - sameAsCms, http2xx: reachable, httpNon2xx: rows.filter((row) => typeof row.httpStatus === "number" && (row.httpStatus < 200 || row.httpStatus >= 300)).length, probeError: rows.filter((row) => row.error).length },
+    counts: { total: rows.length, cmsSameDestination: sameAsCms, cmsDifferent: rows.length - sameAsCms, appPhoneListedByCms: rows.filter((row) => row.appPhoneListedByCms).length, appPhoneNotListedByCms: rows.filter((row) => !row.appPhoneListedByCms).length, http2xx: reachable, httpNon2xx: rows.filter((row) => typeof row.httpStatus === "number" && (row.httpStatus < 200 || row.httpStatus >= 300)).length, probeError: rows.filter((row) => row.error).length },
     rows,
   }, null, 2));
 }
