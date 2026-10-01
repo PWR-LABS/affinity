@@ -42,6 +42,11 @@ export function PlanFinder() {
   const [board, setBoard] = useState<Board | null>(null);
   const [showAll, setShowAll] = useState(false);
   const inFlight = useRef(false);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ block: "center", behavior: "auto" });
+  }, [error]);
 
   const PAGE = 20;
 
@@ -177,7 +182,7 @@ export function PlanFinder() {
       <p className="sr-only" role="status" aria-atomic="true">
         {board ? `${board.medicaidEligible ? "You may qualify for Medicaid. " : ""}${board.totalPlans} Marketplace plans in ${board.county ?? "your county"}, ${board.state ?? "your state"} are ready below.` : ""}
       </p>
-      {error && <p className="elig-error" role="alert">{error}{countyHandoff ? <> <a href="https://www.healthcare.gov/see-plans/" target="_blank" rel="noreferrer">Choose your county on HealthCare.gov ↗</a></> : null}</p>}
+      {error && <p ref={errorRef} className="elig-error" role="alert">{error}{countyHandoff ? <> <a href="https://www.healthcare.gov/see-plans/" target="_blank" rel="noreferrer">Choose your county on HealthCare.gov ↗</a></> : null}</p>}
 
       {board && (
         <section className="board" aria-label="Marketplace plan comparison results">
