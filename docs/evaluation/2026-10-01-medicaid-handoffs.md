@@ -12,13 +12,27 @@ This is a **synthetic, read-only link audit**, not a completed enrollment journe
 
 California previously linked the "Apply or renew" action to a renewal-focused "Keep Your Medi-Cal" page. The current [California DHCS Apply for Medi-Cal hub](https://www.dhcs.ca.gov/medi-cal/apply/) explicitly offers both application and online management/renewal through official partners. The local link now points to that hub; the direct probe returned HTTP 200. The CMS directory's enrollment URL still points to the renewal page, so this intentional source difference is retained rather than counted as a broken link.
 
-## Manual-review queue
+## Browser follow-up (same day)
+
+The five automated-probe exceptions were opened in a normal browser using the configured URLs. All five rendered an official page without bypassing a browser security warning or submitting an application:
+
+| State | Browser observation | Limit |
+| --- | --- | --- |
+| [Alabama](https://medicaid.alabama.gov/content/3.0_Apply/) | "Apply for Medicaid" page rendered. It lists the Recipient Call Center, **800-362-1504**; the app previously showed the agency's broader **334-242-5000** number. | Did not start an application or call. |
+| [Maine](https://apps1.web.maine.gov/benefits/account/login.html) | Redirected to My Maine Connection with an "Apply for Benefits" action and **855-797-4357** help number. | Did not create an account or apply. |
+| [Montana](https://apply.mt.gov/) | DPHHS health-coverage application portal rendered; it also describes returning a redetermination packet after a notice. | Did not sign in or submit. |
+| [New Jersey](https://www.njhelps.gov/) | NJHelps rendered and named NJ FamilyCare/Medicaid and an application path. | Did not screen or apply. |
+| [D.C.](https://www.dchealthlink.com/individuals/medicaid) | DC Health Link's Medicaid page rendered after its normal automatic security check. It links District Direct for application and renewal and lists **202-727-5355** for help with those tasks; the app previously showed DC Health Link's broader **855-532-5465** number. | Did not follow through to District Direct or apply. |
+
+The two verified applicant-help numbers were corrected in code. A browser rendering the destination does not establish a completed handoff, phone reachability, or universal accessibility. The other 49 displayed phone numbers have **not** undergone the same program-specific review.
+
+## Remaining manual-review queue
 
 - The 14 CMS URL differences need semantic review against the respective state program. No automatic replacement is justified by string mismatch alone.
-- D.C. returned HTTP 403 to the automated probe. The [D.C. Health Link Medicaid page](https://www.dchealthlink.com/individuals/medicaid) was independently readable through a browser source and points to District Direct for application and renewal; automated 403 is not proof of a broken user link. A human click-through is still needed.
-- Alabama, Maine, Montana, and New Jersey failed this machine's direct probe. CMS currently lists those same enrollment URLs. Their real-browser reachability and completion path remain unverified.
+- The initial direct probe's D.C. 403 and Alabama/Maine/Montana/New Jersey failures were browser-reachable in the follow-up above. Account creation, action-path completion, and recurring rechecks remain unverified.
+- Audit the remaining 49 displayed phone numbers against current program-specific help lines; an agency switchboard or marketplace line may be less useful than an applicant/renewal line.
 - Human review must confirm that the official-site button lands on an appropriate application or account path for all 51, including portals requiring a login, and that renewal instructions are findable where relevant. This audit did not submit forms or create accounts.
 
 ## Next gate
 
-The [30-case live eligibility matrix](./2026-10-01-pilot-live-matrix.md) has since run with separately labeled direct CMS, official exchange-list, and app-contract evidence. The link differences and inconclusive probes above still need human click-through, followed by intended-reviewer comprehension and accessibility checks under [the pilot protocol](../PILOT_EVALUATION.md). Do not promote these link-probe counts into a claim of pilot readiness or enrollment success.
+The [30-case live eligibility matrix](./2026-10-01-pilot-live-matrix.md) has since run with separately labeled direct CMS, official exchange-list, and app-contract evidence. The 14 link differences, 49 unreviewed phones, application/renewal action paths, intended-reviewer comprehension, and accessibility checks remain under [the pilot protocol](../PILOT_EVALUATION.md). Do not promote browser-render counts into a claim of pilot readiness or enrollment success.
