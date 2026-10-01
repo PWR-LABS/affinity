@@ -8,7 +8,8 @@ import { useEffect } from "react";
  */
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    console.error("Global error:", error?.message, error?.digest);
+    // Never copy a thrown message containing possible request details to the browser console.
+    console.error("Global render error:", error?.digest ?? "no_digest");
   }, [error]);
 
   return (
@@ -20,7 +21,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
           </p>
           <h1 style={{ fontSize: "1.6rem", margin: "0.4rem 0 0.6rem" }}>The page failed to load.</h1>
           <p style={{ color: "#667068", lineHeight: 1.5, margin: 0 }}>
-            We hit an unexpected error. Nothing you entered is stored. Please reload the page.
+            We hit an unexpected error. We do not save a household profile here. Please reload the page.
           </p>
           <button
             type="button"
