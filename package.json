@@ -37,6 +37,7 @@
     "eval:network-bridge": "tsx scripts/eval-network-bridge.ts",
     "eval:live-dryrun": "tsx scripts/eval-live-dryrun.ts",
     "eval:ui-smoke": "tsx scripts/eval-ui-smoke.ts",
+    "eval:pilot-preflight": "tsx scripts/eval-pilot-preflight.ts",
     "poc:live": "bash -c 'set -a; [ -f .env ] && . ./.env; set +a; tsx scripts/poc-live.ts'",
     "eval:m0-smoke": "tsx scripts/eval-m0-smoke.ts",
     "eval:production-readiness": "tsx scripts/eval-production-readiness.ts",

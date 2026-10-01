@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { checkEligibility, multiPersonHouseholdHandoff, officialStateHandoff } from "@/lib/decision/eligibility";
+import { MarketplaceApiError } from "@/lib/marketplace/client";
 import { medicaidResourceByCode } from "@/lib/medicaid/states";
 
 export const dynamic = "force-dynamic";
@@ -38,8 +39,9 @@ export async function POST(req: Request) {
     const result = await checkEligibility({ state, zip, income, householdSize, age, year });
     return NextResponse.json(result);
   } catch (err) {
-    // No PII in logs — just the failure class.
-    console.error("eligibility check failed:", err instanceof Error ? err.message : "unknown");
+    // MarketplaceApiError messages can contain a ZIP in the request path. Log only a fixed
+    // failure category and upstream status, never the request-specific message or body.
+    console.error("eligibility check failed:", err instanceof MarketplaceApiError ? `marketplace_${err.status}` : "unexpected");
     return NextResponse.json(officialStateHandoff(state, zip));
   }
 }

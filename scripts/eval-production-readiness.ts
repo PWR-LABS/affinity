@@ -20,6 +20,7 @@ const GATES = [
   "eval:network-bridge",
   "eval:tic-reconcile",
   "eval:partd-reconcile",
+  "eval:pilot-preflight",
 ];
 
 function run(script: string): boolean {

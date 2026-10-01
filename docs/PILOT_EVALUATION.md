@@ -15,6 +15,10 @@ Evaluate whether an adult who may be leaving Medicaid can identify the correct o
 
 The public ACA board has one coverage source. The tested issuer-file reconciliation, A-F grade, and fuller annual care-cost engine are **not** live consumer features. Employer and Part D verification require their indexes to be loaded and are outside this first evaluation.
 
+## Automated preflight already available
+
+Run `npm run eval:pilot-preflight` before freezing a candidate deployment. It exercises 30 synthetic route and validation cases using an injected Marketplace transport, plus a plan-board failure-log check. It covers state-marketplace and larger-household handoffs, federal estimate branches, ZIP errors, upstream outage behavior, and rejected inputs. It does not make live CMS requests or verify official state links, current plan figures, comprehension, or accessibility. Its 30 fixture cases are **not** the 30 source-paired profiles proposed below.
+
 ## Synthetic evaluation sequence
 
 1. Freeze the deployed Git commit, plan year, official source URLs, test date, and expected outputs. Use synthetic profiles only.
@@ -38,4 +42,4 @@ The Outside-In sponsor and UH reviewers must choose the intended users and workf
 
 ## Evidence record
 
-For each run retain the commit and deploy ID, environment, source/plan year, synthetic fixture set, test results, discrepancies, accessibility findings, operator, and date. Redact secrets and avoid real person-level information. The `eval:production-readiness` bundle is a code/regression gate, not a substitute for this live protocol.
+For each run retain the commit and deploy ID, environment, source/plan year, synthetic fixture set, test results, discrepancies, accessibility findings, operator, and date. Redact secrets and avoid real person-level information. The `eval:production-readiness` bundle includes the synthetic preflight but remains a code/regression gate, not a substitute for this live protocol.

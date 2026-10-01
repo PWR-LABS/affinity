@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { runLivePlans, ZipNotFoundError } from "@/lib/decision/live";
+import { MarketplaceApiError } from "@/lib/marketplace/client";
 import { StateNotSupportedError } from "@/lib/marketplace/states";
 
 export const dynamic = "force-dynamic";
@@ -56,7 +57,8 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    console.error("plan board failed:", err instanceof Error ? err.message : "unknown");
+    // Do not log request-specific upstream paths: a failed ZIP lookup puts the ZIP in the error message.
+    console.error("plan board failed:", err instanceof MarketplaceApiError ? `marketplace_${err.status}` : "unexpected");
     return NextResponse.json({ error: "We couldn't reach the Marketplace right now. Try again in a moment." }, { status: 502 });
   }
 }
