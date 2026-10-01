@@ -38,13 +38,36 @@ The repeatable `npm run eval:medicaid-handoffs` audit was extended to capture th
 
 This is a **directory agreement check**, not a call test or a full audit of which number handles a particular renewal question. The 48 matching numbers still need program-specific confirmation before a human pilot freeze.
 
+## Review of the 14 URL differences (same day)
+
+Each configured URL that differed from the CMS directory's `Enrollment` URL was opened directly in a normal browser. **14/14 rendered an official state, state-contracted portal, or state marketplace entry with visible application, account, or health-coverage navigation.** This resolves the narrow question of whether the differing URLs are obviously broken or off-topic; it does **not** validate every downstream action, account flow, renewal notice, or accessibility path.
+
+| State | Configured destination observed |
+| --- | --- |
+| CA | [DHCS Medi-Cal application hub](https://www.dhcs.ca.gov/medi-cal/apply/) with apply and keep-coverage navigation. |
+| HI | [Med-QUEST portal](https://medical.mybenefits.hawaii.gov/web/kolea/home-page) redirected to its home with application and online-renewal entries. |
+| MN | [DHS apply page](https://mn.gov/dhs/health-care/apply/) with a separate renewal navigation link. |
+| MO | [DSS application page](https://mydss.mo.gov/healthcare/apply) redirected to the official MO HealthNet apply page. |
+| NH | [NH EASY](https://nheasy.nh.gov/) offered medical-benefit application and account management. |
+| NY | [New York State of Health](https://nystateofhealth.ny.gov/) showed apply and renewal entries. |
+| NC | [ePASS](https://epass.nc.gov/) showed medical-assistance application and account/renewal information after dismissing a non-binding welcome notice. |
+| OH | [Ohio Benefits self-service portal](https://ssp.benefits.ohio.gov/) showed medical-assistance application and account-management actions. |
+| OR | [Oregon ONE](https://one.oregon.gov/) showed benefits application and account management. |
+| RI | [HealthyRhode](https://healthyrhode.ri.gov/) showed health-coverage and human-services application entries. |
+| TX | [Your Texas Benefits](https://yourtexasbenefits.com/) showed a benefits-application tab and account entry. |
+| VA | [CoverVA apply hub](https://coverva.dmas.virginia.gov/apply/) showed Medicaid/FAMIS application pathways. |
+| WA | [Washington Healthplanfinder](https://www.wahealthplanfinder.org/) showed application steps and identified Apple Health as Medicaid. |
+| WV | [WV PATH](https://www.wvpath.wv.gov/) showed health-care coverage and an Apply Now path. |
+
+The app CTA now says **"Open official state site"** everywhere instead of promising **"Apply or renew"**. Renewal may use a separate path, and the state notice controls the deadline and instructions. The intended-user path from the app through a completed official action remains a human test, not an automated pass.
+
 ## Remaining manual-review queue
 
-- The 14 CMS URL differences need semantic review against the respective state program. No automatic replacement is justified by string mismatch alone.
+- Recheck the 14 alternative destinations when state programs or CMS listings change. Their entry pages were browser-reviewed above, but deeper application and renewal paths remain untested.
 - The initial direct probe's D.C. 403 and Alabama/Maine/Montana/New Jersey failures were browser-reachable in the follow-up above. Account creation, action-path completion, and recurring rechecks remain unverified.
 - Audit the remaining 49 displayed phone numbers against current program-specific help lines; CMS directory agreement alone does not prove that a particular line handles application or renewal questions.
 - Human review must confirm that the official-site button lands on an appropriate application or account path for all 51, including portals requiring a login, and that renewal instructions are findable where relevant. This audit did not submit forms or create accounts.
 
 ## Next gate
 
-The [30-case live eligibility matrix](./2026-10-01-pilot-live-matrix.md) has since run with separately labeled direct CMS, official exchange-list, and app-contract evidence. The 14 link differences, 49 unreviewed phones, application/renewal action paths, intended-reviewer comprehension, and accessibility checks remain under [the pilot protocol](../PILOT_EVALUATION.md). Do not promote browser-render counts into a claim of pilot readiness or enrollment success.
+The [30-case live eligibility matrix](./2026-10-01-pilot-live-matrix.md) has since run with separately labeled direct CMS, official exchange-list, and app-contract evidence. The 49 phones not yet checked against program-specific state guidance, deeper application/renewal action paths, intended-reviewer comprehension, and accessibility checks remain under [the pilot protocol](../PILOT_EVALUATION.md). Do not promote browser-render counts into a claim of pilot readiness or enrollment success.
