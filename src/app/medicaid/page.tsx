@@ -23,7 +23,7 @@ export default function MedicaidPage() {
         <h1 className="page-title">Understand Medicaid changes. Find your official next step.</h1>
         <p className="page-subtitle">
           Medicaid decisions happen state by state. See what the federal rules say, then go directly to
-          your state&rsquo;s official application or renewal service.
+          your state&rsquo;s official Medicaid site. Follow your state notice for renewal steps.
         </p>
         <div className="medicaid-hero-actions">
           <Link className="cta" href="/#coverage-check">Check likely eligibility</Link>

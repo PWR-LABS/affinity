@@ -31,8 +31,9 @@ export default function HowItWorks() {
 
         <h2>2. Keep Medicaid through the rule changes</h2>
         <p>
-          The <strong>Medicaid desk</strong> covers all 50 states and D.C. with the official application or renewal
-          service, member phone number, and CMS change guide. It also explains the federal requirements scheduled
+          The <strong>Medicaid desk</strong> covers all 50 states and D.C. with an official application page or
+          program portal, member phone number, and CMS change guide. Renewal may require a different path; follow
+          your state notice. The desk also explains the federal requirements scheduled
           for 2027 and keeps a closer watch on New York and Ohio. The state still makes the final decision.
         </p>
 
