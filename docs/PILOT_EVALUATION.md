@@ -31,6 +31,8 @@ A [two-profile live plan-board source pair](./evaluation/2026-10-01-plan-board-s
 
 After the [cost-share scope guard](./evaluation/2026-10-01-cost-share-safety.md), a [new live source-pair replay](./evaluation/2026-10-01-plan-board-source-pair-after-guard.json) evaluated 2/2 synthetic profiles and 20/20 first-page plan rows with zero mismatches. The exact code commit was observed on the public health route and the deep health check passed. This still does not validate every CSR/source variant or complete a pilot freeze.
 
+A [bounded keyboard and mobile-width journey](./evaluation/2026-10-01-keyboard-responsive-journey.md) found and corrected post-submit focus loss and an overbroad result announcement. The fix was retested on its exact live code commit with synthetic inputs. It is not a screen-reader or WCAG conformance audit; intended-reviewer comprehension and assistive-technology testing remain open.
+
 The [2026 Marketplace platform parity check](./evaluation/2026-10-01-marketplace-platforms.md) found and corrected Illinois routing: CMS lists Illinois among the 21 full state exchanges for 2026. The deployed synthetic Illinois handoff check passed in the 30-case live matrix.
 
 ## Synthetic evaluation sequence
