@@ -1,0 +1,1007 @@
+{
+  "evaluatedAt": "2026-10-01T18:27:33.763Z",
+  "app": "https://affinity.pwr-labs.ai",
+  "planYear": 2026,
+  "liveCommit": "08eac5d12c22f37602669d5d9bdc5bd88dc84ebc",
+  "sources": {
+    "cmsApi": "https://developer.cms.gov/marketplace-api/api-spec",
+    "exchangeClassification": "https://www.cms.gov/CCIIO/Resources/Fact-Sheets-and-FAQs/state-marketplaces"
+  },
+  "scope": "30 synthetic live eligibility requests; evidence bases differ by case; not plan-board, enrollment, independent coverage truth, human-use, or accessibility validation",
+  "counts": {
+    "planned": 30,
+    "evaluated": 29,
+    "mismatched": 0,
+    "unavailable": 1,
+    "byBasis": {
+      "direct_cms_full": {
+        "planned": 12,
+        "evaluated": 11,
+        "mismatched": 0
+      },
+      "direct_cms_geography": {
+        "planned": 2,
+        "evaluated": 2,
+        "mismatched": 0
+      },
+      "cms_2026_exchange_list": {
+        "planned": 8,
+        "evaluated": 8,
+        "mismatched": 0
+      },
+      "safety_contract": {
+        "planned": 4,
+        "evaluated": 4,
+        "mismatched": 0
+      },
+      "validation_contract": {
+        "planned": 4,
+        "evaluated": 4,
+        "mismatched": 0
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "oh-low",
+      "basis": "direct_cms_full",
+      "input": {
+        "state": "OH",
+        "zip": "44106",
+        "income": 16000,
+        "age": 30,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "unavailable": "source_pair_unavailable",
+      "checkedAt": "2026-10-01T18:27:18.453Z"
+    },
+    {
+      "id": "oh-mid",
+      "basis": "direct_cms_full",
+      "input": {
+        "state": "OH",
+        "zip": "44106",
+        "income": 45000,
+        "age": 50,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "OH",
+        "county": "Cuyahoga County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 324,
+        "inCoverageGap": false,
+        "planCount": 119,
+        "cheapestPremiumMonthly": 557.6,
+        "missingSourceFields": []
+      },
+      "observed": {
+        "state": "OH",
+        "county": "Cuyahoga County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 324,
+        "inCoverageGap": false,
+        "planCount": 119,
+        "cheapestPremiumMonthly": 557.6
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:20.701Z"
+    },
+    {
+      "id": "oh-high",
+      "basis": "direct_cms_full",
+      "input": {
+        "state": "OH",
+        "zip": "44106",
+        "income": 100000,
+        "age": 60,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "OH",
+        "county": "Cuyahoga County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": 119,
+        "cheapestPremiumMonthly": 847.32,
+        "missingSourceFields": []
+      },
+      "observed": {
+        "state": "OH",
+        "county": "Cuyahoga County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": 119,
+        "cheapestPremiumMonthly": 847.32
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:22.133Z"
+    },
+    {
+      "id": "fl-low",
+      "basis": "direct_cms_full",
+      "input": {
+        "state": "FL",
+        "zip": "33101",
+        "income": 12000,
+        "age": 35,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "FL",
+        "county": "Miami-Dade County",
+        "verdict": "coverage_gap",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": true,
+        "planCount": 189,
+        "cheapestPremiumMonthly": 479.72,
+        "missingSourceFields": []
+      },
+      "observed": {
+        "state": "FL",
+        "county": "Miami-Dade County",
+        "verdict": "coverage_gap",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": true,
+        "planCount": 189,
+        "cheapestPremiumMonthly": 479.72
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:23.434Z"
+    },
+    {
+      "id": "fl-mid",
+      "basis": "direct_cms_full",
+      "input": {
+        "state": "FL",
+        "zip": "33101",
+        "income": 45000,
+        "age": 45,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "FL",
+        "county": "Miami-Dade County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 412,
+        "inCoverageGap": false,
+        "planCount": 188,
+        "cheapestPremiumMonthly": 566.87,
+        "missingSourceFields": []
+      },
+      "observed": {
+        "state": "FL",
+        "county": "Miami-Dade County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 412,
+        "inCoverageGap": false,
+        "planCount": 188,
+        "cheapestPremiumMonthly": 566.87
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:24.764Z"
+    },
+    {
+      "id": "fl-high",
+      "basis": "direct_cms_full",
+      "input": {
+        "state": "FL",
+        "zip": "33101",
+        "income": 100000,
+        "age": 60,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "FL",
+        "county": "Miami-Dade County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": 188,
+        "cheapestPremiumMonthly": 1065.43,
+        "missingSourceFields": []
+      },
+      "observed": {
+        "state": "FL",
+        "county": "Miami-Dade County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": 188,
+        "cheapestPremiumMonthly": 1065.43
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:25.850Z"
+    },
+    {
+      "id": "tx-low",
+      "basis": "direct_cms_full",
+      "input": {
+        "state": "TX",
+        "zip": "77002",
+        "income": 9000,
+        "age": 35,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "TX",
+        "county": "Harris County",
+        "verdict": "coverage_gap",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": true,
+        "planCount": 121,
+        "cheapestPremiumMonthly": 358.1,
+        "missingSourceFields": []
+      },
+      "observed": {
+        "state": "TX",
+        "county": "Harris County",
+        "verdict": "coverage_gap",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": true,
+        "planCount": 121,
+        "cheapestPremiumMonthly": 358.1
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:26.702Z"
+    },
+    {
+      "id": "tx-mid",
+      "basis": "direct_cms_full",
+      "input": {
+        "state": "TX",
+        "zip": "77002",
+        "income": 48000,
+        "age": 45,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "TX",
+        "county": "Harris County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 271,
+        "inCoverageGap": false,
+        "planCount": 119,
+        "cheapestPremiumMonthly": 423.15,
+        "missingSourceFields": []
+      },
+      "observed": {
+        "state": "TX",
+        "county": "Harris County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 271,
+        "inCoverageGap": false,
+        "planCount": 119,
+        "cheapestPremiumMonthly": 423.15
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:27.772Z"
+    },
+    {
+      "id": "wi-high",
+      "basis": "direct_cms_full",
+      "input": {
+        "state": "WI",
+        "zip": "53703",
+        "income": 100000,
+        "age": 60,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "WI",
+        "county": "Dane County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": 48,
+        "cheapestPremiumMonthly": 749.15,
+        "missingSourceFields": []
+      },
+      "observed": {
+        "state": "WI",
+        "county": "Dane County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": 48,
+        "cheapestPremiumMonthly": 749.15
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:28.438Z"
+    },
+    {
+      "id": "ar-federal-platform",
+      "basis": "direct_cms_full",
+      "input": {
+        "state": "AR",
+        "zip": "72201",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "AR",
+        "county": "Pulaski County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 415,
+        "inCoverageGap": false,
+        "planCount": 51,
+        "cheapestPremiumMonthly": 447.45,
+        "missingSourceFields": []
+      },
+      "observed": {
+        "state": "AR",
+        "county": "Pulaski County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 415,
+        "inCoverageGap": false,
+        "planCount": 51,
+        "cheapestPremiumMonthly": 447.45
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:29.297Z"
+    },
+    {
+      "id": "or-federal-platform",
+      "basis": "direct_cms_full",
+      "input": {
+        "state": "OR",
+        "zip": "97204",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "OR",
+        "county": "Multnomah County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 150,
+        "inCoverageGap": false,
+        "planCount": 59,
+        "cheapestPremiumMonthly": 426.45,
+        "missingSourceFields": []
+      },
+      "observed": {
+        "state": "OR",
+        "county": "Multnomah County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 150,
+        "inCoverageGap": false,
+        "planCount": 59,
+        "cheapestPremiumMonthly": 426.45
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:30.202Z"
+    },
+    {
+      "id": "ok-federal-platform",
+      "basis": "direct_cms_full",
+      "input": {
+        "state": "OK",
+        "zip": "73102",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "OK",
+        "county": "Oklahoma County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 202,
+        "inCoverageGap": false,
+        "planCount": 95,
+        "cheapestPremiumMonthly": 436.06,
+        "missingSourceFields": []
+      },
+      "observed": {
+        "state": "OK",
+        "county": "Oklahoma County",
+        "verdict": "marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 202,
+        "inCoverageGap": false,
+        "planCount": 95,
+        "cheapestPremiumMonthly": 436.06
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:31.293Z"
+    },
+    {
+      "id": "oh-zip-in-fl",
+      "basis": "direct_cms_geography",
+      "input": {
+        "state": "OH",
+        "zip": "33101",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "OH",
+        "county": "Miami-Dade County",
+        "verdict": "unknown",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null,
+        "cmsCountyState": "FL"
+      },
+      "observed": {
+        "state": "OH",
+        "county": "Miami-Dade County",
+        "verdict": "unknown",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:31.802Z"
+    },
+    {
+      "id": "fl-zip-in-oh",
+      "basis": "direct_cms_geography",
+      "input": {
+        "state": "FL",
+        "zip": "44106",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "state": "FL",
+        "county": "Cuyahoga County",
+        "verdict": "unknown",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null,
+        "cmsCountyState": "OH"
+      },
+      "observed": {
+        "state": "FL",
+        "county": "Cuyahoga County",
+        "verdict": "unknown",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:32.103Z"
+    },
+    {
+      "id": "ca-exchange",
+      "basis": "cms_2026_exchange_list",
+      "input": {
+        "state": "CA",
+        "zip": "90012",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "verdict": "state_marketplace",
+        "state": "CA",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null,
+        "exchange": "Covered California"
+      },
+      "observed": {
+        "state": "CA",
+        "county": null,
+        "verdict": "state_marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:32.197Z"
+    },
+    {
+      "id": "co-exchange",
+      "basis": "cms_2026_exchange_list",
+      "input": {
+        "state": "CO",
+        "zip": "80202",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "verdict": "state_marketplace",
+        "state": "CO",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null,
+        "exchange": "Connect for Health Colorado"
+      },
+      "observed": {
+        "state": "CO",
+        "county": null,
+        "verdict": "state_marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:32.296Z"
+    },
+    {
+      "id": "dc-exchange",
+      "basis": "cms_2026_exchange_list",
+      "input": {
+        "state": "DC",
+        "zip": "20001",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "verdict": "state_marketplace",
+        "state": "DC",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null,
+        "exchange": "DC Health Link"
+      },
+      "observed": {
+        "state": "DC",
+        "county": null,
+        "verdict": "state_marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:32.401Z"
+    },
+    {
+      "id": "ga-exchange",
+      "basis": "cms_2026_exchange_list",
+      "input": {
+        "state": "GA",
+        "zip": "30303",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "verdict": "state_marketplace",
+        "state": "GA",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null,
+        "exchange": "Georgia Access"
+      },
+      "observed": {
+        "state": "GA",
+        "county": null,
+        "verdict": "state_marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:32.509Z"
+    },
+    {
+      "id": "il-exchange",
+      "basis": "cms_2026_exchange_list",
+      "input": {
+        "state": "IL",
+        "zip": "60601",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "verdict": "state_marketplace",
+        "state": "IL",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null,
+        "exchange": "Get Covered Illinois"
+      },
+      "observed": {
+        "state": "IL",
+        "county": null,
+        "verdict": "state_marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:32.628Z"
+    },
+    {
+      "id": "ny-exchange",
+      "basis": "cms_2026_exchange_list",
+      "input": {
+        "state": "NY",
+        "zip": "10001",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "verdict": "state_marketplace",
+        "state": "NY",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null,
+        "exchange": "NY State of Health"
+      },
+      "observed": {
+        "state": "NY",
+        "county": null,
+        "verdict": "state_marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:32.715Z"
+    },
+    {
+      "id": "pa-exchange",
+      "basis": "cms_2026_exchange_list",
+      "input": {
+        "state": "PA",
+        "zip": "19103",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "verdict": "state_marketplace",
+        "state": "PA",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null,
+        "exchange": "Pennie"
+      },
+      "observed": {
+        "state": "PA",
+        "county": null,
+        "verdict": "state_marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:32.817Z"
+    },
+    {
+      "id": "wa-exchange",
+      "basis": "cms_2026_exchange_list",
+      "input": {
+        "state": "WA",
+        "zip": "98101",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "verdict": "state_marketplace",
+        "state": "WA",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null,
+        "exchange": "Washington Healthplanfinder"
+      },
+      "observed": {
+        "state": "WA",
+        "county": null,
+        "verdict": "state_marketplace",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:32.911Z"
+    },
+    {
+      "id": "oh-household",
+      "basis": "safety_contract",
+      "input": {
+        "state": "OH",
+        "zip": "44106",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 2,
+        "year": 2026
+      },
+      "source": {
+        "verdict": "official_handoff",
+        "state": "OH",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "observed": {
+        "state": "OH",
+        "county": null,
+        "verdict": "official_handoff",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:32.994Z"
+    },
+    {
+      "id": "fl-household",
+      "basis": "safety_contract",
+      "input": {
+        "state": "FL",
+        "zip": "33101",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 3,
+        "year": 2026
+      },
+      "source": {
+        "verdict": "official_handoff",
+        "state": "FL",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "observed": {
+        "state": "FL",
+        "county": null,
+        "verdict": "official_handoff",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:33.158Z"
+    },
+    {
+      "id": "il-household",
+      "basis": "safety_contract",
+      "input": {
+        "state": "IL",
+        "zip": "60601",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 4,
+        "year": 2026
+      },
+      "source": {
+        "verdict": "official_handoff",
+        "state": "IL",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "observed": {
+        "state": "IL",
+        "county": null,
+        "verdict": "official_handoff",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:33.247Z"
+    },
+    {
+      "id": "ny-household",
+      "basis": "safety_contract",
+      "input": {
+        "state": "NY",
+        "zip": "10001",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 5,
+        "year": 2026
+      },
+      "source": {
+        "verdict": "official_handoff",
+        "state": "NY",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "observed": {
+        "state": "NY",
+        "county": null,
+        "verdict": "official_handoff",
+        "medicaidEligible": false,
+        "aptcMonthly": 0,
+        "inCoverageGap": false,
+        "planCount": null,
+        "cheapestPremiumMonthly": null
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:33.341Z"
+    },
+    {
+      "id": "invalid-state",
+      "basis": "validation_contract",
+      "input": {
+        "state": "XX",
+        "zip": "44106",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "expectedStatus": 400,
+        "expectedError": "/select your state/i"
+      },
+      "observed": {
+        "status": 400,
+        "error": "Select your state."
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:33.437Z"
+    },
+    {
+      "id": "invalid-zip",
+      "basis": "validation_contract",
+      "input": {
+        "state": "OH",
+        "zip": "4410",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "expectedStatus": 400,
+        "expectedError": "/5-digit ZIP/i"
+      },
+      "observed": {
+        "status": 400,
+        "error": "Enter a valid 5-digit ZIP code."
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:33.522Z"
+    },
+    {
+      "id": "missing-age",
+      "basis": "validation_contract",
+      "input": {
+        "state": "OH",
+        "zip": "44106",
+        "income": 45000,
+        "age": "",
+        "householdSize": 1,
+        "year": 2026
+      },
+      "source": {
+        "expectedStatus": 400,
+        "expectedError": "/valid age/i"
+      },
+      "observed": {
+        "status": 400,
+        "error": "Enter a valid age."
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:33.676Z"
+    },
+    {
+      "id": "unsupported-year",
+      "basis": "validation_contract",
+      "input": {
+        "state": "OH",
+        "zip": "44106",
+        "income": 45000,
+        "age": 40,
+        "householdSize": 1,
+        "year": 2027
+      },
+      "source": {
+        "expectedStatus": 400,
+        "expectedError": "/2026 only/i"
+      },
+      "observed": {
+        "status": 400,
+        "error": "This comparison currently supports 2026 only."
+      },
+      "differences": [],
+      "checkedAt": "2026-10-01T18:27:33.763Z"
+    }
+  ]
+}

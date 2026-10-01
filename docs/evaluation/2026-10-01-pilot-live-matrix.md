@@ -1,0 +1,17 @@
+# [affinity.] 30-case live eligibility matrix — October 1, 2026
+
+Thirty prewritten, synthetic 2026 requests were sent to the live [affinity.] eligibility endpoint. The [first run](./2026-10-01-pilot-live-matrix.json) evaluated 29/30; `oh-low` was unavailable with an unclassified source-pair error. The [fresh retry](./2026-10-01-pilot-live-matrix-retry.json), completed at 2026-10-01T18:28:30.763Z, evaluated **30/30 with zero compared-field differences and zero unavailable cases**. The retry is the complete result; the first run remains evidence of an availability interruption, not evidence that CMS specifically failed. Both runs named the previously live-verified commit `08eac5d12c22f37602669d5d9bdc5bd88dc84ebc` (Render deploy `dep-dava7pnavr4c7397thl0`). No real people, UH records, or patient data were used.
+
+| Evidence basis | Cases | What was checked |
+| --- | ---: | --- |
+| Direct [CMS Marketplace API](https://developer.cms.gov/marketplace-api/api-spec), full one-person estimate and plan context | 12 | State/county, Medicaid and coverage-gap flags, rounded monthly APTC, total plan count, cheapest **gross monthly premium among the first 10 returned plans**, and source-derived route. No source fields required for those comparisons were missing. |
+| Direct CMS county lookup | 2 | A ZIP deliberately paired with the wrong state stopped at an `unknown` result with no fabricated estimate. |
+| [CMS 2026 state-exchange list](https://www.cms.gov/CCIIO/Resources/Fact-Sheets-and-FAQs/state-marketplaces) | 8 | Live API provided the state-exchange handoff and named the expected exchange, with no invented subsidy or Medicaid finding. This did **not** click or verify the outbound links. |
+| App safety contract | 4 | Multi-person households received an official handoff, with no one-person estimate reused. |
+| App input-validation contract | 4 | Invalid state, malformed ZIP, missing age, and unsupported year returned the expected 400 response. |
+
+The 12 full comparisons use the **same CMS feed** as [affinity.]. Agreement is evidence that the deployed transformation matched direct CMS responses for those synthetic inputs on this run—not independent confirmation of coverage, prices, eligibility, network participation, formulary status, or enrollment. The 18 other live cases have different evidence bases and must not be added to a “30 CMS matches” claim. The 2026 exchange list supplied the external classification for eight of them; the eight safety/validation cases tested product contracts rather than external data.
+
+The existing 30-case fixture preflight covers an upstream outage, but this live run did not force a production outage. It did not test multi-county ZIP selection, all 51 outbound Medicaid links, per-plan displayed prices and annualization, provider/drug results, browser link completion, intended-reviewer comprehension, mobile or assistive-technology use, or UH governance. Those remain open under the [evaluation protocol](../PILOT_EVALUATION.md). An initial one-case unavailability followed by a clean retry warrants a repeatability check; it is not a reproducible defect or a reliability rate.
+
+Reproduce with a local `MARKETPLACE_API_KEY` in the environment and `npm run eval:pilot-live-matrix -- --output <new-json-path>`; the script refuses to overwrite existing evidence. It retains reduced synthetic inputs and source/app comparison fields, never keyed URLs or raw source bodies.

@@ -21,4 +21,4 @@ California previously linked the "Apply or renew" action to a renewal-focused "K
 
 ## Next gate
 
-Run the separately specified 30 **source-paired synthetic profiles**, compare figures with the official Marketplace on the same day, then complete intended-reviewer comprehension and accessibility checks under [the pilot protocol](../PILOT_EVALUATION.md). Do not promote these link-probe counts into a claim of pilot readiness or enrollment success.
+The [30-case live eligibility matrix](./2026-10-01-pilot-live-matrix.md) has since run with separately labeled direct CMS, official exchange-list, and app-contract evidence. The link differences and inconclusive probes above still need human click-through, followed by intended-reviewer comprehension and accessibility checks under [the pilot protocol](../PILOT_EVALUATION.md). Do not promote these link-probe counts into a claim of pilot readiness or enrollment success.
