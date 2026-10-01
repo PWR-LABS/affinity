@@ -33,6 +33,8 @@ After the [cost-share scope guard](./evaluation/2026-10-01-cost-share-safety.md)
 
 A [bounded keyboard and mobile-width journey](./evaluation/2026-10-01-keyboard-responsive-journey.md) found and corrected post-submit focus loss and an overbroad result announcement. The fix was retested on its exact live code commit with synthetic inputs. It is not a screen-reader or WCAG conformance audit; intended-reviewer comprehension and assistive-technology testing remain open.
 
+The [October 1 candidate replay](./evaluation/2026-10-01-candidate-replay.md) preserved the post-Ohio-correction deployed check: 30/30 synthetic eligibility cases evaluated with zero compared-field mismatches or unavailable cases, and 2/2 synthetic plan-board profiles with 20/20 sampled source rows matched. The two observed production commits differed only in documentation, though a deployment transition may have occurred during the replay. This completes the bounded same-code technical source-pair check, not the human, contractual, or UH governance gates.
+
 The [2026 Marketplace platform parity check](./evaluation/2026-10-01-marketplace-platforms.md) found and corrected Illinois routing: CMS lists Illinois among the 21 full state exchanges for 2026. The deployed synthetic Illinois handoff check passed in the 30-case live matrix.
 
 ## Synthetic evaluation sequence
