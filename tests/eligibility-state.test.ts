@@ -18,6 +18,7 @@ test("state-marketplace users get a safe official handoff without a federal esti
   assert.equal(result.medicaidEligible, false);
   assert.match(result.headline, /won't guess/i);
   assert.match(result.notes.join(" "), /No eligibility verdict/i);
+  assert.match(result.nextSteps.join(" "), /Follow your state notice for renewal steps/i);
 });
 
 test("unknown state codes fail closed", async () => {
@@ -33,4 +34,5 @@ test("live-data outages degrade to an official state decision path", () => {
   assert.equal(result.state, "OH");
   assert.match(result.headline, /official coverage decision/i);
   assert.match(result.notes.join(" "), /No eligibility verdict/i);
+  assert.match(result.nextSteps.join(" "), /Renewal steps may differ/i);
 });

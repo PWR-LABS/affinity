@@ -10,7 +10,7 @@ Plan year is a safety boundary: the public comparison and exchange map are curre
 
 ## What is available for evaluation
 
-- Public Medicaid application and renewal routes for all 50 states and D.C.
+- Official Medicaid application pages or program portals for all 50 states and D.C.; renewal may require a different state-specific path.
 - Federal Marketplace screening and plan comparison in supported states, with net monthly and annual premium, deductible, out-of-pocket maximum, and Marketplace-reported provider and drug matches.
 - Source labels, uncertainty language, and an instruction to confirm coverage with the insurer and provider before enrollment.
 - A public privacy and data-flow explanation. No accounts or saved household profiles.

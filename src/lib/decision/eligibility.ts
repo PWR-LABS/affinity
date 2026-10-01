@@ -59,7 +59,7 @@ export function officialStateHandoff(state: string, zip: string): EligibilityRes
     inCoverageGap: false,
     headline: `${resource.program} can make the official coverage decision—we won't guess while the live estimate is unavailable.`,
     nextSteps: [
-      `Apply, renew, or check your case through ${resource.program} using the official link below.`,
+      `Start at the official ${resource.program} site for application or account options. Renewal steps may differ.`,
       "If you received a renewal notice, respond by the deadline even if you think the state already has your information.",
     ],
     notes: ["No eligibility verdict or subsidy amount was produced. Your state application checks income and every coverage category that may apply."],
@@ -105,7 +105,7 @@ export async function checkEligibility(input: EligibilityInput): Promise<Eligibi
       inCoverageGap: false,
       headline: `${requestedMarketplace.state} makes its own Medicaid and Marketplace decisions, so we won't guess from federal-only data.`,
       nextSteps: [
-        `Apply or renew through ${stateResource.program} using the official link below.`,
+        `Start at the official ${stateResource.program} site for application or account options. Follow your state notice for renewal steps.`,
         `For private-plan eligibility and subsidies, use ${requestedMarketplace.name}.`,
       ],
       notes: [

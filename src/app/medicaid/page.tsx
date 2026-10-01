@@ -12,7 +12,7 @@ import {
 export const metadata: Metadata = {
   title: "Medicaid changes by state",
   description:
-    "Track Medicaid eligibility changes nationwide, understand the new federal requirements, and go to the right official state office to apply or renew.",
+    "Track Medicaid eligibility changes nationwide, understand the new federal requirements, and find your state's official application or account site. Follow your notice for renewal steps.",
 };
 
 export default function MedicaidPage() {
@@ -79,7 +79,7 @@ export default function MedicaidPage() {
                 </ul>
                 <p className="medicaid-action"><strong>Do now:</strong> {change.action}</p>
                 <div className="medicaid-card-links">
-                  <a href={resource.applyUrl} target="_blank" rel="noreferrer">Apply or renew in {resource.state} ↗</a>
+                  <a href={resource.applyUrl} target="_blank" rel="noreferrer">Open {resource.state} official site ↗</a>
                   {change.sources.map((source) => (
                     <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>{source.label} ↗</a>
                   ))}

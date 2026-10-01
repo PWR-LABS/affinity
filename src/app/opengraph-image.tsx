@@ -29,7 +29,7 @@ export default function OpengraphImage() {
           Medicaid help for every state. No wrong-door handoffs.
         </div>
         <div style={{ display: "flex", fontSize: 30, color: "#6f665a", marginTop: 28, maxWidth: 940 }}>
-          Track rule changes, apply or renew, and find your next coverage step.
+          Track rule changes, find your official state site, and identify your next coverage step.
         </div>
       </div>
     ),

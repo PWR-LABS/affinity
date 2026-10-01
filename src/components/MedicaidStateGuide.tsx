@@ -19,7 +19,7 @@ export function MedicaidStateGuide() {
       <div>
         <p className="medicaid-eyebrow">All 50 states + D.C.</p>
         <h2 id="medicaid-state-guide-title">Go straight to your state&rsquo;s Medicaid office.</h2>
-        <p>Choose where you live for the official application, phone number, and current federal change guide.</p>
+        <p>Choose where you live for the official state site, phone number, and current federal change guide.</p>
       </div>
 
       <div className="field medicaid-state-picker">
@@ -48,7 +48,7 @@ export function MedicaidStateGuide() {
           ) : null}
 
           <div className="medicaid-state-actions">
-            <a className="cta" href={resource.applyUrl} target="_blank" rel="noreferrer">Apply or renew ↗</a>
+            <a className="cta" href={resource.applyUrl} target="_blank" rel="noreferrer">Open official state site ↗</a>
             <a className="medicaid-secondary-action" href={`tel:${resource.phone.replace(/[^\d+]/g, "")}`}>
               Call {resource.phone}
             </a>
@@ -56,6 +56,7 @@ export function MedicaidStateGuide() {
               Eligibility changes ↗
             </a>
           </div>
+          <p className="medicaid-result-renewal">Renewal steps may differ from a new application. Follow the instructions and deadline on your state notice, or call the number above if the path is unclear.</p>
         </div>
       ) : null}
     </section>

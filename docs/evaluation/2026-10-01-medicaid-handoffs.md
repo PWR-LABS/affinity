@@ -17,7 +17,7 @@ California previously linked the "Apply or renew" action to a renewal-focused "K
 - The 14 CMS URL differences need semantic review against the respective state program. No automatic replacement is justified by string mismatch alone.
 - D.C. returned HTTP 403 to the automated probe. The [D.C. Health Link Medicaid page](https://www.dchealthlink.com/individuals/medicaid) was independently readable through a browser source and points to District Direct for application and renewal; automated 403 is not proof of a broken user link. A human click-through is still needed.
 - Alabama, Maine, Montana, and New Jersey failed this machine's direct probe. CMS currently lists those same enrollment URLs. Their real-browser reachability and completion path remain unverified.
-- Human review must confirm that the `Apply or renew` button lands on an appropriate action path for all 51, including portals requiring a login. This audit did not submit forms or create accounts.
+- Human review must confirm that the official-site button lands on an appropriate application or account path for all 51, including portals requiring a login, and that renewal instructions are findable where relevant. This audit did not submit forms or create accounts.
 
 ## Next gate
 

@@ -140,7 +140,7 @@ export function EligibilityCheck() {
           {officialResource ? (
             <div className="verdict-official-actions" aria-label={`Official ${officialResource.state} resources`}>
               <a className="cta" href={officialResource.applyUrl} target="_blank" rel="noreferrer">
-                Apply or renew with {officialResource.program} ↗
+                Open {officialResource.program} official site ↗
               </a>
               <a href={`tel:${officialResource.phone.replace(/[^\d+]/g, "")}`}>Call {officialResource.phone}</a>
               <a href={medicaidChangeUrl(officialResource.code)} target="_blank" rel="noreferrer">See Medicaid changes ↗</a>

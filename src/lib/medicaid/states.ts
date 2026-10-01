@@ -1,10 +1,11 @@
 /**
- * Official Medicaid application and renewal entry points for the 50 states plus D.C.
+ * Official Medicaid application pages or program portals for the 50 states plus D.C.
  *
  * Source: CMS's state Medicaid contact directory, rechecked 2026-10-01. California's
  * application hub is from DHCS directly because the CMS enrollment link is renewal-focused.
- * These are navigation resources, not encoded eligibility rules: states make final
- * determinations and can change their programs independently.
+ * These are navigation resources, not certified one-click renewal destinations or
+ * encoded eligibility rules. A renewal notice may require a different path; states
+ * make final determinations and can change their programs independently.
  */
 export interface StateMedicaidResource {
   code: string;

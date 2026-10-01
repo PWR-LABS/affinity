@@ -1242,6 +1242,7 @@ body {
 .medicaid-result-label { color: var(--accent) !important; font-size: 0.7rem !important; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
 .medicaid-state-alert { margin: 0.9rem 0 0; padding: 0.65rem 0.75rem; border-radius: 6px; background: color-mix(in srgb, var(--warn) 8%, var(--surface)); font-size: 0.85rem; }
 .medicaid-state-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem 1rem; margin-top: 1rem; }
+.medicaid-result-renewal { margin: 0.75rem 0 0; color: var(--muted); font-size: 0.84rem; line-height: 1.5; }
 .medicaid-secondary-action { color: var(--accent); font-size: 0.86rem; font-weight: 600; text-decoration: none; }
 .medicaid-secondary-action:hover { text-decoration: underline; }
 .medicaid-change {
