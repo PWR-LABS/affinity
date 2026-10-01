@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { releaseIdentity } from "@/lib/deploy/release";
 import { MarketplaceClient } from "@/lib/marketplace/client";
 import { prisma } from "@/lib/prisma";
 
@@ -56,9 +57,10 @@ export async function GET(req: Request) {
     {
       status: ok ? "ok" : "degraded",
       service: "affinity",
+      release: releaseIdentity(process.env.RENDER_GIT_COMMIT, process.env.RENDER_GIT_BRANCH),
       checks,
       nodeEnv: process.env.NODE_ENV ?? "unknown",
     },
-    { status: ok ? 200 : 503 },
+    { status: ok ? 200 : 503, headers: { "cache-control": "no-store" } },
   );
 }
