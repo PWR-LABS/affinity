@@ -28,7 +28,7 @@ type SyntheticCase = {
 
 const base = { state: "OH", zip: "44106", income: 25_000, householdSize: 1, age: 30, year: 2026 };
 
-const stateMarketplaceCases: SyntheticCase[] = ["CA", "CO", "DC", "GA", "NY", "WA", "PA", "VA"].map((state) => ({
+const stateMarketplaceCases: SyntheticCase[] = ["CA", "CO", "DC", "GA", "IL", "NY", "WA", "PA"].map((state) => ({
   id: `state-marketplace-${state}`,
   input: { ...base, state, zip: "12345" }, // Valid-format synthetic ZIP; no real address is asserted.
   status: 200,
@@ -47,7 +47,7 @@ const federalCases: SyntheticCase[] = [
   { id: "federal-subsidized", input: { ...base, income: 48_000 }, status: 200, verdict: "marketplace", mock: { aptc: 285, planCount: 3 } },
   { id: "federal-unsubsidized", input: { ...base, state: "FL", zip: "33101", income: 100_000 }, status: 200, verdict: "marketplace", mock: { planCount: 2 } },
   { id: "federal-coverage-gap", input: { ...base, state: "TX", zip: "77002", income: 9_000 }, status: 200, verdict: "coverage_gap", mock: { gap: true, planCount: 2 } },
-  { id: "federal-no-estimate", input: { ...base, state: "IL", zip: "60601" }, status: 200, verdict: "unknown", mock: { planCount: 0 } },
+  { id: "federal-no-estimate", input: { ...base, state: "MI", zip: "48201" }, status: 200, verdict: "unknown", mock: { planCount: 0 } },
   { id: "federal-zip-state-mismatch", input: { ...base }, status: 200, verdict: "unknown", mock: { countyState: "PA" } },
   { id: "federal-county-missing", input: { ...base }, status: 200, verdict: "unknown", mock: { noCounty: true } },
   { id: "federal-upstream-outage", input: { ...base }, status: 200, verdict: "official_handoff", mock: { outage: true } },

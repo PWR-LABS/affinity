@@ -23,6 +23,8 @@ The [October 1 Medicaid handoff audit](./evaluation/2026-10-01-medicaid-handoffs
 
 A separate [five-case live Marketplace source-pair method check](./evaluation/2026-10-01-marketplace-source-pair.md) matched the app's eligibility fields to direct CMS API responses for five synthetic profiles. It does not replace the 30-profile matrix or the per-plan, comprehension, and accessibility checks below.
 
+The [2026 Marketplace platform parity check](./evaluation/2026-10-01-marketplace-platforms.md) found and corrected Illinois routing: CMS lists Illinois among the 21 full state exchanges for 2026. This source-classification correction requires a deployed synthetic Illinois handoff check before it is considered live.
+
 ## Synthetic evaluation sequence
 
 1. Freeze the deployed Git commit, plan year, official source URLs, test date, and expected outputs. Use synthetic profiles only.

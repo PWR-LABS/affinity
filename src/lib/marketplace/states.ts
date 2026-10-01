@@ -6,10 +6,12 @@
  * detect the state up front (from the ZIP's county) and send people to their own marketplace — where
  * their real plans and subsidies live.
  *
- * Scope note: this list is the full-platform SBMs. "SBM-FP" states (state-branded but running ON the
- * federal platform, e.g. Oregon) ARE served by the API, so they're intentionally NOT here. Source: CMS /
- * KFF SBM list, 2026 plan year. Conservative by design — a state we omit just falls back to the generic
- * path (no worse than before); a state we wrongly include would be sent to a real, working exchange.
+ * Plan-year 2026 authority: CMS lists 21 full-platform SBMs and 3 SBM-FP states.
+ * https://www.cms.gov/CCIIO/Resources/Fact-Sheets-and-FAQs/state-marketplaces
+ * SBM-FP states (Arkansas, Oregon, Oklahoma) still use the federal eligibility/enrollment platform
+ * for 2026 and are intentionally absent here. Oregon plans to transition for plan year 2027;
+ * this table must be rechecked before a 2027 flow is enabled. Omitting a full SBM is unsafe:
+ * it can produce a federal estimate where users need their own state's exchange.
  */
 export interface StateMarketplace {
   /** Full state name, for prose. */
@@ -27,6 +29,7 @@ const SBM: Record<string, StateMarketplace> = {
   DC: { state: "Washington, D.C.", name: "DC Health Link", url: "dchealthlink.com" },
   GA: { state: "Georgia", name: "Georgia Access", url: "georgiaaccess.gov" },
   ID: { state: "Idaho", name: "Your Health Idaho", url: "yourhealthidaho.org" },
+  IL: { state: "Illinois", name: "Get Covered Illinois", url: "getcovered.illinois.gov" },
   KY: { state: "Kentucky", name: "kynect", url: "kynect.ky.gov" },
   ME: { state: "Maine", name: "CoverME.gov", url: "coverme.gov" },
   MD: { state: "Maryland", name: "Maryland Health Connection", url: "marylandhealthconnection.gov" },
