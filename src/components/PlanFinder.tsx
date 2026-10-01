@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
 import { SUPPORTED_MARKETPLACE_PLAN_YEAR } from "@/lib/marketplace/states";
@@ -40,6 +40,7 @@ export function PlanFinder() {
   const [error, setError] = useState<string | null>(null);
   const [board, setBoard] = useState<Board | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const inFlight = useRef(false);
 
   const PAGE = 20;
 
@@ -66,7 +67,9 @@ export function PlanFinder() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (inFlight.current) return;
     if (!e.currentTarget.reportValidity()) return;
+    inFlight.current = true;
     setError(null);
     setBoard(null);
     setShowAll(false);
@@ -87,6 +90,7 @@ export function PlanFinder() {
     } catch {
       setError("We couldn't reach the service. Try again.");
     } finally {
+      inFlight.current = false;
       setLoading(false);
     }
   }
@@ -159,16 +163,19 @@ export function PlanFinder() {
         </div>
 
         <div className="form-actions">
-          <button type="submit" className="primary primary-lg" disabled={!hydrated || loading}>
+          <button type="submit" className="primary primary-lg" disabled={!hydrated} aria-disabled={loading}>
             {loading ? "Finding your plans…" : "Find my plans"}
           </button>
         </div>
       </form>
 
+      <p className="sr-only" role="status" aria-atomic="true">
+        {board ? `${board.medicaidEligible ? "You may qualify for Medicaid. " : ""}${board.totalPlans} Marketplace plans in ${board.county ?? "your county"}, ${board.state ?? "your state"} are ready below.` : ""}
+      </p>
       {error && <p className="elig-error" role="alert">{error}</p>}
 
       {board && (
-        <section className="board" aria-live="polite">
+        <section className="board" aria-label="Marketplace plan comparison results">
           {board.medicaidEligible && (
             <div className="demo-banner" style={{ borderColor: "var(--ok)" }}>
               <span aria-hidden>◆</span>
