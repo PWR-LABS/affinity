@@ -8,6 +8,7 @@
  * the final call belongs to the state Medicaid agency and the official Marketplace.
  */
 import { MarketplaceClient } from "@/lib/marketplace/client";
+import { resolveCounty } from "@/lib/marketplace/geography";
 import { stateBasedMarketplace } from "@/lib/marketplace/states";
 import { medicaidResourceByCode } from "@/lib/medicaid/states";
 
@@ -119,8 +120,8 @@ export async function checkEligibility(input: EligibilityInput): Promise<Eligibi
   if (!client.isLive) return officialStateHandoff(requestedState, input.zip);
 
   const counties = await client.countiesByZip(input.zip);
-  const county = counties[0];
-  if (!county) {
+  const countyResolution = resolveCounty(counties, requestedState);
+  if (countyResolution.status === "not_found") {
     return {
       zip: input.zip,
       state: requestedState,
@@ -133,20 +134,31 @@ export async function checkEligibility(input: EligibilityInput): Promise<Eligibi
       notes: [],
     };
   }
-  if (county.state !== requestedState) {
+  if (countyResolution.status === "state_mismatch") {
     return {
       zip: input.zip,
-      county: county.name,
       state: requestedState,
       verdict: "unknown",
       medicaidEligible: false,
       aptcMonthly: 0,
       inCoverageGap: false,
-      headline: `That ZIP appears to be in ${county.state}, not ${requestedState}.`,
+      headline: `That ZIP does not appear to be in ${requestedState}.`,
       nextSteps: ["Choose the state that matches your home address, then check again."],
       notes: ["We stop here rather than use the wrong state's Medicaid rules."],
     };
   }
+  if (countyResolution.status === "ambiguous") {
+    return {
+      ...officialStateHandoff(requestedState, input.zip),
+      headline: "This ZIP spans multiple counties, so we won't choose a Marketplace rating area for you.",
+      nextSteps: [
+        "Use the official Marketplace to confirm your county before comparing plans or savings.",
+        `For Medicaid, start at the official ${stateResource.program} site below. Follow your state notice for renewal steps.`,
+      ],
+      notes: ["The Marketplace returned multiple counties for this ZIP. No eligibility estimate, subsidy amount, or plan count was calculated."],
+    };
+  }
+  const county = countyResolution.county;
 
   const place = { zipcode: input.zip, countyfips: county.fips, state: county.state };
   // Approximate the household with the given size at the applicant's age — income vs. FPL drives the verdict.

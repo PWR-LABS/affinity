@@ -6,6 +6,7 @@
  * Per the API ToS we query live per request and never pull the whole dataset. Server-side only.
  */
 import { MarketplaceClient } from "@/lib/marketplace/client";
+import { resolveCounty } from "@/lib/marketplace/geography";
 import { stateBasedMarketplace, StateNotSupportedError } from "@/lib/marketplace/states";
 import type { MarketplaceDrugCoverage, MarketplacePlan } from "@/lib/marketplace/types";
 import { pickVerifiedCostShare } from "./cost-share";
@@ -72,6 +73,13 @@ export class ZipNotFoundError extends Error {
   }
 }
 
+export class AmbiguousZipError extends Error {
+  constructor() {
+    super("ZIP spans multiple Marketplace rating counties");
+    this.name = "AmbiguousZipError";
+  }
+}
+
 const isCovered = (s?: string): boolean | null => {
   if (!s) return null;
   const v = s.toLowerCase();
@@ -87,8 +95,10 @@ export async function runLivePlans(input: LivePlansInput): Promise<LivePlansResu
   if (!client.isLive) throw new Error("Marketplace API key not configured.");
 
   const counties = await client.countiesByZip(input.zip);
-  const county = counties[0];
-  if (!county) throw new ZipNotFoundError(input.zip);
+  const countyResolution = resolveCounty(counties);
+  if (countyResolution.status === "not_found") throw new ZipNotFoundError(input.zip);
+  if (countyResolution.status !== "unique") throw new AmbiguousZipError();
+  const county = countyResolution.county;
   // State-Based Marketplaces aren't served by the federal API — redirect, don't fail opaquely.
   const sbm = stateBasedMarketplace(county.state);
   if (sbm) throw new StateNotSupportedError(sbm);

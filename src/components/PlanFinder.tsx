@@ -38,6 +38,7 @@ export function PlanFinder() {
   const [drugs, setDrugs] = useState<Array<{ rxcui: string; label: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [countyHandoff, setCountyHandoff] = useState(false);
   const [board, setBoard] = useState<Board | null>(null);
   const [showAll, setShowAll] = useState(false);
   const inFlight = useRef(false);
@@ -71,6 +72,7 @@ export function PlanFinder() {
     if (!e.currentTarget.reportValidity()) return;
     inFlight.current = true;
     setError(null);
+    setCountyHandoff(false);
     setBoard(null);
     setShowAll(false);
     setLoading(true);
@@ -85,7 +87,10 @@ export function PlanFinder() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) setError(data.error ?? "Something went wrong.");
+      if (!res.ok) {
+        setError(data.error ?? "Something went wrong.");
+        setCountyHandoff(data.code === "county_ambiguous");
+      }
       else setBoard(data as Board);
     } catch {
       setError("We couldn't reach the service. Try again.");
@@ -172,7 +177,7 @@ export function PlanFinder() {
       <p className="sr-only" role="status" aria-atomic="true">
         {board ? `${board.medicaidEligible ? "You may qualify for Medicaid. " : ""}${board.totalPlans} Marketplace plans in ${board.county ?? "your county"}, ${board.state ?? "your state"} are ready below.` : ""}
       </p>
-      {error && <p className="elig-error" role="alert">{error}</p>}
+      {error && <p className="elig-error" role="alert">{error}{countyHandoff ? <> <a href="https://www.healthcare.gov/see-plans/" target="_blank" rel="noreferrer">Choose your county on HealthCare.gov ↗</a></> : null}</p>}
 
       {board && (
         <section className="board" aria-label="Marketplace plan comparison results">

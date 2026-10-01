@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { runLivePlans, ZipNotFoundError } from "@/lib/decision/live";
+import { AmbiguousZipError, runLivePlans, ZipNotFoundError } from "@/lib/decision/live";
 import { MarketplaceApiError } from "@/lib/marketplace/client";
 import { StateNotSupportedError, SUPPORTED_MARKETPLACE_PLAN_YEAR } from "@/lib/marketplace/states";
 
@@ -50,6 +50,9 @@ export async function POST(req: Request) {
   } catch (err) {
     if (err instanceof ZipNotFoundError) {
       return NextResponse.json({ error: "We couldn't find a county for that ZIP. Double-check your ZIP code." }, { status: 400 });
+    }
+    if (err instanceof AmbiguousZipError) {
+      return NextResponse.json({ code: "county_ambiguous", error: "This ZIP spans multiple counties. Use the official Marketplace to confirm your county before comparing plans." }, { status: 409 });
     }
     if (err instanceof StateNotSupportedError) {
       const m = err.marketplace;

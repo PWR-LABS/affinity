@@ -127,7 +127,7 @@ async function evaluate(item: Case): Promise<Json> {
     if (!county || typeof county.fips !== "string" || typeof county.state !== "string") throw new Error("cms_county_unresolved");
     if (item.basis === "direct_cms_geography") {
       if (county.state === item.input.state) throw new Error("geography_fixture_no_longer_mismatches");
-      source = { state: item.input.state, county: county.name, verdict: "unknown", medicaidEligible: false, aptcMonthly: 0, inCoverageGap: false, planCount: null, cheapestPremiumMonthly: null, cmsCountyState: county.state };
+      source = { state: item.input.state, county: null, verdict: "unknown", medicaidEligible: false, aptcMonthly: 0, inCoverageGap: false, planCount: null, cheapestPremiumMonthly: null, cmsCountyState: county.state };
       differences = compare({ state: source.state, county: source.county, verdict: source.verdict, medicaidEligible: false, aptcMonthly: 0, inCoverageGap: false, planCount: null, cheapestPremiumMonthly: null }, observed);
     } else {
       if (county.state !== item.input.state) throw new Error("cms_county_state_mismatch");
