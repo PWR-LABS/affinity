@@ -7,7 +7,8 @@
  */
 import { MarketplaceClient } from "@/lib/marketplace/client";
 import { stateBasedMarketplace, StateNotSupportedError } from "@/lib/marketplace/states";
-import type { MarketplaceCostShare, MarketplaceDrugCoverage, MarketplacePlan } from "@/lib/marketplace/types";
+import type { MarketplaceDrugCoverage, MarketplacePlan } from "@/lib/marketplace/types";
+import { pickVerifiedCostShare } from "./cost-share";
 import { premiumAmounts } from "./premium";
 
 export interface LivePlansInput {
@@ -78,22 +79,6 @@ const isCovered = (s?: string): boolean | null => {
   if (v.includes("covered")) return true;
   return null;
 };
-
-/**
- * Pick the per-person in-network combined deductible/OOP-max amount from the API's variant list.
- * The API already returns the household's income-appropriate CSR variant, so we just choose the right
- * scope: prefer Individual (per-person) over Family so a single filer never sees the larger family number,
- * and the combined medical+drug entry over a medical-only one.
- */
-function pickCostShare(items?: MarketplaceCostShare[]): number | undefined {
-  if (!items?.length) return undefined;
-  const inNet = items.filter((d) => (d.network_tier ?? "In-Network") === "In-Network");
-  const individual = inNet.filter((d) => (d.family_cost ?? "Individual") === "Individual");
-  const pool = individual.length ? individual : inNet;
-  const combined = pool.find((d) => /combined|medical and drug/i.test(d.type ?? ""));
-  const pick = combined ?? pool.find((d) => typeof d.amount === "number") ?? items[0];
-  return typeof pick?.amount === "number" ? pick.amount : undefined;
-}
 
 export async function runLivePlans(input: LivePlansInput): Promise<LivePlansResult> {
   // A user's provider/drug selections can shape GET coverage URLs. Never persist these responses
@@ -170,8 +155,8 @@ export async function runLivePlans(input: LivePlansInput): Promise<LivePlansResu
       premiumMonthly: premium.grossMonthly,
       netPremiumMonthly: premium.netMonthly,
       netPremiumAnnual: premium.netAnnual,
-      deductible: pickCostShare(p.deductibles),
-      oopMax: pickCostShare(p.moops),
+      deductible: pickVerifiedCostShare(p.deductibles),
+      oopMax: pickVerifiedCostShare(p.moops),
       docs: { sbc: p.benefits_url, brochure: p.brochure_url, formulary: p.formulary_url, network: p.network_url },
       doctorsCovered,
       doctorsTotal: doctors.length,

@@ -193,7 +193,8 @@ export function PlanFinder() {
           <p className="board-cost-note">
             Annual premium below is 12 months of the estimated net premium. It excludes the cost of care,
             so it is not a total annual-cost forecast. The in-network out-of-pocket maximum excludes premiums,
-            non-covered services, and out-of-network care. <a href="https://www.healthcare.gov/choose-a-plan/your-total-costs/" target="_blank" rel="noopener noreferrer">How to compare total costs ↗</a>
+            non-covered services, and out-of-network care. A dash for deductible or out-of-pocket maximum means
+            the Marketplace did not give an unambiguous in-network individual combined amount. <a href="https://www.healthcare.gov/choose-a-plan/your-total-costs/" target="_blank" rel="noopener noreferrer">How to compare total costs ↗</a>
           </p>
 
           <div className="board-rows">

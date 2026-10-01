@@ -41,15 +41,20 @@ async function official(path: string, method: "GET" | "POST", body?: Json): Prom
 function costShare(items: unknown): Json {
   if (!Array.isArray(items) || items.length === 0) return { amount: null, selected: null, candidateCount: 0 };
   const all = items.filter((item): item is CostShare => Boolean(item && typeof item === "object" && !Array.isArray(item)));
-  const inNetwork = all.filter((item) => (item.network_tier ?? "In-Network") === "In-Network");
-  const individual = inNetwork.filter((item) => (item.family_cost ?? "Individual") === "Individual");
-  const pool = individual.length ? individual : inNetwork;
-  const combined = pool.find((item) => /combined|medical and drug/i.test(String(item.type ?? "")));
-  const selected = combined ?? pool.find((item) => typeof item.amount === "number") ?? all[0];
+  const eligible = all.filter((item) =>
+    typeof item.network_tier === "string" && item.network_tier.trim().toLowerCase() === "in-network" &&
+    typeof item.family_cost === "string" && item.family_cost.trim().toLowerCase() === "individual" &&
+    typeof item.type === "string" && /combined|medical and drug/i.test(item.type) &&
+    typeof item.amount === "number" && Number.isFinite(item.amount) && item.amount >= 0,
+  );
+  const distinctAmounts = [...new Set(eligible.map((item) => item.amount))];
+  const selected = distinctAmounts.length === 1 ? eligible[0] : undefined;
   return {
     amount: typeof selected?.amount === "number" ? selected.amount : null,
     selected: selected ? { type: selected.type ?? null, csr: selected.csr ?? null, networkTier: selected.network_tier ?? null, familyCost: selected.family_cost ?? null } : null,
     candidateCount: all.length,
+    eligibleCount: eligible.length,
+    distinctEligibleAmounts: distinctAmounts.length,
   };
 }
 

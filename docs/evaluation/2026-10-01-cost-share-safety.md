@@ -1,0 +1,7 @@
+# [affinity.] cost-share ambiguity guard — October 1, 2026
+
+The live plan board previously preferred an in-network individual cost-share entry but could fall back to a family or out-of-network amount when no preferred entry existed. It also took the first amount when multiple variants were present. Because the board labels the out-of-pocket maximum as in-network, these fallbacks could create a misleading figure. This is a demonstrated **code-path risk**, not a mismatch observed in the [20 sampled live source rows](./2026-10-01-plan-board-source-pair.md): those rows each had one explicit `In-Network` / `Individual` combined medical-and-drug source entry.
+
+The selection now returns a number only when the source explicitly identifies an in-network, individual, combined medical-and-drug amount and every eligible variant agrees on the amount. Family-only, out-of-network-only, missing scope/type, malformed, medical-only, and conflicting-variant records return unknown. The UI renders a dash and explains what that means; it does not turn missing data into $0. The fixture tests exercise those branches. A live replay of the two-profile sample is still required after the new deploy, and more varied source records would be needed to validate actual CSR variant selection.
+
+This guard changes only the presentation of cost-share fields. It does not verify issuer accuracy, total annual care cost, or coverage status. A displayed figure remains a source report to confirm with the plan before enrollment.

@@ -44,6 +44,7 @@ The [2026 Marketplace platform parity check](./evaluation/2026-10-01-marketplace
 
 - **Route safety:** every tested state handoff points to the intended official service; no synthetic unsupported-state or multi-person case receives a fabricated federal estimate.
 - **Claim safety:** zero displayed guarantees of provider participation, formulary coverage, eligibility, or full annual care cost. Unknown data remain visibly unknown.
+- **Cost-share scope:** an in-network individual deductible or out-of-pocket figure must have explicit combined medical-and-drug source scope and an unambiguous amount. Otherwise show unknown, not a family, out-of-network, or first-listed variant. See the [cost-share guard](./evaluation/2026-10-01-cost-share-safety.md).
 - **Privacy:** no participant or patient data; no health/income/search terms in [affinity.] request URLs; no intentional storage of submitted household profiles or request bodies.
 - **Reliability:** the exact evaluated deploy is live, the deep health check passes, and errors are triaged. Any incorrect official handoff, sensitive-data exposure, or reproducible misleading coverage claim pauses the evaluation until fixed and replayed.
 - **Evidence reporting:** publish denominators and per-case results. Do not turn a test pass into a claim of improved enrollment, cost savings, network accuracy, or clinical outcome.
