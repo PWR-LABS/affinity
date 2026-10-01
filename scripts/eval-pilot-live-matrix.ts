@@ -16,7 +16,7 @@ const CMS_EXCHANGES = "https://www.cms.gov/CCIIO/Resources/Fact-Sheets-and-FAQs/
 
 type Json = Record<string, unknown>;
 type Input = { state: string; zip: string; income: number | string; age: number | string; householdSize: number; year: number };
-type Basis = "direct_cms_full" | "direct_cms_geography" | "cms_2026_exchange_list" | "safety_contract" | "validation_contract";
+type Basis = "direct_cms_full" | "direct_cms_geography" | "direct_cms_ambiguous" | "cms_2026_exchange_list" | "safety_contract" | "validation_contract";
 type Case = { id: string; basis: Basis; input: Input; expectedName?: string; expectedStatus?: number; expectedError?: RegExp };
 
 const single = (state: string, zip: string, income: number, age: number): Input =>
@@ -34,7 +34,7 @@ const CASES: readonly Case[] = [
   { id: "wi-high", basis: "direct_cms_full", input: single("WI", "53703", 100_000, 60) },
   { id: "ar-federal-platform", basis: "direct_cms_full", input: single("AR", "72201", 45_000, 40) },
   { id: "or-federal-platform", basis: "direct_cms_full", input: single("OR", "97204", 45_000, 40) },
-  { id: "ok-federal-platform", basis: "direct_cms_full", input: single("OK", "73102", 45_000, 40) },
+  { id: "ok-multi-county", basis: "direct_cms_ambiguous", input: single("OK", "73102", 45_000, 40) },
   { id: "oh-zip-in-fl", basis: "direct_cms_geography", input: single("OH", "33101", 45_000, 40) },
   { id: "fl-zip-in-oh", basis: "direct_cms_geography", input: single("FL", "44106", 45_000, 40) },
   { id: "ca-exchange", basis: "cms_2026_exchange_list", input: single("CA", "90012", 45_000, 40), expectedName: "Covered California" },
@@ -129,6 +129,13 @@ async function evaluate(item: Case): Promise<Json> {
       if (county.state === item.input.state) throw new Error("geography_fixture_no_longer_mismatches");
       source = { state: item.input.state, county: null, verdict: "unknown", medicaidEligible: false, aptcMonthly: 0, inCoverageGap: false, planCount: null, cheapestPremiumMonthly: null, cmsCountyState: county.state };
       differences = compare({ state: source.state, county: source.county, verdict: source.verdict, medicaidEligible: false, aptcMonthly: 0, inCoverageGap: false, planCount: null, cheapestPremiumMonthly: null }, observed);
+    } else if (item.basis === "direct_cms_ambiguous") {
+      const distinct = [...new Set(counties.filter((candidate) => candidate.state === item.input.state).map((candidate) => candidate.fips))];
+      if (distinct.length < 2) throw new Error("geography_fixture_no_longer_ambiguous");
+      source = { state: item.input.state, candidateCount: distinct.length, countyFips: distinct,
+        verdict: "official_handoff", county: null, medicaidEligible: false, aptcMonthly: 0, inCoverageGap: false, planCount: null, cheapestPremiumMonthly: null };
+      differences = compare({ state: source.state, county: null, verdict: source.verdict, medicaidEligible: false, aptcMonthly: 0, inCoverageGap: false, planCount: null, cheapestPremiumMonthly: null }, observed);
+      if (!/multiple counties/i.test(String(app.headline))) differences.push("ambiguityHeadline");
     } else {
       if (county.state !== item.input.state) throw new Error("cms_county_state_mismatch");
       const place = { zipcode: item.input.zip, countyfips: county.fips, state: county.state };
@@ -171,7 +178,7 @@ async function main(): Promise<void> {
       cases.push(result);
       console.log(`${(result.differences as string[]).length ? "DIFF" : "PASS"} ${item.id}`);
     } catch (error) {
-      const category = error instanceof Error && /^(cms|app)_http_\d{3}$|^cms_(county_unresolved|county_state_mismatch|estimate_missing)$|^geography_fixture_no_longer_mismatches$/.test(error.message)
+      const category = error instanceof Error && /^(cms|app)_http_\d{3}$|^cms_(county_unresolved|county_state_mismatch|estimate_missing)$|^geography_fixture_no_longer_(mismatches|ambiguous)$/.test(error.message)
         ? error.message
         : error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")
           ? "source_timeout"
@@ -190,7 +197,7 @@ async function main(): Promise<void> {
     sources: { cmsApi: "https://developer.cms.gov/marketplace-api/api-spec", exchangeClassification: CMS_EXCHANGES },
     scope: "30 synthetic live eligibility requests; evidence bases differ by case; not plan-board, enrollment, independent coverage truth, human-use, or accessibility validation",
     counts: { planned: CASES.length, evaluated: paired.length, mismatched: mismatched.length, unavailable: CASES.length - paired.length,
-      byBasis: Object.fromEntries((["direct_cms_full", "direct_cms_geography", "cms_2026_exchange_list", "safety_contract", "validation_contract"] as Basis[]).map((basis) => [basis, { planned: CASES.filter((row) => row.basis === basis).length, evaluated: paired.filter((row) => row.basis === basis).length, mismatched: mismatched.filter((row) => row.basis === basis).length }])) },
+      byBasis: Object.fromEntries((["direct_cms_full", "direct_cms_geography", "direct_cms_ambiguous", "cms_2026_exchange_list", "safety_contract", "validation_contract"] as Basis[]).map((basis) => [basis, { planned: CASES.filter((row) => row.basis === basis).length, evaluated: paired.filter((row) => row.basis === basis).length, mismatched: mismatched.filter((row) => row.basis === basis).length }])) },
     cases,
   };
   const json = `${JSON.stringify(report, null, 2)}\n`;
