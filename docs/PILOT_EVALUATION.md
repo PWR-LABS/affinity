@@ -6,6 +6,8 @@ Status: proposed, non-confidential. This document is a reproducible evaluation p
 
 Evaluate whether an adult who may be leaving Medicaid can identify the correct official next step and interpret a federal Marketplace plan comparison without mistaking source-reported coverage or annualized premium for a guarantee. Keep the initial test to synthetic, one-person 2026 profiles. Do not enter UH or patient records.
 
+Plan year is a safety boundary: the public comparison and exchange map are currently certified for **2026 only**. Eligibility, plan-search, and provider-lookup APIs reject other years. A 2027 evaluation must first refresh exchange classifications (including Oregon's planned transition), source figures, links, and tests rather than reuse the 2026 routing table.
+
 ## What is available for evaluation
 
 - Public Medicaid application and renewal routes for all 50 states and D.C.

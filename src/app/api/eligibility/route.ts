@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { checkEligibility, multiPersonHouseholdHandoff, officialStateHandoff } from "@/lib/decision/eligibility";
 import { MarketplaceApiError } from "@/lib/marketplace/client";
+import { SUPPORTED_MARKETPLACE_PLAN_YEAR } from "@/lib/marketplace/states";
 import { medicaidResourceByCode } from "@/lib/medicaid/states";
 
 export const dynamic = "force-dynamic";
@@ -24,10 +25,11 @@ export async function POST(req: Request) {
   const income = Number(b.income);
   const householdSize = Number(b.householdSize ?? 1);
   const age = Number(b.age);
-  const year = Number(b.year ?? 2026);
+  const year = Number(b.year ?? SUPPORTED_MARKETPLACE_PLAN_YEAR);
   const missing = (value: unknown) => value == null || (typeof value === "string" && value.trim() === "");
 
   if (!medicaidResourceByCode(state)) return NextResponse.json({ error: "Select your state." }, { status: 400 });
+  if (year !== SUPPORTED_MARKETPLACE_PLAN_YEAR) return NextResponse.json({ error: `This comparison currently supports ${SUPPORTED_MARKETPLACE_PLAN_YEAR} only.` }, { status: 400 });
   if (!/^\d{5}$/.test(zip)) return NextResponse.json({ error: "Enter a valid 5-digit ZIP code." }, { status: 400 });
   if (missing(b.income) || !Number.isFinite(income) || income < 0) return NextResponse.json({ error: "Enter your annual income." }, { status: 400 });
   if (missing(b.age) || !Number.isInteger(age) || age < 0 || age > 120) return NextResponse.json({ error: "Enter a valid age." }, { status: 400 });

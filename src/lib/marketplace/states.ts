@@ -22,6 +22,9 @@ export interface StateMarketplace {
   url: string;
 }
 
+/** Exchange routing and the public comparison are currently certified for this plan year only. */
+export const SUPPORTED_MARKETPLACE_PLAN_YEAR = 2026;
+
 const SBM: Record<string, StateMarketplace> = {
   CA: { state: "California", name: "Covered California", url: "coveredca.com" },
   CO: { state: "Colorado", name: "Connect for Health Colorado", url: "connectforhealthco.com" },

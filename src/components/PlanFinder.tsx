@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
+import { SUPPORTED_MARKETPLACE_PLAN_YEAR } from "@/lib/marketplace/states";
 
 interface SubjectStatus { key: string; label?: string; covered: boolean | null; priorAuth?: boolean }
 interface PlanRow {
@@ -75,7 +76,7 @@ export function PlanFinder() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          zip: zip.trim(), income: Number(income), age: Number(age), householdSize: Number(householdSize), year: 2026,
+          zip: zip.trim(), income: Number(income), age: Number(age), householdSize: Number(householdSize), year: SUPPORTED_MARKETPLACE_PLAN_YEAR,
           doctors: doctors.map((d) => ({ npi: d.npi, label: d.label })),
           drugs: drugs.map((d) => ({ rxcui: d.rxcui, label: d.label })),
         }),

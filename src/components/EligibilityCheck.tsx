@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { medicaidChangeUrl, medicaidResourceByCode, STATE_MEDICAID_RESOURCES } from "@/lib/medicaid/states";
-import { stateBasedMarketplace } from "@/lib/marketplace/states";
+import { stateBasedMarketplace, SUPPORTED_MARKETPLACE_PLAN_YEAR } from "@/lib/marketplace/states";
 
 interface Result {
   county?: string;
@@ -54,7 +54,7 @@ export function EligibilityCheck() {
           income: Number(income),
           householdSize: Number(householdSize),
           age: Number(age),
-          year: 2026,
+          year: SUPPORTED_MARKETPLACE_PLAN_YEAR,
         }),
       });
       const data = await res.json();
