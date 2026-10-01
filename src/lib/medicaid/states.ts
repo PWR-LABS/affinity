@@ -16,7 +16,7 @@ export interface StateMedicaidResource {
 }
 
 export const STATE_MEDICAID_RESOURCES: readonly StateMedicaidResource[] = [
-  { code: "AL", state: "Alabama", program: "Alabama Medicaid", applyUrl: "https://medicaid.alabama.gov/content/3.0_Apply/", phone: "334-242-5000" },
+  { code: "AL", state: "Alabama", program: "Alabama Medicaid", applyUrl: "https://medicaid.alabama.gov/content/3.0_Apply/", phone: "800-362-1504" },
   { code: "AK", state: "Alaska", program: "Alaska Medicaid", applyUrl: "https://www.medicaidalaska.com/portals/wps/portal/enterprise/memberpublic/", phone: "800-478-7778" },
   { code: "AZ", state: "Arizona", program: "Arizona Health Care Cost Containment System (AHCCCS)", applyUrl: "https://azahcccs.gov/Members/GetCovered/apply.html", phone: "800-654-8713" },
   { code: "AR", state: "Arkansas", program: "Arkansas Medicaid", applyUrl: "https://humanservices.arkansas.gov/apply-for-services/", phone: "800-482-8988" },
@@ -24,7 +24,7 @@ export const STATE_MEDICAID_RESOURCES: readonly StateMedicaidResource[] = [
   { code: "CO", state: "Colorado", program: "Health First Colorado", applyUrl: "https://www.healthfirstcolorado.com/apply-now/", phone: "800-221-3943" },
   { code: "CT", state: "Connecticut", program: "HUSKY Health", applyUrl: "https://portal.ct.gov/DSS/Common-Elements/How-to-Apply-for-Services/How-to-Apply-for-Services", phone: "855-805-4325" },
   { code: "DE", state: "Delaware", program: "Delaware Medicaid & Medical Assistance", applyUrl: "https://assist.dhss.delaware.gov/", phone: "866-843-7212" },
-  { code: "DC", state: "District of Columbia", program: "DC Medicaid", applyUrl: "https://www.dchealthlink.com/individuals/medicaid", phone: "855-532-5465" },
+  { code: "DC", state: "District of Columbia", program: "DC Medicaid", applyUrl: "https://www.dchealthlink.com/individuals/medicaid", phone: "202-727-5355" },
   { code: "FL", state: "Florida", program: "Florida Medicaid", applyUrl: "https://www.myflfamilies.com/services/public-assistance", phone: "888-419-3456" },
   { code: "GA", state: "Georgia", program: "Georgia Medicaid", applyUrl: "https://medicaid.georgia.gov/how-apply", phone: "877-423-4746" },
   { code: "HI", state: "Hawaii", program: "Hawaii Med-QUEST", applyUrl: "https://medical.mybenefits.hawaii.gov/web/kolea/home-page", phone: "800-316-8005" },
