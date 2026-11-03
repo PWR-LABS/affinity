@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-11-03T18:02:05.270Z",
+  "completedAt": "2026-11-03T18:02:15.438Z",
+  "targetYear": 2027,
+  "sourceCommit": "d2ec33ede083a548670e0fecce7f16b48d786a94",
+  "harnessSha256": "dcf151de4b110ae3f691683b611cee0a2f3c4c56b230eaa38e838d5ab67f120d",
+  "sourceApi": "https://marketplace.api.healthcare.gov/api/v1",
+  "app": "https://affinity.pwr-labs.ai",
+  "scope": "Six synthetic one-person source probes (five 2027, one 2026 control); first page only. Four lookup probes and three deployed 2027 rejection guards. No independent quote/coverage verification or consumer-use certification.",
+  "readiness": "NOT_ENABLED",
+  "production": {
+    "before": {
+      "httpStatus": 200,
+      "healthy": true,
+      "commit": "d2ec33ede083a548670e0fecce7f16b48d786a94",
+      "marketplaceApiOk": true
+    },
+    "after": {
+      "httpStatus": 200,
+      "healthy": true,
+      "commit": "d2ec33ede083a548670e0fecce7f16b48d786a94",
+      "marketplaceApiOk": true
+    },
+    "releaseStable": true,
+    "sourceCommitMatchesRelease": true
+  },
+  "counts": {
+    "plannedProfiles": 6,
+    "availableProfiles": 6,
+    "unavailableProfiles": 0
+  },
+  "profiles": [
+    {
+      "input": {
+        "id": "oh-control-2026",
+        "state": "OH",
+        "zip": "44106",
+        "income": 45000,
+        "age": 50,
+        "year": 2026
+      },
+      "available": true,
+      "geography": {
+        "httpStatus": 200,
+        "uniqueCounty": true,
+        "countyFips": "39035"
+      },
+      "eligibility": {
+        "httpStatus": 200,
+        "expectedFieldsPresent": true
+      },
+      "planSearch": {
+        "httpStatus": 200,
+        "expectedFieldsPresent": true,
+        "sampledRows": 10,
+        "totalPlans": 119,
+        "explicitYearFields": 0,
+        "planDocumentUrlsMentioningRequestedYear": 5
+      }
+    },
+    {
+      "input": {
+        "id": "oh-2027",
+        "state": "OH",
+        "zip": "44106",
+        "income": 45000,
+        "age": 50,
+        "year": 2027
+      },
+      "available": true,
+      "geography": {
+        "httpStatus": 200,
+        "uniqueCounty": true,
+        "countyFips": "39035"
+      },
+      "eligibility": {
+        "httpStatus": 200,
+        "expectedFieldsPresent": true
+      },
+      "planSearch": {
+        "httpStatus": 200,
+        "expectedFieldsPresent": true,
+        "sampledRows": 10,
+        "totalPlans": 132,
+        "explicitYearFields": 0,
+        "planDocumentUrlsMentioningRequestedYear": 3
+      }
+    },
+    {
+      "input": {
+        "id": "fl-2027",
+        "state": "FL",
+        "zip": "33101",
+        "income": 28000,
+        "age": 35,
+        "year": 2027
+      },
+      "available": true,
+      "geography": {
+        "httpStatus": 200,
+        "uniqueCounty": true,
+        "countyFips": "12086"
+      },
+      "eligibility": {
+        "httpStatus": 200,
+        "expectedFieldsPresent": true
+      },
+      "planSearch": {
+        "httpStatus": 200,
+        "expectedFieldsPresent": true,
+        "sampledRows": 10,
+        "totalPlans": 160,
+        "explicitYearFields": 0,
+        "planDocumentUrlsMentioningRequestedYear": 10
+      }
+    },
+    {
+      "input": {
+        "id": "tx-2027",
+        "state": "TX",
+        "zip": "77002",
+        "income": 48000,
+        "age": 45,
+        "year": 2027
+      },
+      "available": true,
+      "geography": {
+        "httpStatus": 200,
+        "uniqueCounty": true,
+        "countyFips": "48201"
+      },
+      "eligibility": {
+        "httpStatus": 200,
+        "expectedFieldsPresent": true
+      },
+      "planSearch": {
+        "httpStatus": 200,
+        "expectedFieldsPresent": true,
+        "sampledRows": 10,
+        "totalPlans": 135,
+        "explicitYearFields": 0,
+        "planDocumentUrlsMentioningRequestedYear": 10
+      }
+    },
+    {
+      "input": {
+        "id": "ar-2027",
+        "state": "AR",
+        "zip": "72201",
+        "income": 35000,
+        "age": 40,
+        "year": 2027
+      },
+      "available": true,
+      "geography": {
+        "httpStatus": 200,
+        "uniqueCounty": true,
+        "countyFips": "05119"
+      },
+      "eligibility": {
+        "httpStatus": 200,
+        "expectedFieldsPresent": true
+      },
+      "planSearch": {
+        "httpStatus": 200,
+        "expectedFieldsPresent": true,
+        "sampledRows": 10,
+        "totalPlans": 35,
+        "explicitYearFields": 0,
+        "planDocumentUrlsMentioningRequestedYear": 10
+      }
+    },
+    {
+      "input": {
+        "id": "ok-2027",
+        "state": "OK",
+        "zip": "73104",
+        "income": 35000,
+        "age": 40,
+        "year": 2027
+      },
+      "available": true,
+      "geography": {
+        "httpStatus": 200,
+        "uniqueCounty": true,
+        "countyFips": "40109"
+      },
+      "eligibility": {
+        "httpStatus": 200,
+        "expectedFieldsPresent": true
+      },
+      "planSearch": {
+        "httpStatus": 200,
+        "expectedFieldsPresent": true,
+        "sampledRows": 10,
+        "totalPlans": 81,
+        "explicitYearFields": 0,
+        "planDocumentUrlsMentioningRequestedYear": 10
+      }
+    }
+  ],
+  "lookups": {
+    "providerAutocomplete": {
+      "httpStatus": 200,
+      "observed": true,
+      "suggestionCount": 10
+    },
+    "drugAutocomplete": {
+      "httpStatus": 200,
+      "observed": true,
+      "suggestionCount": 10,
+      "yearScoped": false
+    },
+    "providerCoverage": {
+      "httpStatus": 200,
+      "observed": true,
+      "rowsReturned": 10,
+      "rowsWithExplicitCoverage": 10
+    },
+    "drugCoverage": {
+      "httpStatus": 200,
+      "observed": true,
+      "rowsReturned": 10,
+      "rowsWithExplicitCoverage": 10
+    }
+  },
+  "guards": [
+    {
+      "path": "/api/eligibility",
+      "httpStatus": 400,
+      "rejectsTargetYear": true
+    },
+    {
+      "path": "/api/plans",
+      "httpStatus": 400,
+      "rejectsTargetYear": true
+    },
+    {
+      "path": "/api/providers/autocomplete",
+      "httpStatus": 400,
+      "rejectsTargetYear": true
+    }
+  ],
+  "observationsComplete": true
+}

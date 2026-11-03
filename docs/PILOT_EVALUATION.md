@@ -8,6 +8,8 @@ Evaluate whether an adult who may be leaving Medicaid can identify the correct o
 
 Plan year is a safety boundary: the public comparison and exchange map are currently certified for **2026 only**. Eligibility, plan-search, and provider-lookup APIs reject other years. A 2027 evaluation must first refresh exchange classifications (including Oregon's planned transition), source figures, links, and tests rather than reuse the 2026 routing table.
 
+The [November 3 readiness audit](PLAN_YEAR_2027_READINESS.md) records bounded 2027 API availability, the CMS 2027 routing classifications, and the changes and acceptance tests needed before enabling that year. It preserves an initial ambiguous-county result and a separate repeat; 2027 remains disabled.
+
 ## What is available for evaluation
 
 - Official Medicaid application pages or program portals for all 50 states and D.C.; renewal may require a different state-specific path.

@@ -4,6 +4,12 @@ Public, chronological record of what shipped. The durable doctrine lives in
 [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md). No personal data appears here — live runs are described against a **demo profile** whose ZIP /
 income / providers / medications are set locally in `.env` and never committed.
 
+## 2027 Marketplace readiness audit (2026-11-03)
+
+- Added a bounded, repeatable source-availability runner with synthetic profiles, reduced evidence, and tests for missing data, ambiguous geography, wrong years, deployment transitions, rejection guards, and secret-safe failures.
+- Recorded five 2027 source probes plus a 2026 control, four lookup probes, and three deployed year-rejection checks. Retained the incomplete first Oklahoma run separately from the repeat.
+- Documented the 51-jurisdiction CMS 2027 routing comparison and implementation/acceptance work in the [readiness audit](docs/PLAN_YEAR_2027_READINESS.md). Public 2027 support remains disabled; this is not quote-accuracy or pilot certification.
+
 ## Synthetic Outside-In evaluation candidate (2026-10-01)
 
 - Added a synthetic-first [evaluation protocol](docs/PILOT_EVALUATION.md) with explicit UH governance, human-use, accessibility, and Marketplace API terms gates. It is not UH pilot authorization or a real-data deployment plan.

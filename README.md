@@ -4,6 +4,7 @@
 
 **Vision:** [`docs/AFFINITY_PRODUCT_VISION.md`](docs/AFFINITY_PRODUCT_VISION.md) · **Doctrine:** [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md) · **Outside-In evaluation:** [`docs/PILOT_EVALUATION.md`](docs/PILOT_EVALUATION.md) · **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 **Claude Code entry:** [`CLAUDE.md`](CLAUDE.md)
+**2027 preparation:** [`docs/PLAN_YEAR_2027_READINESS.md`](docs/PLAN_YEAR_2027_READINESS.md) records the source-availability audit and remaining implementation checks; public comparison remains 2026-only.
 
 **Bucket:** green healthcare/biotech family. Brand accent green `#2d9c4a`.
 
