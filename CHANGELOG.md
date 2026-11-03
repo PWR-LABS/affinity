@@ -4,6 +4,12 @@ Public, chronological record of what shipped. The durable doctrine lives in
 [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md). No personal data appears here — live runs are described against a **demo profile** whose ZIP /
 income / providers / medications are set locally in `.env` and never committed.
 
+## Updater review fixes (unreleased, 2026-11-03)
+
+- Isolated fixed historical routing/transport expectations from the generated catalog. Added real-catalog validation and a full-bundle synthetic transition check so legitimate later years, platform/URL changes and retired years pass while incomplete data still fail.
+- Made deployed source-pair checks follow direct CMS state metadata when a profile moves to its own exchange, with separate handoff and federal-quote counts.
+- Added meaningful link destinations to policy-source fingerprints. Versioned the comparison format and report legacy baselines as requiring migration; no observation or format upgrade renews a policy review.
+
 ## Freshness updater and 2027 support (live, 2026-11-03)
 
 - Merged PR #3 after operator approval and verified its exact responding production commit, deep Marketplace health, current receipt and 2027 default. The daily workflow is active; its first manually dispatched cloud run passed both jobs and deployed source-pair checks. See the [activation record](docs/evaluation/2026-11-03-updater-activation.md).
