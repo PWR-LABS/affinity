@@ -48,4 +48,6 @@ npm run build
 
 The fixture-only unit/preflight commands freeze their clock to the catalog's observation time. That makes historical fixture tests deterministic without weakening production expiry checks; live refresh and browser checks use the real clock. Tests cover future-year discovery, incomplete/unknown sources, empty successful responses, ambiguous counties, secret-safe failures, next-year deferral, receipt renewal, expiry handoffs, publication scope and deployment readback.
 
+The initial [verification record](evaluation/2026-11-03-freshness-updater.md) retains source-check dates, the catalog hash, unresolved observations, test results and the pending activation boundary.
+
 There is no new paid server or database in this design. The schedule consumes API requests, GitHub runner time and occasional Render builds; costs depend on the account's allowances and usage. Routine price retrieval already happens per request, so prices are not copied into a yearly database.
