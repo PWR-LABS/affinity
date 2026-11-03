@@ -1,5 +1,10 @@
 # [affinity.] — build log / changelog
 
+## Guidance observation migration candidate (2026-11-03)
+
+- Prepared format-2 observation hashes for five available official sources and preserved null hashes for two New York articles returning HTTP 403. A repeat confirmed five matching observations while review remained required.
+- Recorded a [partial source-to-claim review](docs/evaluation/2026-11-03-guidance-review.md). The complete policy-review date remains September 28, detailed summaries stay withheld, and issue #4 remains open. This checkpoint does not renew policy approval or claim deployment.
+
 Public, chronological record of what shipped. The durable doctrine lives in
 [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md). No personal data appears here — live runs are described against a **demo profile** whose ZIP /
 income / providers / medications are set locally in `.env` and never committed.

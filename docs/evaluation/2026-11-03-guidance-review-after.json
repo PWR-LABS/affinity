@@ -1,0 +1,61 @@
+{
+  "observedAt": "2026-11-03T22:13:25.231Z",
+  "fingerprintVersion": 2,
+  "baselineVersion": 2,
+  "fingerprint": "e545a160afa4a98f8b23debe1d442a4dfb720b6dc645dc2f3ff6480045ce04a3",
+  "lastPolicyReview": "September 28, 2026",
+  "reviewOverdue": true,
+  "needsReview": true,
+  "records": [
+    {
+      "id": "renewals",
+      "url": "https://www.medicaid.gov/federal-policy-guidance/downloads/smd26001.pdf",
+      "status": "unchanged_observation",
+      "httpStatus": 200,
+      "sha256": "d68dd06836fa5f36a0ec8bc54eb90a552a665a8a809c9ee0c7407dee1f9967ed"
+    },
+    {
+      "id": "community-engagement",
+      "url": "https://www.cms.gov/newsroom/fact-sheets/medicaid-community-engagement-requirement-certain-individuals-interim-final-rule-comment-period-cms",
+      "status": "unchanged_observation",
+      "httpStatus": 200,
+      "sha256": "fb129345ce93dc173da5aade7b179beb1d093bb6c6af02efc0ef75132f36dde6"
+    },
+    {
+      "id": "NY-0",
+      "url": "https://www.health.ny.gov/health_care/medicaid/program/update/2026/no07_2026-06.htm",
+      "status": "http_error",
+      "httpStatus": 403,
+      "sha256": null
+    },
+    {
+      "id": "NY-1",
+      "url": "https://www.health.ny.gov/health_care/medicaid/program/update/2026/no08_2026-07.htm",
+      "status": "http_error",
+      "httpStatus": 403,
+      "sha256": null
+    },
+    {
+      "id": "OH-0",
+      "url": "https://codes.ohio.gov/ohio-revised-code/section-5163.11",
+      "status": "unchanged_observation",
+      "httpStatus": 200,
+      "sha256": "2c33de5e699c03aab9ba4c4ee93ddbf074e064bd7d37c5ad946d1f03fc855473"
+    },
+    {
+      "id": "policy-publication-index",
+      "url": "https://www.medicaid.gov/federal-policy-guidance",
+      "status": "unchanged_observation",
+      "httpStatus": 200,
+      "sha256": "7b8054910e26615568fc4edc4d280630056e11164fc85bd2fae44fbee5ff64bd"
+    },
+    {
+      "id": "state-contact-directory",
+      "url": "https://www.medicaid.gov/about-us/where-can-people-get-help-medicaid-chip",
+      "status": "unchanged_observation",
+      "httpStatus": 200,
+      "sha256": "1e5842c8d64d005ca0da7152b1fe94dcb0063a7e266cd7322fdf36f86986043d"
+    }
+  ],
+  "scope": "Source reachability and normalized-content change detection, including publication discovery. A matching hash or HTTP 200 does not approve a policy statement or application path."
+}

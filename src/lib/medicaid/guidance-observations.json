@@ -1,16 +1,17 @@
 {
-  "observedAt": "2026-11-03T19:27:43.395Z",
+  "observedAt": "2026-11-03T22:13:03.393Z",
+  "fingerprintVersion": 2,
   "policyReviewNotRenewed": true,
   "records": [
     {
       "id": "renewals",
       "url": "https://www.medicaid.gov/federal-policy-guidance/downloads/smd26001.pdf",
-      "sha256": "50f47fe6d3b6a0274fa7e5383c4ed7dfd574ddc478317f0a983853d6edd5bba2"
+      "sha256": "d68dd06836fa5f36a0ec8bc54eb90a552a665a8a809c9ee0c7407dee1f9967ed"
     },
     {
       "id": "community-engagement",
       "url": "https://www.cms.gov/newsroom/fact-sheets/medicaid-community-engagement-requirement-certain-individuals-interim-final-rule-comment-period-cms",
-      "sha256": "921052d7d3a863e16162c28ab81b6b672a20635ee8858302beedb3cea8c40a94"
+      "sha256": "fb129345ce93dc173da5aade7b179beb1d093bb6c6af02efc0ef75132f36dde6"
     },
     {
       "id": "NY-0",
@@ -25,17 +26,17 @@
     {
       "id": "OH-0",
       "url": "https://codes.ohio.gov/ohio-revised-code/section-5163.11",
-      "sha256": "65dc9e3fb12e9118ef786f97b45f8b25bea42785e93d8e7f81aff938376d2419"
+      "sha256": "2c33de5e699c03aab9ba4c4ee93ddbf074e064bd7d37c5ad946d1f03fc855473"
     },
     {
       "id": "policy-publication-index",
       "url": "https://www.medicaid.gov/federal-policy-guidance",
-      "sha256": "d41961345d27f572d6e9b4a6442b7dbc7af3d3f0d2f14fd1dcf39468c4542302"
+      "sha256": "7b8054910e26615568fc4edc4d280630056e11164fc85bd2fae44fbee5ff64bd"
     },
     {
       "id": "state-contact-directory",
       "url": "https://www.medicaid.gov/about-us/where-can-people-get-help-medicaid-chip",
-      "sha256": "34cdda49271bb25db6c4a0c437867817da7a70e84aefa30dbeb4cb1f5229cbd5"
+      "sha256": "1e5842c8d64d005ca0da7152b1fe94dcb0063a7e266cd7322fdf36f86986043d"
     }
   ]
 }

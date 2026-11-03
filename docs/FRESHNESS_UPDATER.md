@@ -10,6 +10,8 @@ The source-pair runners consult direct year-specific CMS state metadata. If a fi
 
 HTML fingerprint format 2 includes normalized main-content text and link destinations, including relative document links and HTML base URLs. Menu/header/footer/script changes remain excluded. Equivalent relative/absolute URLs and encoded query separators normalize consistently. The previous text-only observation baseline is not silently accepted: successful observations against it report `baseline_refresh_required`. This marks a comparison-format migration, not a policy change or a completed review. After reviewing sources and meaning, explicitly establish a format-2 baseline; fetching pages or upgrading the fingerprint never renews the policy review date. This format change does not replace the legacy baseline or close the existing review issue.
 
+The subsequent [November 3 observation migration](evaluation/2026-11-03-guidance-review.md) establishes format-2 hashes for five successfully retrieved sources. Both New York records remain null after HTTP 403 responses. The policy review is explicitly partial: its September 28 date is unchanged, detailed summaries remain withheld, and the existing review issue remains open. The migration checkpoint is prepared separately from production until merged; an unchanged observation is not content approval.
+
 ## Automatic Marketplace updates
 
 The application reads a strictly validated data catalog, not hardcoded year lists or a clock-based year switch. Its year choices, default, state routing and exchange links come from `src/lib/marketplace/catalog-data.json`. The official current year is the default only after its catalog and availability probes pass. Initial direct CMS checks accepted 2026 and 2027 with 2027 current.
