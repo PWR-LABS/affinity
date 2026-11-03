@@ -1,4 +1,5 @@
 /** Source-change detection only. Observation hashes never count as policy review. */
+import { setTimeout as wait } from "node:timers/promises";
 import { createHash } from "node:crypto";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { FEDERAL_MEDICAID_CHANGES, MEDICAID_GUIDANCE_REVIEWED, medicaidGuidanceCurrent } from "@/lib/medicaid/federal";
@@ -6,6 +7,9 @@ import { FEATURED_MEDICAID_CHANGES } from "@/lib/medicaid/states";
 
 const BASELINE = "src/lib/medicaid/guidance-observations.json";
 export const GUIDANCE_FINGERPRINT_VERSION = 2;
+const SOURCE_USER_AGENT = "affinity-source-watch/1.0 (+https://github.com/PWR-LABS/affinity)";
+// Medicaid.gov declares Crawl-delay: 1. Space all source requests conservatively.
+const SOURCE_INTERVAL_MS = 1200;
 export const GUIDANCE_SOURCES = [
   ...FEDERAL_MEDICAID_CHANGES.map((source) => ({ id: source.id, url: source.sourceUrl })),
   ...FEATURED_MEDICAID_CHANGES.flatMap((source) => source.sources.map((link, index) => ({ id: `${source.code}-${index}`, url: link.url }))),
@@ -55,14 +59,16 @@ export function contentFingerprint(bytes: Uint8Array, contentType: string, sourc
   return createHash("sha256").update(`guidance-fingerprint/${GUIDANCE_FINGERPRINT_VERSION}\n`).update(data).digest("hex");
 }
 
-export async function watchGuidance(options: { baseline?: { fingerprintVersion?: number; records: Array<{ id: string; sha256: string | null }> }; fetchImpl?: typeof fetch; now?: number }) {
+export async function watchGuidance(options: { baseline?: { fingerprintVersion?: number; records: Array<{ id: string; sha256: string | null }> }; fetchImpl?: typeof fetch; waitImpl?: (milliseconds: number) => Promise<unknown>; now?: number }) {
   const records = [];
   for (const source of GUIDANCE_SOURCES) {
+    if (records.length) await (options.waitImpl ?? wait)(SOURCE_INTERVAL_MS);
     let sha256: string | null = null;
     let status = "network_unavailable";
     let httpStatus: number | null = null;
     try {
-      const response = await (options.fetchImpl ?? fetch)(source.url, { signal: AbortSignal.timeout(15_000), cache: "no-store", headers: { accept: "text/html,application/pdf" } });
+      const cmsSource = ["www.medicaid.gov", "www.cms.gov"].includes(new URL(source.url).hostname);
+      const response = await (options.fetchImpl ?? fetch)(source.url, { signal: AbortSignal.timeout(15_000), cache: "no-store", headers: { accept: "text/html,application/pdf", ...(cmsSource ? { "user-agent": SOURCE_USER_AGENT } : {}) } });
       httpStatus = response.status;
       status = "http_error";
       if (response.ok) {

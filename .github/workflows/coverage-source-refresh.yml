@@ -25,11 +25,16 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version-file: .node-version
-      - run: node scripts/eval-guidance-transport.cjs
+      - run: npm ci --include=dev
+      - run: npm run test && npm run typecheck
+      - run: npm run watch:guidance
+      - name: Require every reviewed source to match
+        run: node -e 'const r=require("./tmp/guidance-watch-report.json"); if(r.needsReview || r.records.length !== 7 || r.records.some(x => x.status !== "unchanged_observation" || x.httpStatus !== 200)) process.exit(1)'
+
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: guidance-transport-diagnostic
-          path: tmp/guidance-transport.json
+          path: tmp/guidance-watch-report.json
           retention-days: 7
   marketplace-catalog:
     if: github.repository == 'PWR-LABS/affinity' && github.ref == 'refs/heads/main'
