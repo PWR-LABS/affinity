@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { checkEligibility, multiPersonHouseholdHandoff, officialStateHandoff } from "@/lib/decision/eligibility";
 import { MarketplaceApiError } from "@/lib/marketplace/client";
-import { SUPPORTED_MARKETPLACE_PLAN_YEAR } from "@/lib/marketplace/states";
+import { MARKETPLACE_PLAN_YEAR_ERROR, marketplaceCatalogFreshness, parseMarketplacePlanYear } from "@/lib/marketplace/states";
 import { medicaidResourceByCode } from "@/lib/medicaid/states";
 
 export const dynamic = "force-dynamic";
@@ -25,25 +25,31 @@ export async function POST(req: Request) {
   const income = Number(b.income);
   const householdSize = Number(b.householdSize ?? 1);
   const age = Number(b.age);
-  const year = Number(b.year ?? SUPPORTED_MARKETPLACE_PLAN_YEAR);
+  const year = parseMarketplacePlanYear(b.year);
   const missing = (value: unknown) => value == null || (typeof value === "string" && value.trim() === "");
 
   if (!medicaidResourceByCode(state)) return NextResponse.json({ error: "Select your state." }, { status: 400 });
-  if (year !== SUPPORTED_MARKETPLACE_PLAN_YEAR) return NextResponse.json({ error: `This comparison currently supports ${SUPPORTED_MARKETPLACE_PLAN_YEAR} only.` }, { status: 400 });
+  if (year === undefined) return NextResponse.json({ error: MARKETPLACE_PLAN_YEAR_ERROR }, { status: 400 });
   if (!/^\d{5}$/.test(zip)) return NextResponse.json({ error: "Enter a valid 5-digit ZIP code." }, { status: 400 });
   if (missing(b.income) || !Number.isFinite(income) || income < 0) return NextResponse.json({ error: "Enter your annual income." }, { status: 400 });
   if (missing(b.age) || !Number.isInteger(age) || age < 0 || age > 120) return NextResponse.json({ error: "Enter a valid age." }, { status: 400 });
   if (!Number.isInteger(householdSize) || householdSize < 1 || householdSize > 12)
     return NextResponse.json({ error: "Household size must be 1–12." }, { status: 400 });
-  if (householdSize > 1) return NextResponse.json(multiPersonHouseholdHandoff(state, zip));
+  if (marketplaceCatalogFreshness().status !== "current") return NextResponse.json({
+    ...officialStateHandoff(state, zip), year, sourceFreshness: "stale",
+    headline: "Our coverage sources are overdue for a check. Use the official services for current information.",
+    nextSteps: ["Use the official Marketplace or Medicaid directory to find your current state service."],
+    notes: ["No eligibility estimate or subsidy was calculated from an overdue source catalog."],
+  });
+  if (householdSize > 1) return NextResponse.json({ ...multiPersonHouseholdHandoff(state, zip), year });
 
   try {
     const result = await checkEligibility({ state, zip, income, householdSize, age, year });
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, year });
   } catch (err) {
     // MarketplaceApiError messages can contain a ZIP in the request path. Log only a fixed
     // failure category and upstream status, never the request-specific message or body.
     console.error("eligibility check failed:", err instanceof MarketplaceApiError ? `marketplace_${err.status}` : "unexpected");
-    return NextResponse.json(officialStateHandoff(state, zip));
+    return NextResponse.json({ ...officialStateHandoff(state, zip), year });
   }
 }

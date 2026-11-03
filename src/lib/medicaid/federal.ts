@@ -1,5 +1,11 @@
 /** Public guidance only. State Medicaid agencies make individual eligibility decisions. */
 export const MEDICAID_GUIDANCE_REVIEWED = "September 28, 2026";
+/** Review date has day precision; fetching a page does not renew this review. */
+export const MEDICAID_GUIDANCE_REVIEWED_DAY = "2026-09-28";
+export function medicaidGuidanceCurrent(now = Date.now()) {
+  const reviewed = Date.parse(`${MEDICAID_GUIDANCE_REVIEWED_DAY}T00:00:00Z`);
+  return now >= reviewed && now - reviewed < 30 * 24 * 60 * 60 * 1000;
+}
 
 export const FEDERAL_MEDICAID_CHANGES = [
   {

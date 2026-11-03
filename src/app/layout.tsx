@@ -3,8 +3,12 @@ import type { ReactNode } from "react";
 import { Space_Grotesk } from "next/font/google";
 
 import { SiteShell } from "@/components/SiteShell";
+import { marketplaceCatalogFreshness } from "@/lib/marketplace/states";
 
 import "./globals.css";
+
+// Evaluate the receipt on each request, including otherwise static pages.
+export const dynamic = "force-dynamic";
 
 // Display face — the [PWR] LABS canon wordmark typeface. Body copy stays on the clean system stack.
 const spaceGrotesk = Space_Grotesk({
@@ -15,7 +19,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 const DESCRIPTION =
-  "Losing Medicaid? Get a nationwide, state-specific Medicaid handoff, track the 2027 rule changes, and check whether you may qualify for Medicaid or a subsidized Marketplace plan. Free and neutral.";
+  "Losing Medicaid? Get a nationwide, state-specific Medicaid handoff, find current official guidance, and check whether you may qualify for Medicaid or a subsidized Marketplace plan. Free and neutral.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://affinity.pwr-labs.ai"),
@@ -52,7 +56,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={spaceGrotesk.variable}>
       <body>
-        <SiteShell>{children}</SiteShell>
+        <SiteShell freshness={marketplaceCatalogFreshness()}>{children}</SiteShell>
       </body>
     </html>
   );

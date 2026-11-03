@@ -1,0 +1,949 @@
+{
+  "evaluatedAt": "2026-11-03T18:49:24.138Z",
+  "app": "http://127.0.0.1:3217",
+  "planYear": 2027,
+  "targetKind": "local_candidate",
+  "liveCommit": "unverified",
+  "source": "https://developer.cms.gov/marketplace-api/api-spec",
+  "scope": "Two synthetic one-person profiles; only first 10 source plans per profile checked against the selected target; no coverage, documents, or full annual cost validation. liveCommit, if supplied, is a caller assertion, not independently verified deployment identity.",
+  "counts": {
+    "plannedProfiles": 2,
+    "evaluatedProfiles": 2,
+    "unavailableProfiles": 0,
+    "comparedRows": 20,
+    "mismatchedRows": 0,
+    "mismatchedProfiles": 0
+  },
+  "profiles": [
+    {
+      "id": "oh-subsidized",
+      "input": {
+        "id": "oh-subsidized",
+        "zip": "44106",
+        "state": "OH",
+        "income": 45000,
+        "age": 50,
+        "householdSize": 1,
+        "year": 2027
+      },
+      "source": {
+        "county": "Cuyahoga County",
+        "state": "OH",
+        "aptcMonthly": 469,
+        "totalPlans": 132,
+        "firstPagePlans": 10
+      },
+      "observed": {
+        "year": 2027,
+        "county": "Cuyahoga County",
+        "state": "OH",
+        "aptcMonthly": 469,
+        "totalPlans": 132
+      },
+      "profileDifferences": [],
+      "rows": [
+        {
+          "id": "10337OH0010001",
+          "source": {
+            "id": "10337OH0010001",
+            "name": "AmeriHealth Caritas Next Bronze Essential + Three Free PCP Visits + Free 24/7 Preferred Provider PCP/Urgent Virtual Care + No Referrals ",
+            "metal": "Bronze",
+            "grossMonthly": 640,
+            "netMonthly": 171,
+            "netAnnual": 2052,
+            "deductible": 12000,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "10337OH0010001",
+            "name": "AmeriHealth Caritas Next Bronze Essential + Three Free PCP Visits + Free 24/7 Preferred Provider PCP/Urgent Virtual Care + No Referrals ",
+            "metal": "Bronze",
+            "grossMonthly": 640,
+            "netMonthly": 171,
+            "netAnnual": 2052,
+            "deductible": 12000,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "31981OH0010110",
+          "source": {
+            "id": "31981OH0010110",
+            "name": "Bronze Complete Unlimited $0Antidote PCP/UrgentVirtual Visits and 4 $0 Tier-1 PCP Visits Included",
+            "metal": "Bronze",
+            "grossMonthly": 640,
+            "netMonthly": 171,
+            "netAnnual": 2052,
+            "deductible": 8700,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "31981OH0010110",
+            "name": "Bronze Complete Unlimited $0Antidote PCP/UrgentVirtual Visits and 4 $0 Tier-1 PCP Visits Included",
+            "metal": "Bronze",
+            "grossMonthly": 640,
+            "netMonthly": 171,
+            "netAnnual": 2052,
+            "deductible": 8700,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "31981OH0010064",
+          "source": {
+            "id": "31981OH0010064",
+            "name": "BronzeEnhanced Blood Pressure Management Unlimited $0Antidote PCP/UrgentVirtual Visits and $0 Advanced Rx",
+            "metal": "Bronze",
+            "grossMonthly": 642,
+            "netMonthly": 173,
+            "netAnnual": 2076,
+            "deductible": 8700,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "31981OH0010064",
+            "name": "BronzeEnhanced Blood Pressure Management Unlimited $0Antidote PCP/UrgentVirtual Visits and $0 Advanced Rx",
+            "metal": "Bronze",
+            "grossMonthly": 642,
+            "netMonthly": 173,
+            "netAnnual": 2076,
+            "deductible": 8700,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "31981OH0010062",
+          "source": {
+            "id": "31981OH0010062",
+            "name": "BronzeEnhanced Diabetes Unlimited $0Antidote PCP/UrgentVirtual Visits and Select $0 Insulin",
+            "metal": "Bronze",
+            "grossMonthly": 642,
+            "netMonthly": 173,
+            "netAnnual": 2076,
+            "deductible": 8700,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "31981OH0010062",
+            "name": "BronzeEnhanced Diabetes Unlimited $0Antidote PCP/UrgentVirtual Visits and Select $0 Insulin",
+            "metal": "Bronze",
+            "grossMonthly": 642,
+            "netMonthly": 173,
+            "netAnnual": 2076,
+            "deductible": 8700,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "31981OH0010111",
+          "source": {
+            "id": "31981OH0010111",
+            "name": "BronzeComplete+DentalUnlimited $0Antidote PCP/UrgentVirtual Visits and 4 $0 Tier-1 PCP Visits Included",
+            "metal": "Bronze",
+            "grossMonthly": 655,
+            "netMonthly": 186,
+            "netAnnual": 2232,
+            "deductible": 8700,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "31981OH0010111",
+            "name": "BronzeComplete+DentalUnlimited $0Antidote PCP/UrgentVirtual Visits and 4 $0 Tier-1 PCP Visits Included",
+            "metal": "Bronze",
+            "grossMonthly": 655,
+            "netMonthly": 186,
+            "netAnnual": 2232,
+            "deductible": 8700,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "31981OH0010065",
+          "source": {
+            "id": "31981OH0010065",
+            "name": "BronzeEnhanced Blood PressureManagement+DentalUnlimited $0Antidote PCP/UrgentVirtual Visits and $0 Advanced Rx",
+            "metal": "Bronze",
+            "grossMonthly": 657,
+            "netMonthly": 188,
+            "netAnnual": 2256,
+            "deductible": 8700,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "31981OH0010065",
+            "name": "BronzeEnhanced Blood PressureManagement+DentalUnlimited $0Antidote PCP/UrgentVirtual Visits and $0 Advanced Rx",
+            "metal": "Bronze",
+            "grossMonthly": 657,
+            "netMonthly": 188,
+            "netAnnual": 2256,
+            "deductible": 8700,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "31981OH0010063",
+          "source": {
+            "id": "31981OH0010063",
+            "name": "BronzeEnhancedDiabetes+DentalUnlimited $0Antidote PCP/UrgentVirtual Visits and Select $0 Insulin",
+            "metal": "Bronze",
+            "grossMonthly": 658,
+            "netMonthly": 189,
+            "netAnnual": 2268,
+            "deductible": 8700,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "31981OH0010063",
+            "name": "BronzeEnhancedDiabetes+DentalUnlimited $0Antidote PCP/UrgentVirtual Visits and Select $0 Insulin",
+            "metal": "Bronze",
+            "grossMonthly": 658,
+            "netMonthly": 189,
+            "netAnnual": 2268,
+            "deductible": 8700,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "10337OH0010013",
+          "source": {
+            "id": "10337OH0010013",
+            "name": "AmeriHealth Caritas Next Bronze Signature + Free 24/7 Preferred Provider PCP/Urgent Virtual Care +No Referrals ",
+            "metal": "Bronze",
+            "grossMonthly": 695,
+            "netMonthly": 226,
+            "netAnnual": 2712,
+            "deductible": 7500,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "10337OH0010013",
+            "name": "AmeriHealth Caritas Next Bronze Signature + Free 24/7 Preferred Provider PCP/Urgent Virtual Care +No Referrals ",
+            "metal": "Bronze",
+            "grossMonthly": 695,
+            "netMonthly": 226,
+            "netAnnual": 2712,
+            "deductible": 7500,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "29276OH0970001",
+          "source": {
+            "id": "29276OH0970001",
+            "name": "Anthem Bronze Pathway X 11700 HSA ($0 Select Drugs + Incentives)",
+            "metal": "Bronze",
+            "grossMonthly": 697,
+            "netMonthly": 228,
+            "netAnnual": 2736,
+            "deductible": 11700,
+            "oopMax": 11700,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "29276OH0970001",
+            "name": "Anthem Bronze Pathway X 11700 HSA ($0 Select Drugs + Incentives)",
+            "metal": "Bronze",
+            "grossMonthly": 697,
+            "netMonthly": 228,
+            "netAnnual": 2736,
+            "deductible": 11700,
+            "oopMax": 11700
+          },
+          "differences": []
+        },
+        {
+          "id": "31981OH0010210",
+          "source": {
+            "id": "31981OH0010210",
+            "name": "Bronze Elite Unlimited $0Antidote PCP/UrgentVirtual Visits and More $0 Benefits",
+            "metal": "Bronze",
+            "grossMonthly": 701,
+            "netMonthly": 232,
+            "netAnnual": 2784,
+            "deductible": 8000,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "31981OH0010210",
+            "name": "Bronze Elite Unlimited $0Antidote PCP/UrgentVirtual Visits and More $0 Benefits",
+            "metal": "Bronze",
+            "grossMonthly": 701,
+            "netMonthly": 232,
+            "netAnnual": 2784,
+            "deductible": 8000,
+            "oopMax": 12000
+          },
+          "differences": []
+        }
+      ],
+      "checkedAt": "2026-11-03T18:49:20.256Z"
+    },
+    {
+      "id": "wi-no-subsidy",
+      "input": {
+        "id": "wi-no-subsidy",
+        "zip": "53703",
+        "state": "WI",
+        "income": 100000,
+        "age": 60,
+        "householdSize": 1,
+        "year": 2027
+      },
+      "source": {
+        "county": "Dane County",
+        "state": "WI",
+        "aptcMonthly": 0,
+        "totalPlans": 38,
+        "firstPagePlans": 10
+      },
+      "observed": {
+        "year": 2027,
+        "county": "Dane County",
+        "state": "WI",
+        "aptcMonthly": 0,
+        "totalPlans": 38
+      },
+      "profileDifferences": [],
+      "rows": [
+        {
+          "id": "38345WI0080076",
+          "source": {
+            "id": "38345WI0080076",
+            "name": "Dean Focus Bronze Share",
+            "metal": "Bronze",
+            "grossMonthly": 981,
+            "netMonthly": 981,
+            "netAnnual": 11772,
+            "deductible": 8000,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "38345WI0080076",
+            "name": "Dean Focus Bronze Share",
+            "metal": "Bronze",
+            "grossMonthly": 981,
+            "netMonthly": 981,
+            "netAnnual": 11772,
+            "deductible": 8000,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "37833WI0510338",
+          "source": {
+            "id": "37833WI0510338",
+            "name": "QUARTZ ONE ACHIEVE W/UW HEALTH BRONZE $10,800 DED",
+            "metal": "Bronze",
+            "grossMonthly": 1098,
+            "netMonthly": 1098,
+            "netAnnual": 13176,
+            "deductible": 10800,
+            "oopMax": 11800,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "37833WI0510338",
+            "name": "QUARTZ ONE ACHIEVE W/UW HEALTH BRONZE $10,800 DED",
+            "metal": "Bronze",
+            "grossMonthly": 1098,
+            "netMonthly": 1098,
+            "netAnnual": 13176,
+            "deductible": 10800,
+            "oopMax": 11800
+          },
+          "differences": []
+        },
+        {
+          "id": "38345WI0080070",
+          "source": {
+            "id": "38345WI0080070",
+            "name": "Dean Focus Bronze Standard",
+            "metal": "Bronze",
+            "grossMonthly": 1105,
+            "netMonthly": 1105,
+            "netAnnual": 13260,
+            "deductible": 7500,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "38345WI0080070",
+            "name": "Dean Focus Bronze Standard",
+            "metal": "Bronze",
+            "grossMonthly": 1105,
+            "netMonthly": 1105,
+            "netAnnual": 13260,
+            "deductible": 7500,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "37833WI0380338",
+          "source": {
+            "id": "37833WI0380338",
+            "name": "QUARTZ ONE ACHIEVE W/UW HEALTH BRONZE (DENTAL & VISION) $10,800 DED",
+            "metal": "Bronze",
+            "grossMonthly": 1134,
+            "netMonthly": 1134,
+            "netAnnual": 13608,
+            "deductible": 10800,
+            "oopMax": 11800,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "37833WI0380338",
+            "name": "QUARTZ ONE ACHIEVE W/UW HEALTH BRONZE (DENTAL & VISION) $10,800 DED",
+            "metal": "Bronze",
+            "grossMonthly": 1134,
+            "netMonthly": 1134,
+            "netAnnual": 13608,
+            "deductible": 10800,
+            "oopMax": 11800
+          },
+          "differences": []
+        },
+        {
+          "id": "94529WI0240080",
+          "source": {
+            "id": "94529WI0240080",
+            "name": "Better Together HMO Bronze 7500 Ded/12000 MOOP HSA",
+            "metal": "Bronze",
+            "grossMonthly": 1135,
+            "netMonthly": 1135,
+            "netAnnual": 13620,
+            "deductible": 7500,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "94529WI0240080",
+            "name": "Better Together HMO Bronze 7500 Ded/12000 MOOP HSA",
+            "metal": "Bronze",
+            "grossMonthly": 1135,
+            "netMonthly": 1135,
+            "netAnnual": 13620,
+            "deductible": 7500,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "94529WI0240019",
+          "source": {
+            "id": "94529WI0240019",
+            "name": "Better Together HMO Bronze 5250 Ded/10000 MOOP HSA",
+            "metal": "Bronze",
+            "grossMonthly": 1159,
+            "netMonthly": 1159,
+            "netAnnual": 13908,
+            "deductible": 5250,
+            "oopMax": 10000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "94529WI0240019",
+            "name": "Better Together HMO Bronze 5250 Ded/10000 MOOP HSA",
+            "metal": "Bronze",
+            "grossMonthly": 1159,
+            "netMonthly": 1159,
+            "netAnnual": 13908,
+            "deductible": 5250,
+            "oopMax": 10000
+          },
+          "differences": []
+        },
+        {
+          "id": "94529WI0240083",
+          "source": {
+            "id": "94529WI0240083",
+            "name": "Better Together HMO Bronze No Medical Ded/12000 MOOP HSA",
+            "metal": "Bronze",
+            "grossMonthly": 1160,
+            "netMonthly": 1160,
+            "netAnnual": 13920,
+            "deductible": null,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": null,
+                "candidateCount": 2
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "94529WI0240083",
+            "name": "Better Together HMO Bronze No Medical Ded/12000 MOOP HSA",
+            "metal": "Bronze",
+            "grossMonthly": 1160,
+            "netMonthly": 1160,
+            "netAnnual": 13920,
+            "deductible": null,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "37833WI0510205",
+          "source": {
+            "id": "37833WI0510205",
+            "name": "QUARTZ ONE ACHIEVE W/UW HEALTH BRONZE STANDARD EASY PRICING",
+            "metal": "Bronze",
+            "grossMonthly": 1162,
+            "netMonthly": 1162,
+            "netAnnual": 13944,
+            "deductible": 7500,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "37833WI0510205",
+            "name": "QUARTZ ONE ACHIEVE W/UW HEALTH BRONZE STANDARD EASY PRICING",
+            "metal": "Bronze",
+            "grossMonthly": 1162,
+            "netMonthly": 1162,
+            "netAnnual": 13944,
+            "deductible": 7500,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "37833WI0380275",
+          "source": {
+            "id": "37833WI0380275",
+            "name": "QUARTZ ONE ACHIEVE W/UW HEALTH BRONZE (DENTAL & VISION) STANDARD EASY PRICING",
+            "metal": "Bronze",
+            "grossMonthly": 1200,
+            "netMonthly": 1200,
+            "netAnnual": 14400,
+            "deductible": 7500,
+            "oopMax": 12000,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": {
+                  "type": "Combined Medical and Drug EHB Deductible",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "37833WI0380275",
+            "name": "QUARTZ ONE ACHIEVE W/UW HEALTH BRONZE (DENTAL & VISION) STANDARD EASY PRICING",
+            "metal": "Bronze",
+            "grossMonthly": 1200,
+            "netMonthly": 1200,
+            "netAnnual": 14400,
+            "deductible": 7500,
+            "oopMax": 12000
+          },
+          "differences": []
+        },
+        {
+          "id": "37833WI0510204",
+          "source": {
+            "id": "37833WI0510204",
+            "name": "QUARTZ ONE ACHIEVE W/UW HEALTH BRONZE $0 MEDICAL DED",
+            "metal": "Bronze",
+            "grossMonthly": 1250,
+            "netMonthly": 1250,
+            "netAnnual": 15000,
+            "deductible": null,
+            "oopMax": 11500,
+            "sourceCostShareSelection": {
+              "deductible": {
+                "selected": null,
+                "candidateCount": 2
+              },
+              "oopMax": {
+                "selected": {
+                  "type": "Maximum Out of Pocket for Medical and Drug EHB Benefits (Total)",
+                  "csr": "Exchange variant (no CSR)",
+                  "networkTier": "In-Network",
+                  "familyCost": "Individual"
+                },
+                "candidateCount": 1
+              }
+            }
+          },
+          "observed": {
+            "id": "37833WI0510204",
+            "name": "QUARTZ ONE ACHIEVE W/UW HEALTH BRONZE $0 MEDICAL DED",
+            "metal": "Bronze",
+            "grossMonthly": 1250,
+            "netMonthly": 1250,
+            "netAnnual": 15000,
+            "deductible": null,
+            "oopMax": 11500
+          },
+          "differences": []
+        }
+      ],
+      "checkedAt": "2026-11-03T18:49:24.138Z"
+    }
+  ]
+}

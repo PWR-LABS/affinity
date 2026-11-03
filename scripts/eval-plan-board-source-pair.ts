@@ -1,14 +1,17 @@
 /**
- * Bounded direct-CMS versus deployed plan-board comparison for two synthetic
- * one-person 2026 profiles. Check only the first 10 source plans per profile;
+ * Bounded direct-CMS versus a selected plan-board target for two synthetic
+ * one-person profiles. Defaults to production/2026; use AFFINITY_EVAL_APP_URL
+ * and AFFINITY_EVAL_YEAR for an explicit local 2027 candidate check.
+ * Check only the first 10 source plans per profile;
  * do not mirror the source catalog or retain raw responses/keyed URLs.
  */
 import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
+import { parseMarketplacePlanYear } from "@/lib/marketplace/states";
 
-const APP_URL = "https://affinity.pwr-labs.ai";
+const APP_URL = process.env.AFFINITY_EVAL_APP_URL ?? "https://affinity.pwr-labs.ai";
 const CMS_API = "https://marketplace.api.healthcare.gov/api/v1";
-const YEAR = 2026;
+const YEAR = parseMarketplacePlanYear(process.env.AFFINITY_EVAL_YEAR ?? 2026);
 const PROFILES = [
   { id: "oh-subsidized", zip: "44106", state: "OH", income: 45_000, age: 50 },
   { id: "wi-no-subsidy", zip: "53703", state: "WI", income: 100_000, age: 60 },
@@ -103,7 +106,7 @@ async function evaluate(profile: typeof PROFILES[number]): Promise<Json> {
     body: JSON.stringify({ zip: profile.zip, income: profile.income, age: profile.age, householdSize: 1, year: YEAR, doctors: [], drugs: [] }),
   }), "app");
   const geo = await official(`/counties/by/zip/${profile.zip}`, "GET");
-  const county = Array.isArray(geo.counties) ? geo.counties[0] as Json | undefined : undefined;
+  const county = Array.isArray(geo.counties) && geo.counties.length === 1 ? geo.counties[0] as Json | undefined : undefined;
   if (!county || county.state !== profile.state || typeof county.fips !== "string") throw new Error("cms_county_unresolved");
   const household = { income: profile.income, people: [{ age: profile.age }] };
   const place = { zipcode: profile.zip, countyfips: county.fips, state: county.state };
@@ -124,6 +127,7 @@ async function evaluate(profile: typeof PROFILES[number]): Promise<Json> {
   });
   const profileDifferences = [
     ...(app.state === profile.state ? [] : ["state"]),
+    ...(app.year === YEAR ? [] : ["year"]),
     ...(app.county === county.name ? [] : ["county"]),
     ...(app.aptcMonthly === aptc ? [] : ["aptcMonthly"]),
     ...(app.totalPlans === search.total ? [] : ["totalPlans"]),
@@ -133,7 +137,7 @@ async function evaluate(profile: typeof PROFILES[number]): Promise<Json> {
     id: profile.id,
     input: { ...profile, householdSize: 1, year: YEAR },
     source: { county: county.name, state: county.state, aptcMonthly: aptc, totalPlans: search.total, firstPagePlans: sourcePlans.length },
-    observed: { county: app.county, state: app.state, aptcMonthly: app.aptcMonthly, totalPlans: app.totalPlans },
+    observed: { year: app.year, county: app.county, state: app.state, aptcMonthly: app.aptcMonthly, totalPlans: app.totalPlans },
     profileDifferences,
     rows,
     checkedAt: new Date().toISOString(),
@@ -142,6 +146,10 @@ async function evaluate(profile: typeof PROFILES[number]): Promise<Json> {
 
 async function main(): Promise<void> {
   assert.equal(PROFILES.length, 2);
+  if (YEAR === undefined) throw new Error("unsupported_plan_year");
+  const target = new URL(APP_URL);
+  if (target.username || target.password || target.search || target.hash || target.pathname !== "/"
+    || (target.protocol !== "https:" && !(target.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(target.hostname)))) throw new Error("invalid_app_target");
   if (!process.env.MARKETPLACE_API_KEY?.trim()) throw new Error("marketplace_key_unset");
   const outputIndex = process.argv.indexOf("--output");
   if (outputIndex >= 0 && !process.argv[outputIndex + 1]) throw new Error("output_path_missing");
@@ -165,9 +173,10 @@ async function main(): Promise<void> {
   const mismatchedProfiles = evaluated.filter((profile) => (profile.profileDifferences as string[]).length > 0);
   const report = {
     evaluatedAt: new Date().toISOString(), app: APP_URL, planYear: YEAR,
+    targetKind: ["localhost", "127.0.0.1", "[::1]"].includes(target.hostname) ? "local_candidate" : "remote_service",
     liveCommit: process.env.AFFINITY_LIVE_COMMIT ?? "unverified",
     source: "https://developer.cms.gov/marketplace-api/api-spec",
-    scope: "Two synthetic one-person profiles; only first 10 source plans per profile checked against deployed board; no coverage, documents, or full annual cost validation",
+    scope: "Two synthetic one-person profiles; only first 10 source plans per profile checked against the selected target; no coverage, documents, or full annual cost validation. liveCommit, if supplied, is a caller assertion, not independently verified deployment identity.",
     counts: { plannedProfiles: PROFILES.length, evaluatedProfiles: evaluated.length, unavailableProfiles: PROFILES.length - evaluated.length,
       comparedRows: comparedRows.length, mismatchedRows: mismatchedRows.length, mismatchedProfiles: mismatchedProfiles.length },
     profiles,

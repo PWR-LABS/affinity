@@ -4,6 +4,26 @@ Public, chronological record of what shipped. The durable doctrine lives in
 [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md). No personal data appears here — live runs are described against a **demo profile** whose ZIP /
 income / providers / medications are set locally in `.env` and never committed.
 
+## Freshness updater (unreleased, 2026-11-03)
+
+- Replaced hardcoded years and exchange records with a validated CMS data catalog; the default now follows the verified official current year, 2027. Added complete state metadata and bounded availability checks, future-year deferral, atomic replacement and bounded receipt renewal.
+- Prepared daily GitHub Actions checks with a data-only automatic publisher, review-proposal mode, deployment readback and same-day source pairs. Policy documents, publication discovery and contact-directory drift use a separate deduplicated review path.
+- Added public freshness status and expiry handoffs. Overdue policy summaries are withheld while official-source links remain available; successful retrieval never silently renews their review date. See the [updater contract](docs/FRESHNESS_UPDATER.md) for configuration, boundaries and activation status.
+
+## 2027 Marketplace candidate (unreleased, 2026-11-03)
+
+- Added an explicit coverage-year selector to screening and plan comparison, initially with the default retained at 2026; the freshness updater above supersedes that default. Results echo the chosen year, income/age labels identify it, and screening-to-plan navigation preserves it.
+- Made state routing year-specific: Oregon retains the federal path for 2026 and uses Explore Health for 2027. Unknown years fail before source access. Eligibility, plan search, provider lookup, and provider/drug coverage use the requested year.
+- Changing years clears results and doctor selections; late responses from an old year and mismatched response years cannot populate a new result. Added routing/transport regression tests and an optional Playwright browser check.
+- Prepared the existing bounded plan-board source-pair runner for explicit local targets and either supported year. This candidate has not been merged or deployed; no hosting, database, or LLM configuration changed.
+- Recorded [local candidate evidence and cost implications](docs/evaluation/2026-11-03-plan-year-candidate.md): five 2027 eligibility profiles, 20 sampled 2027 plan rows, a separate 20-row 2026 control, and seven browser checks passed. These are bounded technical checks, not public deployment or independent coverage certification.
+
+## 2027 Marketplace readiness audit (2026-11-03)
+
+- Added a bounded, repeatable source-availability runner with synthetic profiles, reduced evidence, and tests for missing data, ambiguous geography, wrong years, deployment transitions, rejection guards, and secret-safe failures.
+- Recorded five 2027 source probes plus a 2026 control, four lookup probes, and three deployed year-rejection checks. Retained the incomplete first Oklahoma run separately from the repeat.
+- Documented the 51-jurisdiction CMS 2027 routing comparison and implementation/acceptance work in the [readiness audit](docs/PLAN_YEAR_2027_READINESS.md). Public 2027 support remains disabled; this is not quote-accuracy or pilot certification.
+
 ## Synthetic Outside-In evaluation candidate (2026-10-01)
 
 - Added a synthetic-first [evaluation protocol](docs/PILOT_EVALUATION.md) with explicit UH governance, human-use, accessibility, and Marketplace API terms gates. It is not UH pilot authorization or a real-data deployment plan.

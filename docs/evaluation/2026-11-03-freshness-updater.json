@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-03T19:57:38.725Z",
+  "runtimeSourceCommit": "476de5a48a8d228f17d5142e1fd8410572d6ad49",
+  "localBuildId": "ssdstemnDfG_-Tj6n--L2",
+  "activation": {
+    "status": "prepared_not_active",
+    "workflowRequiresDefaultBranch": true,
+    "initialMergeAndDeployment": "pending_authorization",
+    "publicReleaseObserved": "d2ec33ede083a548670e0fecce7f16b48d786a94",
+    "publicReleaseObservedAt": "2026-11-03T19:58:14.175Z",
+    "firstScheduledExecution": "not_observed",
+    "postPublicationDeploymentVerifier": "implemented_not_executed_against_candidate"
+  },
+  "catalog": {
+    "sha256": "7cd02ae1c3bff878980189582b000fab0a54962f3e1f21e9918da5994d2c0db7",
+    "checkedAt": "2026-11-03T19:27:39.629Z",
+    "expiresAt": "2026-11-11T19:27:39.629Z",
+    "defaultYear": 2027,
+    "years": {
+      "2026": {
+        "jurisdictions": 51,
+        "ownPlatformMarketplaces": 21,
+        "oregonModel": "SupportedSBM"
+      },
+      "2027": {
+        "jurisdictions": 51,
+        "ownPlatformMarketplaces": 22,
+        "oregonModel": "SBM"
+      }
+    },
+    "lastRefresh": {
+      "status": "verified",
+      "checkedAt": "2026-11-03T19:46:51.695Z",
+      "changed": false,
+      "candidateSha256": "118a7e3b06f99a080d2bc49c7853f0898a4390c36e3a8888228de3ece95518b3",
+      "defaultYear": 2027,
+      "years": [
+        "2026",
+        "2027"
+      ],
+      "outcomes": [
+        {
+          "year": 2026,
+          "state": "OH",
+          "status": "source_available"
+        },
+        {
+          "year": 2026,
+          "state": "FL",
+          "status": "source_available"
+        },
+        {
+          "year": 2026,
+          "state": "TX",
+          "status": "source_available"
+        },
+        {
+          "year": 2026,
+          "state": "AR",
+          "status": "source_available"
+        },
+        {
+          "year": 2026,
+          "state": "OK",
+          "status": "source_available"
+        },
+        {
+          "year": 2027,
+          "state": "OH",
+          "status": "source_available"
+        },
+        {
+          "year": 2027,
+          "state": "FL",
+          "status": "source_available"
+        },
+        {
+          "year": 2027,
+          "state": "TX",
+          "status": "source_available"
+        },
+        {
+          "year": 2027,
+          "state": "AR",
+          "status": "source_available"
+        },
+        {
+          "year": 2027,
+          "state": "OK",
+          "status": "source_available"
+        }
+      ],
+      "deferredYears": [],
+      "scope": "Official year/platform metadata and five synthetic availability probes per year; not independent coverage or policy review"
+    }
+  },
+  "guidance": {
+    "lastPolicyReview": "September 28, 2026",
+    "observedAt": "2026-11-03T19:43:59.614Z",
+    "reviewOverdue": true,
+    "needsReview": true,
+    "policyReviewRenewed": false,
+    "records": [
+      {
+        "id": "renewals",
+        "status": "unchanged_observation",
+        "httpStatus": 200
+      },
+      {
+        "id": "community-engagement",
+        "status": "unchanged_observation",
+        "httpStatus": 200
+      },
+      {
+        "id": "NY-0",
+        "status": "http_error",
+        "httpStatus": 403
+      },
+      {
+        "id": "NY-1",
+        "status": "http_error",
+        "httpStatus": 403
+      },
+      {
+        "id": "OH-0",
+        "status": "unchanged_observation",
+        "httpStatus": 200
+      },
+      {
+        "id": "policy-publication-index",
+        "status": "unchanged_observation",
+        "httpStatus": 200
+      },
+      {
+        "id": "state-contact-directory",
+        "status": "unchanged_observation",
+        "httpStatus": 200
+      }
+    ],
+    "scope": "Source reachability and normalized-content change detection, including publication discovery. A matching hash or HTTP 200 does not approve a policy statement or application path."
+  },
+  "verification": {
+    "node": "24.22.1",
+    "productionBuild": "passed",
+    "typecheck": "passed",
+    "readinessGates": 12,
+    "unitTests": {
+      "passed": 141,
+      "failed": 0
+    },
+    "fixturePreflight": {
+      "passed": 31,
+      "total": 31
+    },
+    "workflowYaml": "two_jobs_parsed",
+    "publisherSyntax": "passed",
+    "credentialExclusion": "passed_for_scoped_staged_files",
+    "browser": {
+      "evaluatedAt": "2026-11-03T19:56:31.294Z",
+      "target": "http://127.0.0.1:3217",
+      "scope": "Headless Chromium with fixed synthetic API fixtures; actual local Oregon handoff. Not a screen-reader or human comprehension audit.",
+      "passed": [
+        "Oregon 2027 official handoff and visible year",
+        "late 2026 eligibility result cannot reappear after switching to 2027",
+        "screening-to-plan navigation preserves the requested year",
+        "provider lookup uses the selected year and old selections/suggestions clear",
+        "old board clears and a late 2026 plan response cannot appear as 2027",
+        "a mismatched response year is rejected",
+        "390px layout has no horizontal overflow",
+        "real-clock receipt and source-status page distinguish source checks from policy review",
+        "overdue policy summaries are withheld while official state handoffs remain available"
+      ]
+    }
+  },
+  "repositoryConfiguration": {
+    "actionsEnabled": true,
+    "issuesEnabled": true,
+    "encryptedSecretName": "MARKETPLACE_API_KEY",
+    "secretValue": "not_recorded",
+    "autoPublishVariable": "true",
+    "activation": "inert_until_workflow_on_main",
+    "scheduledUtc": "09:23 daily"
+  },
+  "boundaries": [
+    "Routine automatic publication is restricted to one validated catalog JSON file; executable code and policy meaning require review.",
+    "Source availability and same-feed comparisons do not certify independent network, formulary or policy correctness.",
+    "Employer/TiC and Medicare Part D indexes are outside this catalog refresh contract.",
+    "Notion keeper synchronization is pending the initial merge; Git publication does not complete it."
+  ],
+  "cleanup": {
+    "taskLoopbackServer": "closed",
+    "isolatedHeadlessBrowser": "closed",
+    "userBrowser": "not_used"
+  }
+}

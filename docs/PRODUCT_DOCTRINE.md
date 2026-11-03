@@ -56,6 +56,7 @@ is source-agnostic.
 - **Network truth.** Never present "in-network" or "on-formulary" as fact. Every coverage claim carries
   **source, freshness, and confidence**; conflicts are surfaced; the user is always told to confirm with
   the provider's office and the official Marketplace before enrolling.
+- **Freshness is enforced, not assumed.** Year/routing data require dated source checks and expiry. Routine structured updates may publish only after validation; unknown or overdue sources must stop unsupported estimates and point to official services. A retrieval timestamp does not renew a policy-content review. The [freshness updater](FRESHNESS_UPDATER.md) is an unreleased implementation of this operator requirement, not a current production capability claim.
 - **Total cost of care is the target, not a present-tense runtime claim.** The live board shows net
   monthly and annualized premium alongside deductible and out-of-pocket maximum, and says clearly that
   annual premium excludes care spending. The tested cost engine is not yet the live ranking key.

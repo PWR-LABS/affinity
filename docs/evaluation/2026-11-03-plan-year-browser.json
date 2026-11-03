@@ -1,0 +1,17 @@
+{
+  "evaluatedAt": "2026-11-03T18:46:34.378Z",
+  "target": "http://127.0.0.1:3217",
+  "scope": "Headless Chromium with fixed synthetic API fixtures; actual local Oregon handoff. Not a screen-reader or human comprehension audit.",
+  "passed": [
+    "Oregon 2027 official handoff and visible year",
+    "late 2026 eligibility result cannot reappear after switching to 2027",
+    "screening-to-plan navigation preserves the requested year",
+    "provider lookup uses the selected year and old selections/suggestions clear",
+    "old board clears and a late 2026 plan response cannot appear as 2027",
+    "a mismatched response year is rejected",
+    "390px layout has no horizontal overflow"
+  ],
+  "runtimeSourceCommit": "082fb8748ab79c453d83bd522ada039fbcbb247c",
+  "harnessSha256": "a1b68bcc9ebaea33e84c9dce8d9597fa4712859dbac19c1bb1a4fca45e891f6b",
+  "runtime": "Node 24.22.1; Playwright 1.64.1; headless installed Google Chrome; isolated browser context"
+}
