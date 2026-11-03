@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { contentFingerprint, GUIDANCE_FINGERPRINT_VERSION, watchGuidance } from "../scripts/watch-guidance";
-import { medicaidGuidanceCurrent } from "@/lib/medicaid/federal";
+import { MEDICAID_GUIDANCE_REVIEWED_DAY, medicaidGuidanceCurrent } from "@/lib/medicaid/federal";
 import { publicationPlan } from "../scripts/publish-catalog-refresh.cjs";
 import { snapshotMatches } from "../scripts/verify-catalog-publication.cjs";
 import { ownedGuidanceIssue } from "../scripts/report-guidance-watch.cjs";
+
+const REVIEWED_AT = Date.parse(`${MEDICAID_GUIDANCE_REVIEWED_DAY}T00:00:00Z`);
+const DAY = 24 * 60 * 60 * 1000;
 
 test("guidance notifications reuse the actual GitHub Actions author identity without adopting someone else's issue", () => {
   const title = "Coverage guidance source review required";
@@ -54,8 +57,8 @@ test("link normalization respects entities, relative URLs, base URLs and exclude
 
 test("a link-only change raises review even while the policy review date is current", async () => {
   const transport = (href: string) => (async () => new Response(`<main>${"Official guidance. ".repeat(20)}<a href="${href}">Apply</a></main>`, { headers: { "content-type": "text/html" } })) as typeof fetch;
-  const first = await watchGuidance({ fetchImpl: transport("https://old.example.gov/apply"), now: Date.parse("2026-10-01T00:00:00Z") });
-  const second = await watchGuidance({ fetchImpl: transport("https://new.example.gov/apply"), baseline: first, now: Date.parse("2026-10-02T00:00:00Z") });
+  const first = await watchGuidance({ fetchImpl: transport("https://old.example.gov/apply"), now: REVIEWED_AT + DAY });
+  const second = await watchGuidance({ fetchImpl: transport("https://new.example.gov/apply"), baseline: first, now: REVIEWED_AT + 2 * DAY });
   assert.equal(second.reviewOverdue, false);
   assert.equal(second.needsReview, true);
   assert.ok(second.records.every(({ status }) => status === "content_changed"));
@@ -63,8 +66,8 @@ test("a link-only change raises review even while the policy review date is curr
 
 test("legacy fingerprints require an explicit baseline migration without renewing policy review", async () => {
   const fetchImpl = (async () => new Response(`<main>${"Official guidance. ".repeat(20)}</main>`, { headers: { "content-type": "text/html" } })) as typeof fetch;
-  const first = await watchGuidance({ fetchImpl, now: Date.parse("2026-10-01T00:00:00Z") });
-  const next = await watchGuidance({ fetchImpl, baseline: { records: first.records }, now: Date.parse("2026-10-02T00:00:00Z") });
+  const first = await watchGuidance({ fetchImpl, now: REVIEWED_AT + DAY });
+  const next = await watchGuidance({ fetchImpl, baseline: { records: first.records }, now: REVIEWED_AT + 2 * DAY });
   assert.equal(next.fingerprintVersion, GUIDANCE_FINGERPRINT_VERSION);
   assert.equal(next.baselineVersion, null);
   assert.equal(next.needsReview, true);
@@ -74,12 +77,19 @@ test("legacy fingerprints require an explicit baseline migration without renewin
 
 test("a fetch or matching observation hash never renews a policy review", async () => {
   const fetchImpl = (async () => new Response(`<main>${"Official guidance. ".repeat(20)}</main>`, { headers: { "content-type": "text/html" } })) as typeof fetch;
-  const first = await watchGuidance({ fetchImpl, now: Date.parse("2026-11-03T12:00:00Z") });
-  const repeat = await watchGuidance({ fetchImpl, baseline: first, now: Date.parse("2026-11-04T12:00:00Z") });
+  const first = await watchGuidance({ fetchImpl, now: REVIEWED_AT + 31 * DAY });
+  const repeat = await watchGuidance({ fetchImpl, baseline: first, now: REVIEWED_AT + 32 * DAY });
   assert.ok(repeat.records.every((record) => record.status === "unchanged_observation"));
   assert.equal(repeat.reviewOverdue, true);
   assert.equal(repeat.needsReview, true);
-  assert.equal(medicaidGuidanceCurrent(Date.parse("2026-11-03T12:00:00Z")), false);
+  assert.equal(medicaidGuidanceCurrent(REVIEWED_AT + 31 * DAY), false);
+});
+
+test("policy review expires at thirty days and rejects a future review date", () => {
+  assert.equal(medicaidGuidanceCurrent(REVIEWED_AT - 1), false);
+  assert.equal(medicaidGuidanceCurrent(REVIEWED_AT), true);
+  assert.equal(medicaidGuidanceCurrent(REVIEWED_AT + 30 * DAY - 1), true);
+  assert.equal(medicaidGuidanceCurrent(REVIEWED_AT + 30 * DAY), false);
 });
 
 test("a Git checkpoint alone cannot pass deployed catalog verification", () => {
