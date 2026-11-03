@@ -9,10 +9,10 @@ import {
   medicaidResourceByCode,
 } from "@/lib/medicaid/states";
 
-export function MedicaidStateGuide() {
+export function MedicaidStateGuide({ guidanceCurrent = false }: { guidanceCurrent?: boolean }) {
   const [code, setCode] = useState("");
   const resource = medicaidResourceByCode(code);
-  const featured = featuredMedicaidChange(code);
+  const featured = guidanceCurrent ? featuredMedicaidChange(code) : undefined;
 
   return (
     <section className="medicaid-state-guide page-panel" aria-labelledby="medicaid-state-guide-title">

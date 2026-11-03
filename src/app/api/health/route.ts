@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { releaseIdentity } from "@/lib/deploy/release";
 import { MarketplaceClient } from "@/lib/marketplace/client";
 import { prisma } from "@/lib/prisma";
+import { marketplaceCatalogFreshness } from "@/lib/marketplace/states";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,7 @@ export async function GET(req: Request) {
       service: "affinity",
       release: releaseIdentity(process.env.RENDER_GIT_COMMIT, process.env.RENDER_GIT_BRANCH),
       checks,
+      sourceFreshness: marketplaceCatalogFreshness(),
       nodeEnv: process.env.NODE_ENV ?? "unknown",
     },
     { status: ok ? 200 : 503, headers: { "cache-control": "no-store" } },

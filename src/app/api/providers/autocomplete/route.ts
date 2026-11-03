@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { MarketplaceClient } from "@/lib/marketplace/client";
-import { MARKETPLACE_PLAN_YEAR_ERROR, parseMarketplacePlanYear } from "@/lib/marketplace/states";
+import { MARKETPLACE_PLAN_YEAR_ERROR, marketplaceCatalogFreshness, parseMarketplacePlanYear } from "@/lib/marketplace/states";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +19,7 @@ export async function POST(req: Request) {
   const year = parseMarketplacePlanYear(input.year);
   if (year === undefined) return NextResponse.json({ items: [], error: MARKETPLACE_PLAN_YEAR_ERROR }, { status: 400 });
   if (q.length < 2 || !/^\d{5}$/.test(zip)) return NextResponse.json({ items: [] });
+  if (marketplaceCatalogFreshness().status !== "current") return NextResponse.json({ items: [], code: "sources_stale", error: "Provider sources are overdue for a check." }, { status: 503 });
   try {
     const client = new MarketplaceClient({ useCache: false });
     const items = (await client.providersAutocomplete(q, zip, year)).slice(0, 12).map((p) => ({

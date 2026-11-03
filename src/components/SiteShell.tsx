@@ -13,7 +13,7 @@ const NAV = [
 ];
 
 /** Warm, centered consumer shell — header + content + footer. No dev sidebar. */
-export function SiteShell({ children }: { children: ReactNode }) {
+export function SiteShell({ children, freshness }: { children: ReactNode; freshness: { status: "current" | "stale"; checkedAt: string } }) {
   const pathname = usePathname() ?? "/";
   return (
     <div className="site">
@@ -37,12 +37,14 @@ export function SiteShell({ children }: { children: ReactNode }) {
       </header>
 
       <main id="main" className="site-main">
+        {freshness.status === "stale" ? <p className="elig-error" role="status">Our Marketplace source checks are overdue. Use official services for current estimates.</p> : null}
         {children}
       </main>
 
       <footer className="site-footer">
+        <p>Marketplace year and routing checks: {new Date(freshness.checkedAt).toLocaleDateString("en-US", { timeZone: "UTC", year: "numeric", month: "long", day: "numeric" })}. <Link href="/sources">Sources and freshness</Link>.</p>
         <p>
-          Free and neutral — no commissions, no ads, no accounts. We do not save your household answers. This is decision
+          Free and neutral—no commissions, no ads, no accounts. We do not save your household answers. This is decision
           support, not insurance advice; the final word belongs to your state Medicaid office and the official
           Marketplace. <Link href="/how-it-works">How it works</Link>. <Link href="/privacy">Privacy and data flow</Link>.
         </p>

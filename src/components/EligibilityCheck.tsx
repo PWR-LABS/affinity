@@ -7,6 +7,7 @@ import { medicaidChangeUrl, medicaidResourceByCode, STATE_MEDICAID_RESOURCES } f
 import { DEFAULT_MARKETPLACE_PLAN_YEAR, parseMarketplacePlanYear, stateBasedMarketplace, SUPPORTED_MARKETPLACE_PLAN_YEARS, type MarketplacePlanYear } from "@/lib/marketplace/states";
 
 interface Result {
+  sourceFreshness?: "stale";
   year: MarketplacePlanYear;
   county?: string;
   state?: string;
@@ -83,8 +84,8 @@ export function EligibilityCheck() {
     }
   }
 
-  const officialResource = medicaidResourceByCode(result?.state ?? state);
-  const officialMarketplace = stateBasedMarketplace(result?.state ?? state, result?.year ?? year);
+  const officialResource = result?.sourceFreshness === "stale" ? undefined : medicaidResourceByCode(result?.state ?? state);
+  const officialMarketplace = result?.sourceFreshness === "stale" ? undefined : stateBasedMarketplace(result?.state ?? state, result?.year ?? year);
 
   return (
     <div className="elig" id="coverage-check">
@@ -155,6 +156,10 @@ export function EligibilityCheck() {
             </>
           )}
           {result.notes.map((n, i) => <p key={i} className="verdict-note">{n}</p>)}
+          {result.sourceFreshness === "stale" ? <div className="verdict-official-actions">
+            <a href="https://www.healthcare.gov/marketplace-in-your-state/" target="_blank" rel="noreferrer">Find your official Marketplace ↗</a>
+            <a href="https://www.medicaid.gov/about-us/where-can-people-get-help-medicaid-chip" target="_blank" rel="noreferrer">Find your state Medicaid office ↗</a>
+          </div> : null}
           {result.verdict === "marketplace" ? (
             <div className="verdict-official-actions" aria-label="Marketplace next steps">
               <Link className="cta" href={`/plans?year=${result.year}`}>Compare {result.year} Marketplace plans →</Link>

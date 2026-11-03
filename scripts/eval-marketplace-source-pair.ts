@@ -10,7 +10,7 @@ import { parseMarketplacePlanYear } from "@/lib/marketplace/states";
 
 const APP_URL = process.env.AFFINITY_EVAL_APP_URL ?? "https://affinity.pwr-labs.ai";
 const CMS_API = "https://marketplace.api.healthcare.gov/api/v1";
-const YEAR = parseMarketplacePlanYear(process.env.AFFINITY_EVAL_YEAR);
+const YEAR = parseMarketplacePlanYear(process.env.AFFINITY_EVAL_YEAR ?? 2026);
 
 interface Profile {
   id: string;

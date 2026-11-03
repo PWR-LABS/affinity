@@ -15,6 +15,13 @@
  * Omitting a full SBM is unsafe:
  * it can produce a federal estimate where users need their own state's exchange.
  */
+import catalogData from "./catalog-data.json";
+import { assertCatalog, catalogFreshness, type MarketplaceCatalog } from "./catalog";
+import { STATE_MEDICAID_RESOURCES } from "@/lib/medicaid/states";
+
+assertCatalog(catalogData, STATE_MEDICAID_RESOURCES.map((state) => state.code));
+export const MARKETPLACE_CATALOG: MarketplaceCatalog = catalogData;
+
 export interface StateMarketplace {
   /** Full state name, for prose. */
   state: string;
@@ -24,11 +31,12 @@ export interface StateMarketplace {
   url: string;
 }
 
-export const SUPPORTED_MARKETPLACE_PLAN_YEARS = [2026, 2027] as const;
-export type MarketplacePlanYear = (typeof SUPPORTED_MARKETPLACE_PLAN_YEARS)[number];
-/** Deliberately explicit; never roll the quote year forward from the device clock. */
-export const DEFAULT_MARKETPLACE_PLAN_YEAR: MarketplacePlanYear = 2026;
-export const MARKETPLACE_PLAN_YEAR_ERROR = "Choose 2026 or 2027 coverage.";
+export const SUPPORTED_MARKETPLACE_PLAN_YEARS = Object.keys(MARKETPLACE_CATALOG.years).map(Number).sort((a, b) => a - b);
+export type MarketplacePlanYear = number;
+/** The validated official current year; never inferred from a device clock. */
+export const DEFAULT_MARKETPLACE_PLAN_YEAR = MARKETPLACE_CATALOG.defaultYear;
+export const MARKETPLACE_PLAN_YEAR_ERROR = `Choose ${SUPPORTED_MARKETPLACE_PLAN_YEARS.join(" or ")} coverage.`;
+export const marketplaceCatalogFreshness = (now = Date.now()) => catalogFreshness(MARKETPLACE_CATALOG, now);
 
 export function parseMarketplacePlanYear(value: unknown): MarketplacePlanYear | undefined {
   if (value === undefined) return DEFAULT_MARKETPLACE_PLAN_YEAR;
@@ -48,36 +56,11 @@ export function assertMarketplacePlanYear(year: number): asserts year is Marketp
   if (!SUPPORTED_MARKETPLACE_PLAN_YEARS.some((supported) => supported === year)) throw new UnsupportedMarketplacePlanYearError();
 }
 
-const SBM: Record<string, StateMarketplace> = {
-  CA: { state: "California", name: "Covered California", url: "coveredca.com" },
-  CO: { state: "Colorado", name: "Connect for Health Colorado", url: "connectforhealthco.com" },
-  CT: { state: "Connecticut", name: "Access Health CT", url: "accesshealthct.com" },
-  DC: { state: "Washington, D.C.", name: "DC Health Link", url: "dchealthlink.com" },
-  GA: { state: "Georgia", name: "Georgia Access", url: "georgiaaccess.gov" },
-  ID: { state: "Idaho", name: "Your Health Idaho", url: "yourhealthidaho.org" },
-  IL: { state: "Illinois", name: "Get Covered Illinois", url: "getcovered.illinois.gov" },
-  KY: { state: "Kentucky", name: "kynect", url: "kynect.ky.gov" },
-  ME: { state: "Maine", name: "CoverME.gov", url: "coverme.gov" },
-  MD: { state: "Maryland", name: "Maryland Health Connection", url: "marylandhealthconnection.gov" },
-  MA: { state: "Massachusetts", name: "Massachusetts Health Connector", url: "mahealthconnector.org" },
-  MN: { state: "Minnesota", name: "MNsure", url: "mnsure.org" },
-  NV: { state: "Nevada", name: "Nevada Health Link", url: "nevadahealthlink.com" },
-  NJ: { state: "New Jersey", name: "Get Covered New Jersey", url: "getcovered.nj.gov" },
-  NM: { state: "New Mexico", name: "beWellnm", url: "bewellnm.com" },
-  NY: { state: "New York", name: "NY State of Health", url: "nystateofhealth.ny.gov" },
-  PA: { state: "Pennsylvania", name: "Pennie", url: "pennie.com" },
-  RI: { state: "Rhode Island", name: "HealthSource RI", url: "healthsourceri.com" },
-  VT: { state: "Vermont", name: "Vermont Health Connect", url: "portal.healthconnect.vermont.gov" },
-  VA: { state: "Virginia", name: "Virginia's Insurance Marketplace", url: "marketplace.virginia.gov" },
-  WA: { state: "Washington", name: "Washington Healthplanfinder", url: "wahealthplanfinder.org" },
-};
-
 /** The SBM record for this year, or undefined for a federal-platform state. */
 export function stateBasedMarketplace(state?: string, year: number = DEFAULT_MARKETPLACE_PLAN_YEAR): StateMarketplace | undefined {
   assertMarketplacePlanYear(year);
   const code = state?.toUpperCase();
-  if (year === 2027 && code === "OR") return { state: "Oregon", name: "Explore Health", url: "explorehealthor.gov" };
-  return code ? SBM[code] : undefined;
+  return code ? MARKETPLACE_CATALOG.years[String(year)].marketplaces[code] : undefined;
 }
 
 /** Thrown when a request targets an SBM state the federal API can't serve — a clear redirect, not an outage. */

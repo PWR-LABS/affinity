@@ -16,8 +16,8 @@ export default function Home() {
 
       <div className="medicaid-home-alert">
         <div>
-          <strong>Medicaid rules are changing.</strong>
-          <span> Six-month renewals for most expansion adults and separate community-engagement checks are coming in 2027.</span>
+          <strong>Medicaid requirements can change.</strong>
+          <span> Follow your state notice and check current official guidance.</span>
         </div>
         <Link href="/medicaid">See what changes for you →</Link>
       </div>

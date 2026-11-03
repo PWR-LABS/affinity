@@ -8,6 +8,7 @@
  */
 import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
+import { SUPPORTED_MARKETPLACE_PLAN_YEARS } from "@/lib/marketplace/states";
 
 const APP_URL = "https://affinity.pwr-labs.ai";
 const CMS_API = "https://marketplace.api.healthcare.gov/api/v1";
@@ -52,7 +53,7 @@ const CASES: readonly Case[] = [
   { id: "invalid-state", basis: "validation_contract", input: single("XX", "44106", 45_000, 40), expectedStatus: 400, expectedError: /select your state/i },
   { id: "invalid-zip", basis: "validation_contract", input: single("OH", "4410", 45_000, 40), expectedStatus: 400, expectedError: /5-digit ZIP/i },
   { id: "missing-age", basis: "validation_contract", input: { ...single("OH", "44106", 45_000, 40), age: "" }, expectedStatus: 400, expectedError: /valid age/i },
-  { id: "unsupported-year", basis: "validation_contract", input: { ...single("OH", "44106", 45_000, 40), year: 2028 }, expectedStatus: 400, expectedError: /2026/i },
+  { id: "unsupported-year", basis: "validation_contract", input: { ...single("OH", "44106", 45_000, 40), year: Math.max(...SUPPORTED_MARKETPLACE_PLAN_YEARS) + 1 }, expectedStatus: 400, expectedError: /coverage|supports/i },
 ];
 assert.equal(CASES.length, 30);
 assert.equal(new Set(CASES.map((item) => item.id)).size, 30);

@@ -33,8 +33,8 @@ export default function HowItWorks() {
         <p>
           The <strong>Medicaid desk</strong> covers all 50 states and D.C. with an official application page or
           program portal, listed phone number, and CMS change guide. Renewal may require a different path; follow
-          your state notice. The desk also explains the federal requirements scheduled
-          for 2027 and keeps a closer watch on New York and Ohio. The state still makes the final decision.
+          your state notice. Detailed policy summaries appear only while their source review is current;
+          otherwise, we link to official guidance while the summaries await review. The state still makes the final decision.
         </p>
 
         <h2>3. If you&rsquo;re Marketplace-bound: your real plans</h2>

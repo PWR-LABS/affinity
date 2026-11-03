@@ -5,6 +5,7 @@ const { chromium } = require(process.env.AFFINITY_PLAYWRIGHT_MODULE || "playwrig
 
 const base = process.env.AFFINITY_EVAL_APP_URL || "http://127.0.0.1:3217";
 const target = new URL(base);
+const defaultYear = require("../src/lib/marketplace/catalog-data.json").defaultYear;
 assert.ok(["localhost", "127.0.0.1", "[::1]"].includes(target.hostname), "browser fixtures require a loopback target");
 const json = (body) => ({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
 const screening = (year) => ({ year, state: "OH", verdict: "marketplace", aptcMonthly: 100, headline: "Synthetic Marketplace result", nextSteps: [], notes: [] });
@@ -20,7 +21,7 @@ async function main() {
     await page.goto(base);
     await page.getByRole("button", { name: "Check my coverage" }).waitFor({ state: "visible" });
     await page.waitForFunction(() => !document.querySelector('button[type="submit"]').disabled);
-    assert.equal(await page.getByLabel("Coverage year", { exact: true }).inputValue(), "2026");
+    assert.equal(await page.getByLabel("Coverage year", { exact: true }).inputValue(), String(defaultYear));
     await page.getByLabel("Coverage year", { exact: true }).selectOption("2027");
     await page.getByLabel("State", { exact: true }).selectOption("OR");
     await page.getByLabel("ZIP code", { exact: true }).fill("97201");
@@ -119,6 +120,30 @@ async function main() {
     await page.screenshot({ path: "tmp/2027-plan-year-mobile.png", fullPage: true });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
     passed.push("390px layout has no horizontal overflow");
+
+    const freshnessResponse = await page.request.get(`${base}/api/freshness`);
+    assert.equal(freshnessResponse.status(), 200);
+    const freshness = await freshnessResponse.json();
+    assert.equal(freshness.marketplace.status, "current");
+    assert.equal(freshness.marketplace.defaultYear, defaultYear);
+    assert.ok(Date.parse(freshness.marketplace.checkedAt) <= Date.now());
+    assert.ok(Date.parse(freshness.marketplace.expiresAt) > Date.now());
+    await page.goto(`${base}/sources`);
+    await page.getByRole("heading", { name: "Sources and freshness", exact: true }).waitFor();
+    assert.match(await page.locator("main").innerText(), /Automatically fetching a document does not renew that review/);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+    await page.screenshot({ path: "tmp/freshness-sources-mobile.png", fullPage: true });
+    passed.push("real-clock receipt and source-status page distinguish source checks from policy review");
+
+    await page.goto(`${base}/medicaid`);
+    if (freshness.guidance.status === "review_required") {
+      await page.getByRole("status").filter({ hasText: "awaiting a source review" }).waitFor();
+      assert.equal(await page.locator(".medicaid-change-action, .medicaid-action, .medicaid-card-timing").count(), 0);
+      await page.getByLabel("Your state", { exact: true }).selectOption("NY");
+      assert.equal(await page.locator(".medicaid-state-alert").count(), 0);
+      assert.ok(await page.getByRole("link", { name: "Open official state site" }).getAttribute("href"));
+      passed.push("overdue policy summaries are withheld while official state handoffs remain available");
+    }
     await context.close();
     console.log(JSON.stringify({ evaluatedAt: new Date().toISOString(), target: base, scope: "Headless Chromium with fixed synthetic API fixtures; actual local Oregon handoff. Not a screen-reader or human comprehension audit.", passed }, null, 2));
   } finally { await browser.close(); }

@@ -6,7 +6,7 @@ import { POST as plans } from "@/app/api/plans/route";
 import { POST as providers } from "@/app/api/providers/autocomplete/route";
 import { checkEligibility } from "@/lib/decision/eligibility";
 import { runLivePlans } from "@/lib/decision/live";
-import { UnsupportedMarketplacePlanYearError } from "@/lib/marketplace/states";
+import { DEFAULT_MARKETPLACE_PLAN_YEAR, SUPPORTED_MARKETPLACE_PLAN_YEARS, UnsupportedMarketplacePlanYearError } from "@/lib/marketplace/states";
 
 const base = { state: "OH", zip: "44106", age: 40, income: 45_000, householdSize: 1 };
 const request = (body: Record<string, unknown>) => new Request("https://affinity.invalid/api/test", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -80,11 +80,11 @@ test("2027 is carried through eligibility, plan search, doctor lookup and covera
   for (const call of yearGets) assert.equal(call.url.searchParams.get("year"), "2027");
 });
 
-test("omitted year stays 2026 and official larger-household handoffs echo the chosen year", async (t) => {
+test("omitted year uses the source-validated default and larger-household handoffs echo the chosen year", async (t) => {
   const calls = transport(t);
   const response = await eligibility(request(base));
-  assert.equal((await response.json()).year, 2026);
-  for (const call of calls.filter((call) => call.body)) assert.equal(call.body!.year, 2026);
+  assert.equal((await response.json()).year, DEFAULT_MARKETPLACE_PLAN_YEAR);
+  for (const call of calls.filter((call) => call.body)) assert.equal(call.body!.year, DEFAULT_MARKETPLACE_PLAN_YEAR);
   const count = calls.length;
   const handoff = await eligibility(request({ ...base, householdSize: 2, year: 2027 }));
   const result = await handoff.json();
@@ -95,7 +95,8 @@ test("omitted year stays 2026 and official larger-household handoffs echo the ch
 
 test("direct engine callers cannot bypass the unknown-year guard", async (t) => {
   const calls = transport(t);
-  await assert.rejects(checkEligibility({ ...base, year: 2028 }), UnsupportedMarketplacePlanYearError);
-  await assert.rejects(runLivePlans({ ...base, year: 2028, doctors: [], drugs: [] }), UnsupportedMarketplacePlanYearError);
+  const unknownYear = Math.max(...SUPPORTED_MARKETPLACE_PLAN_YEARS) + 1;
+  await assert.rejects(checkEligibility({ ...base, year: unknownYear }), UnsupportedMarketplacePlanYearError);
+  await assert.rejects(runLivePlans({ ...base, year: unknownYear, doctors: [], drugs: [] }), UnsupportedMarketplacePlanYearError);
   assert.equal(calls.length, 0);
 });

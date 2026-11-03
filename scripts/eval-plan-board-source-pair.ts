@@ -11,7 +11,7 @@ import { parseMarketplacePlanYear } from "@/lib/marketplace/states";
 
 const APP_URL = process.env.AFFINITY_EVAL_APP_URL ?? "https://affinity.pwr-labs.ai";
 const CMS_API = "https://marketplace.api.healthcare.gov/api/v1";
-const YEAR = parseMarketplacePlanYear(process.env.AFFINITY_EVAL_YEAR);
+const YEAR = parseMarketplacePlanYear(process.env.AFFINITY_EVAL_YEAR ?? 2026);
 const PROFILES = [
   { id: "oh-subsidized", zip: "44106", state: "OH", income: 45_000, age: 50 },
   { id: "wi-no-subsidy", zip: "53703", state: "WI", income: 100_000, age: 60 },

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { checkEligibility, multiPersonHouseholdHandoff, officialStateHandoff } from "@/lib/decision/eligibility";
 import { MarketplaceApiError } from "@/lib/marketplace/client";
-import { MARKETPLACE_PLAN_YEAR_ERROR, parseMarketplacePlanYear } from "@/lib/marketplace/states";
+import { MARKETPLACE_PLAN_YEAR_ERROR, marketplaceCatalogFreshness, parseMarketplacePlanYear } from "@/lib/marketplace/states";
 import { medicaidResourceByCode } from "@/lib/medicaid/states";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +35,12 @@ export async function POST(req: Request) {
   if (missing(b.age) || !Number.isInteger(age) || age < 0 || age > 120) return NextResponse.json({ error: "Enter a valid age." }, { status: 400 });
   if (!Number.isInteger(householdSize) || householdSize < 1 || householdSize > 12)
     return NextResponse.json({ error: "Household size must be 1–12." }, { status: 400 });
+  if (marketplaceCatalogFreshness().status !== "current") return NextResponse.json({
+    ...officialStateHandoff(state, zip), year, sourceFreshness: "stale",
+    headline: "Our coverage sources are overdue for a check. Use the official services for current information.",
+    nextSteps: ["Use the official Marketplace or Medicaid directory to find your current state service."],
+    notes: ["No eligibility estimate or subsidy was calculated from an overdue source catalog."],
+  });
   if (householdSize > 1) return NextResponse.json({ ...multiPersonHouseholdHandoff(state, zip), year });
 
   try {

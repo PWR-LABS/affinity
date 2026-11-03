@@ -185,6 +185,11 @@ body {
 }
 .notice-link { color: var(--accent); font-weight: 500; text-decoration: none; }
 .notice-link:hover { text-decoration: underline; }
+.sources-page .page-panel { display: grid; gap: 0.85rem; margin-top: 1rem; }
+.sources-page .page-panel h2 { font-family: var(--font-space-grotesk), sans-serif; font-size: 1.25rem; font-weight: 700; }
+.sources-page .page-panel a { color: var(--accent); text-decoration: underline; text-underline-offset: 0.15em; }
+.sources-page .page-panel ul { display: grid; gap: 0.4rem; }
+
 .page-panel {
   border: 1px solid var(--border);
   border-radius: var(--radius);

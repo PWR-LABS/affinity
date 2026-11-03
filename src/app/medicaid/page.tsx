@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { MedicaidStateGuide } from "@/components/MedicaidStateGuide";
-import { FEDERAL_MEDICAID_CHANGES, MEDICAID_GUIDANCE_REVIEWED } from "@/lib/medicaid/federal";
+import { FEDERAL_MEDICAID_CHANGES, MEDICAID_GUIDANCE_REVIEWED, medicaidGuidanceCurrent } from "@/lib/medicaid/federal";
 import {
   FEATURED_MEDICAID_CHANGES,
   medicaidChangeUrl,
@@ -14,8 +14,10 @@ export const metadata: Metadata = {
   description:
     "Track Medicaid eligibility changes nationwide, understand the new federal requirements, and find your state's official application or account site. Follow your notice for renewal steps.",
 };
+export const dynamic = "force-dynamic";
 
 export default function MedicaidPage() {
+  const guidanceCurrent = medicaidGuidanceCurrent();
   return (
     <div className="medicaid-page">
       <div className="page-header medicaid-hero">
@@ -31,21 +33,24 @@ export default function MedicaidPage() {
         </div>
       </div>
 
-      <MedicaidStateGuide />
+      <MedicaidStateGuide guidanceCurrent={guidanceCurrent} />
+      {!guidanceCurrent ? <p className="elig-error" role="status">Our detailed policy summaries are awaiting a source review. Use the official federal and state guidance linked below for current requirements.</p> : null}
 
       <section className="medicaid-federal" aria-labelledby="federal-changes-title">
         <div className="medicaid-section-head">
           <p className="medicaid-eyebrow">Federal policy · reviewed {MEDICAID_GUIDANCE_REVIEWED}</p>
-          <h2 id="federal-changes-title">Two changes, with different rules about who is affected.</h2>
+          <h2 id="federal-changes-title">{guidanceCurrent ? "Two changes, with different rules about who is affected." : "Read the current official federal guidance."}</h2>
           <p>Your state decides your eligibility and sends the notice that governs your next step.</p>
         </div>
         <div className="medicaid-federal-grid">
           {FEDERAL_MEDICAID_CHANGES.map((change) => (
             <article className="medicaid-change" key={change.id}>
-              <p className="medicaid-change-kicker">{change.kicker}</p>
-              <h3>{change.title}</h3>
-              <p>{change.summary}</p>
-              <p className="medicaid-change-action"><strong>What to do now:</strong> {change.nextStep}</p>
+              {guidanceCurrent ? <>
+                <p className="medicaid-change-kicker">{change.kicker}</p>
+                <h3>{change.title}</h3>
+                <p>{change.summary}</p>
+                <p className="medicaid-change-action"><strong>What to do now:</strong> {change.nextStep}</p>
+              </> : <h3>{change.sourceLabel}</h3>}
               <a href={change.sourceUrl} target="_blank" rel="noreferrer">
                 {change.sourceLabel} <span aria-hidden="true">↗</span>
               </a>
@@ -58,7 +63,7 @@ export default function MedicaidPage() {
         <div className="medicaid-section-head">
           <p className="medicaid-eyebrow">State watch</p>
           <h2 id="state-watch-title">New York and Ohio</h2>
-          <p>What is enacted, what is coming, and the safest action to take now.</p>
+          <p>{guidanceCurrent ? "What is enacted, what is coming, and the safest action to take now." : "Use the current notices and official sources for your state."}</p>
         </div>
 
         <div className="medicaid-state-grid">
@@ -70,14 +75,14 @@ export default function MedicaidPage() {
                   <span className="medicaid-state-code">{change.code}</span>
                   <div>
                     <h3>{resource.state}</h3>
-                    <p>{change.dek}</p>
+                    {guidanceCurrent ? <p>{change.dek}</p> : null}
                   </div>
                 </div>
-                <p className="medicaid-card-timing">{change.timing}</p>
+                {guidanceCurrent ? <><p className="medicaid-card-timing">{change.timing}</p>
                 <ul>
                   {change.facts.map((fact) => <li key={fact}>{fact}</li>)}
                 </ul>
-                <p className="medicaid-action"><strong>Do now:</strong> {change.action}</p>
+                <p className="medicaid-action"><strong>Do now:</strong> {change.action}</p></> : null}
                 <div className="medicaid-card-links">
                   <a href={resource.applyUrl} target="_blank" rel="noreferrer">Open {resource.state} official site ↗</a>
                   {change.sources.map((source) => (

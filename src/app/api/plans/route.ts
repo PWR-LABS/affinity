@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { AmbiguousZipError, runLivePlans, ZipNotFoundError } from "@/lib/decision/live";
 import { MarketplaceApiError } from "@/lib/marketplace/client";
-import { MARKETPLACE_PLAN_YEAR_ERROR, parseMarketplacePlanYear, StateNotSupportedError } from "@/lib/marketplace/states";
+import { MARKETPLACE_PLAN_YEAR_ERROR, marketplaceCatalogFreshness, parseMarketplacePlanYear, StateNotSupportedError } from "@/lib/marketplace/states";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Household size must be 1–12." }, { status: 400 });
   if (householdSize > 1)
     return NextResponse.json({ error: "This plan estimate currently supports one person at a time. For a larger household, use the official Marketplace so each member's age is included." }, { status: 400 });
+  if (marketplaceCatalogFreshness().status !== "current") return NextResponse.json({ code: "sources_stale", error: "Our plan sources are overdue for a check. Use the official Marketplace for current plans." }, { status: 503 });
 
   const doctors = Array.isArray(b.doctors)
     ? (b.doctors as Array<Record<string, unknown>>)

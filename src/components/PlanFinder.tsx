@@ -41,6 +41,7 @@ export function PlanFinder({ initialYear = DEFAULT_MARKETPLACE_PLAN_YEAR }: { in
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [countyHandoff, setCountyHandoff] = useState(false);
+  const [staleHandoff, setStaleHandoff] = useState(false);
   const [board, setBoard] = useState<Board | null>(null);
   const [showAll, setShowAll] = useState(false);
   const inFlight = useRef(false);
@@ -63,6 +64,7 @@ export function PlanFinder({ initialYear = DEFAULT_MARKETPLACE_PLAN_YEAR }: { in
     setDoctors([]);
     setError(null);
     setCountyHandoff(false);
+    setStaleHandoff(false);
     setShowAll(false);
     setLoading(false);
   }
@@ -96,6 +98,7 @@ export function PlanFinder({ initialYear = DEFAULT_MARKETPLACE_PLAN_YEAR }: { in
     const currentRequest = ++requestId.current;
     setError(null);
     setCountyHandoff(false);
+    setStaleHandoff(false);
     setBoard(null);
     setShowAll(false);
     setLoading(true);
@@ -114,6 +117,7 @@ export function PlanFinder({ initialYear = DEFAULT_MARKETPLACE_PLAN_YEAR }: { in
       if (!res.ok) {
         setError(data.error ?? "Something went wrong.");
         setCountyHandoff(data.code === "county_ambiguous");
+        setStaleHandoff(data.code === "sources_stale");
       }
       else if (data.year !== year) setError("The coverage year did not match your request. Please search again.");
       else setBoard(data as Board);
@@ -212,7 +216,7 @@ export function PlanFinder({ initialYear = DEFAULT_MARKETPLACE_PLAN_YEAR }: { in
       <p className="sr-only" role="status" aria-atomic="true">
         {board ? `${board.medicaidEligible ? "You may qualify for Medicaid. " : ""}${board.totalPlans} Marketplace plans for ${board.year} in ${board.county ?? "your county"}, ${board.state ?? "your state"} are ready below.` : ""}
       </p>
-      {error && <p ref={errorRef} className="elig-error" role="alert">{error}{countyHandoff ? <> <a href="https://www.healthcare.gov/see-plans/" target="_blank" rel="noreferrer">Choose your county on HealthCare.gov ↗</a></> : null}</p>}
+      {error && <p ref={errorRef} className="elig-error" role="alert">{error}{countyHandoff || staleHandoff ? <> <a href="https://www.healthcare.gov/see-plans/" target="_blank" rel="noreferrer">{countyHandoff ? "Choose your county on HealthCare.gov" : "Check current plans on HealthCare.gov"} ↗</a></> : null}</p>}
 
       {board && (
         <section className="board" aria-label="Marketplace plan comparison results">
