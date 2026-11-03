@@ -1,6 +1,6 @@
 # [affinity.] — freshness updater
 
-Operator requirement, November 3, 2026: the product must detect and handle annual/source changes rather than silently become an outdated source itself. This implementation is prepared on the development branch; the scheduled workflow and public behavior require the initial reviewed merge/deployment before they can be claimed live.
+Operator requirement, November 3, 2026: the product must detect and handle annual/source changes rather than silently become an outdated source itself. The operator-approved merge is deployed, the daily workflow is active on `main`, and its first manually dispatched cloud run passed, including the responding release/catalog and bounded source pairs. See the [activation record](evaluation/2026-11-03-updater-activation.md). A future cron invocation and an actual automatic renewal commit remain separate observations; an unchanged first run correctly avoided a new catalog commit.
 
 ## Automatic Marketplace updates
 
@@ -48,6 +48,6 @@ npm run build
 
 The fixture-only unit/preflight commands freeze their clock to the catalog's observation time. That makes historical fixture tests deterministic without weakening production expiry checks; live refresh and browser checks use the real clock. Tests cover future-year discovery, incomplete/unknown sources, empty successful responses, ambiguous counties, secret-safe failures, next-year deferral, receipt renewal, expiry handoffs, publication scope and deployment readback.
 
-The initial [verification record](evaluation/2026-11-03-freshness-updater.md) retains source-check dates, the catalog hash, unresolved observations, test results and the pending activation boundary.
+The initial [verification record](evaluation/2026-11-03-freshness-updater.md) retains pre-merge source-check dates, the catalog hash, unresolved observations, test results and the then-pending activation boundary. The separate activation record preserves the later production observations.
 
 There is no new paid server or database in this design. The schedule consumes API requests, GitHub runner time and occasional Render builds; costs depend on the account's allowances and usage. Routine price retrieval already happens per request, so prices are not copied into a yearly database.

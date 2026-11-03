@@ -4,6 +4,19 @@ import { contentFingerprint, watchGuidance } from "../scripts/watch-guidance";
 import { medicaidGuidanceCurrent } from "@/lib/medicaid/federal";
 import { publicationPlan } from "../scripts/publish-catalog-refresh.cjs";
 import { snapshotMatches } from "../scripts/verify-catalog-publication.cjs";
+import { ownedGuidanceIssue } from "../scripts/report-guidance-watch.cjs";
+
+test("guidance notifications reuse the actual GitHub Actions author identity without adopting someone else's issue", () => {
+  const title = "Coverage guidance source review required";
+  const issues = [
+    { number: 1, title, author: { is_bot: false, login: "github-actions" } },
+    { number: 2, title, author: { is_bot: true, login: "other-bot" } },
+    { number: 3, title: "Another issue", author: { is_bot: true, login: "app/github-actions" } },
+    { number: 4, title, author: { is_bot: true, login: "app/github-actions" } },
+  ];
+  assert.equal(ownedGuidanceIssue(issues, title)?.number, 4);
+  assert.equal(ownedGuidanceIssue(issues.slice(0, 3), title), undefined);
+});
 
 test("automatic publisher rejects other branches, repositories, events, code edits and a moved base", () => {
   const base = { event: "schedule", ref: "refs/heads/main", repository: "PWR-LABS/affinity", sourceSha: "a".repeat(40), remoteSha: "a".repeat(40), changedFiles: ["src/lib/marketplace/catalog-data.json"], autoPublish: "true" };

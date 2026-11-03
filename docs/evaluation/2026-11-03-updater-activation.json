@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-03T20:23:21.681Z",
+  "approval": "Operator approved the initial merge/deployment on November 3, 2026",
+  "pullRequest": "https://github.com/PWR-LABS/affinity/pull/3",
+  "mergeCommit": "abd43fc2c9722f96d6873647d9a893a028bd1145",
+  "mergedAt": "2026-11-03T20:15:40Z",
+  "render": {
+    "deployId": "dep-dbl41rmi0phs739e9740",
+    "status": "live",
+    "commit": "abd43fc2c9722f96d6873647d9a893a028bd1145",
+    "trigger": "new_commit"
+  },
+  "workflow": {
+    "id": 406163950,
+    "state": "active",
+    "cronUtc": "23 9 * * *",
+    "firstRun": {
+      "url": "https://github.com/PWR-LABS/affinity/actions/runs/41711038149",
+      "event": "workflow_dispatch",
+      "conclusion": "success",
+      "jobs": {
+        "marketplaceCatalog": "success",
+        "guidanceWatch": "success"
+      },
+      "refresh": {
+        "status": "verified",
+        "checkedAt": "2026-11-03T20:17:25.479Z",
+        "changed": false,
+        "candidateSha256": "6489ffc5d95edd2812e7c470c7690b4b2ddaf207b4404213e5052bebca2450f4",
+        "defaultYear": 2027,
+        "years": [
+          "2026",
+          "2027"
+        ],
+        "outcomes": [
+          {
+            "year": 2026,
+            "state": "OH",
+            "status": "source_available"
+          },
+          {
+            "year": 2026,
+            "state": "FL",
+            "status": "source_available"
+          },
+          {
+            "year": 2026,
+            "state": "TX",
+            "status": "source_available"
+          },
+          {
+            "year": 2026,
+            "state": "AR",
+            "status": "source_available"
+          },
+          {
+            "year": 2026,
+            "state": "OK",
+            "status": "source_available"
+          },
+          {
+            "year": 2027,
+            "state": "OH",
+            "status": "source_available"
+          },
+          {
+            "year": 2027,
+            "state": "FL",
+            "status": "source_available"
+          },
+          {
+            "year": 2027,
+            "state": "TX",
+            "status": "source_available"
+          },
+          {
+            "year": 2027,
+            "state": "AR",
+            "status": "source_available"
+          },
+          {
+            "year": 2027,
+            "state": "OK",
+            "status": "source_available"
+          }
+        ],
+        "deferredYears": [],
+        "scope": "Official year/platform metadata and five synthetic availability probes per year; not independent coverage or policy review"
+      },
+      "deploymentReceipt": {
+        "observedAt": "2026-11-03T20:18:42.603Z",
+        "commit": "abd43fc2c9722f96d6873647d9a893a028bd1145",
+        "checkedAt": "2026-11-03T19:27:39.629Z",
+        "year": 2027,
+        "releaseAndCatalogVerified": true,
+        "dependencyVerified": true,
+        "sourcePairsPassed": true,
+        "oregonRouteVerified": true,
+        "scope": "Bounded synthetic deployed checks, not independent coverage or policy-content certification"
+      }
+    }
+  },
+  "liveHealth": {
+    "observedAt": "2026-11-03T20:19:50.949Z",
+    "expectedCommit": "abd43fc2c9722f96d6873647d9a893a028bd1145",
+    "health": {
+      "status": "ok",
+      "service": "affinity",
+      "release": {
+        "commit": "abd43fc2c9722f96d6873647d9a893a028bd1145",
+        "branch": "main"
+      },
+      "checks": {
+        "app": "ok",
+        "database": "ok",
+        "marketplaceApiKey": "present",
+        "marketplaceApi": "ok"
+      },
+      "sourceFreshness": {
+        "status": "current",
+        "checkedAt": "2026-11-03T19:27:39.629Z",
+        "expiresAt": "2026-11-11T19:27:39.629Z"
+      },
+      "nodeEnv": "production"
+    },
+    "freshness": {
+      "overall": "attention_required",
+      "marketplace": {
+        "status": "current",
+        "checkedAt": "2026-11-03T19:27:39.629Z",
+        "expiresAt": "2026-11-11T19:27:39.629Z",
+        "defaultYear": 2027,
+        "supportedYears": [
+          2026,
+          2027
+        ],
+        "scope": "Official year/platform metadata and bounded synthetic availability probes; live quotes are requested separately."
+      },
+      "guidance": {
+        "lastReviewed": "September 28, 2026",
+        "status": "review_required",
+        "scope": "Policy meaning and state application completion are not certified by the catalog refresh."
+      },
+      "indexedCoverage": {
+        "status": "not_certified_by_catalog_refresh"
+      }
+    }
+  },
+  "comparisons": {
+    "eligibility2027": {
+      "evaluatedAt": "2026-11-03T20:18:32.083Z",
+      "counts": {
+        "planned": 5,
+        "paired": 5,
+        "mismatched": 0,
+        "unavailable": 0
+      }
+    },
+    "plans2027": {
+      "evaluatedAt": "2026-11-03T20:18:41.837Z",
+      "counts": {
+        "plannedProfiles": 2,
+        "evaluatedProfiles": 2,
+        "unavailableProfiles": 0,
+        "comparedRows": 20,
+        "mismatchedRows": 0,
+        "mismatchedProfiles": 0
+      }
+    },
+    "plans2026": {
+      "evaluatedAt": "2026-11-03T20:20:06.809Z",
+      "counts": {
+        "plannedProfiles": 2,
+        "evaluatedProfiles": 2,
+        "unavailableProfiles": 0,
+        "comparedRows": 20,
+        "mismatchedRows": 0,
+        "mismatchedProfiles": 0
+      }
+    }
+  },
+  "browser": {
+    "initial": {
+      "status": "expectation_failed",
+      "criterion": "Expected a federal plan-comparison link for Oregon 97201/2026",
+      "finding": "Actual production returned a no-estimate official handoff because CMS reports multiple counties; this is the intended geography guard."
+    },
+    "repeat": {
+      "observedAt": "2026-11-03T20:22:24.008Z",
+      "commit": "abd43fc2c9722f96d6873647d9a893a028bd1145",
+      "passed": [
+        "Production defaults to source-verified 2027",
+        "Oregon 2027 reaches Explore Health on the responding production app",
+        "Ambiguous Oregon 97201 returns an official no-estimate county handoff",
+        "Unique-county Oregon 97401 retains the federal Marketplace route for 2026",
+        "Live source-status page fits 390px viewport",
+        "Production withholds overdue detailed policy summaries"
+      ],
+      "scope": "Isolated headless Chromium, actual production responses and fixed synthetic Oregon inputs; no enrollment or user data; browser closed."
+    }
+  },
+  "guidance": {
+    "issue": "https://github.com/PWR-LABS/affinity/issues/4",
+    "lastPolicyReview": "September 28, 2026",
+    "reviewOverdue": true,
+    "records": [
+      {
+        "id": "renewals",
+        "status": "unchanged_observation",
+        "httpStatus": 200
+      },
+      {
+        "id": "community-engagement",
+        "status": "unchanged_observation",
+        "httpStatus": 200
+      },
+      {
+        "id": "NY-0",
+        "status": "http_error",
+        "httpStatus": 403
+      },
+      {
+        "id": "NY-1",
+        "status": "http_error",
+        "httpStatus": 403
+      },
+      {
+        "id": "OH-0",
+        "status": "unchanged_observation",
+        "httpStatus": 200
+      },
+      {
+        "id": "policy-publication-index",
+        "status": "http_error",
+        "httpStatus": 403
+      },
+      {
+        "id": "state-contact-directory",
+        "status": "http_error",
+        "httpStatus": 403
+      }
+    ],
+    "reviewRenewed": false
+  },
+  "followupRegression": {
+    "reason": "GitHub CLI GraphQL reports the Actions bot as app/github-actions; the review notifier must recognize that identity to reuse its issue.",
+    "testsPassed": 142,
+    "readinessGatesPassed": 12,
+    "scriptSha256": "844824597fa827233b99c2d73d319b49b947b74bd3779c81f9a2c9d70070e13a"
+  },
+  "limits": [
+    "The first manual cloud run is verified; a future cron tick and actual automatic renewal push are not observed by this record.",
+    "Unchanged catalog data correctly produced no additional catalog commit.",
+    "Same-feed synthetic comparisons do not establish independent network/formulary accuracy or policy correctness.",
+    "Policy review remains required; employer and Medicare ingestion remain separate contracts."
+  ]
+}

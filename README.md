@@ -4,8 +4,8 @@
 
 **Vision:** [`docs/AFFINITY_PRODUCT_VISION.md`](docs/AFFINITY_PRODUCT_VISION.md) · **Doctrine:** [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md) · **Outside-In evaluation:** [`docs/PILOT_EVALUATION.md`](docs/PILOT_EVALUATION.md) · **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 **Claude Code entry:** [`CLAUDE.md`](CLAUDE.md)
-**2027 candidate:** this development branch adds explicit 2026/2027 selection, year-specific routing and quote context; [candidate verification and cost notes](docs/evaluation/2026-11-03-plan-year-candidate.md) record its local checks. The deployed public service remains 2026-only. [`docs/PLAN_YEAR_2027_READINESS.md`](docs/PLAN_YEAR_2027_READINESS.md) preserves the pre-implementation audit.
-**Freshness updater:** the [development updater](docs/FRESHNESS_UPDATER.md) derives accepted years/default/routing from verified CMS data, enforces expiry, and prepares daily catalog refresh and policy-source monitoring. Its current validated default is 2027. Activation and deployed readback remain pending the initial merge/deployment.
+**2027 support, live November 3, 2026:** explicit 2026/2027 selection, year-specific routing and quote context are deployed. The verified CMS catalog currently selects 2027 by default. [Activation evidence](docs/evaluation/2026-11-03-updater-activation.md) records the responding release and source-pair checks; the earlier [readiness audit](docs/PLAN_YEAR_2027_READINESS.md) and [candidate record](docs/evaluation/2026-11-03-plan-year-candidate.md) remain historical evidence.
+**Freshness updater:** the [updater](docs/FRESHNESS_UPDATER.md) derives accepted years/default/routing from validated CMS data, enforces expiry, and runs daily catalog and policy-source checks in GitHub Actions. The first manually dispatched cloud run passed, including deployed-release readback. Policy meaning requires review, and employer/Medicare indexes remain separate source contracts.
 
 **Bucket:** green healthcare/biotech family. Brand accent green `#2d9c4a`.
 

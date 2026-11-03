@@ -4,13 +4,19 @@ Public, chronological record of what shipped. The durable doctrine lives in
 [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md). No personal data appears here — live runs are described against a **demo profile** whose ZIP /
 income / providers / medications are set locally in `.env` and never committed.
 
-## Freshness updater (unreleased, 2026-11-03)
+## Freshness updater and 2027 support (live, 2026-11-03)
+
+- Merged PR #3 after operator approval and verified its exact responding production commit, deep Marketplace health, current receipt and 2027 default. The daily workflow is active; its first manually dispatched cloud run passed both jobs and deployed source-pair checks. See the [activation record](docs/evaluation/2026-11-03-updater-activation.md).
+- Verified five 2027 eligibility pairs, 20 sampled 2027 plan rows and a separate 20-row 2026 control with no compared-field mismatches. The policy watcher opened one review issue for overdue guidance and unresolved source observations.
+- Corrected the monitor's ownership match for GitHub CLI's actual `app/github-actions` bot identity so later runs reuse that issue. The new regression check passes with all 142 tests and 12 readiness gates. Historical pre-release evidence below retains its original scope; this release record supersedes its pending activation status.
+
+## Freshness updater (pre-release evidence, 2026-11-03)
 
 - Replaced hardcoded years and exchange records with a validated CMS data catalog; the default now follows the verified official current year, 2027. Added complete state metadata and bounded availability checks, future-year deferral, atomic replacement and bounded receipt renewal.
 - Prepared daily GitHub Actions checks with a data-only automatic publisher, review-proposal mode, deployment readback and same-day source pairs. Policy documents, publication discovery and contact-directory drift use a separate deduplicated review path.
 - Added public freshness status and expiry handoffs. Overdue policy summaries are withheld while official-source links remain available; successful retrieval never silently renews their review date. See the [updater contract](docs/FRESHNESS_UPDATER.md) for configuration, boundaries and activation status.
 
-## 2027 Marketplace candidate (unreleased, 2026-11-03)
+## 2027 Marketplace candidate (pre-release evidence, 2026-11-03)
 
 - Added an explicit coverage-year selector to screening and plan comparison, initially with the default retained at 2026; the freshness updater above supersedes that default. Results echo the chosen year, income/age labels identify it, and screening-to-plan navigation preserves it.
 - Made state routing year-specific: Oregon retains the federal path for 2026 and uses Explore Health for 2027. Unknown years fail before source access. Eligibility, plan search, provider lookup, and provider/drug coverage use the requested year.
