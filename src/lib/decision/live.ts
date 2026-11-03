@@ -7,7 +7,7 @@
  */
 import { MarketplaceClient } from "@/lib/marketplace/client";
 import { resolveCounty } from "@/lib/marketplace/geography";
-import { stateBasedMarketplace, StateNotSupportedError } from "@/lib/marketplace/states";
+import { assertMarketplacePlanYear, stateBasedMarketplace, StateNotSupportedError } from "@/lib/marketplace/states";
 import type { MarketplaceDrugCoverage, MarketplacePlan } from "@/lib/marketplace/types";
 import { pickVerifiedCostShare } from "./cost-share";
 import { premiumAmounts } from "./premium";
@@ -89,6 +89,7 @@ const isCovered = (s?: string): boolean | null => {
 };
 
 export async function runLivePlans(input: LivePlansInput): Promise<LivePlansResult> {
+  assertMarketplacePlanYear(input.year);
   // A user's provider/drug selections can shape GET coverage URLs. Never persist these responses
   // in the on-disk source cache, even though the cache key is hashed.
   const client = new MarketplaceClient({ useCache: false });
@@ -100,7 +101,7 @@ export async function runLivePlans(input: LivePlansInput): Promise<LivePlansResu
   if (countyResolution.status !== "unique") throw new AmbiguousZipError();
   const county = countyResolution.county;
   // State-Based Marketplaces aren't served by the federal API — redirect, don't fail opaquely.
-  const sbm = stateBasedMarketplace(county.state);
+  const sbm = stateBasedMarketplace(county.state, input.year);
   if (sbm) throw new StateNotSupportedError(sbm);
   const place = { zipcode: input.zip, countyfips: county.fips, state: county.state };
   const people = Array.from({ length: Math.max(1, input.householdSize) }, () => ({ age: input.age }));

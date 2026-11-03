@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { medicaidChangeUrl, medicaidResourceByCode, STATE_MEDICAID_RESOURCES } from "@/lib/medicaid/states";
-import { stateBasedMarketplace, SUPPORTED_MARKETPLACE_PLAN_YEAR } from "@/lib/marketplace/states";
+import { DEFAULT_MARKETPLACE_PLAN_YEAR, parseMarketplacePlanYear, stateBasedMarketplace, SUPPORTED_MARKETPLACE_PLAN_YEARS, type MarketplacePlanYear } from "@/lib/marketplace/states";
 
 interface Result {
+  year: MarketplacePlanYear;
   county?: string;
   state?: string;
   verdict: "medicaid" | "marketplace" | "coverage_gap" | "state_marketplace" | "official_handoff" | "unknown";
@@ -30,6 +31,7 @@ export function EligibilityCheck() {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
   const [state, setState] = useState("");
+  const [year, setYear] = useState<MarketplacePlanYear>(DEFAULT_MARKETPLACE_PLAN_YEAR);
   const [zip, setZip] = useState("");
   const [income, setIncome] = useState("");
   const [householdSize, setHouseholdSize] = useState("1");
@@ -37,10 +39,22 @@ export function EligibilityCheck() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const requestId = useRef(0);
+
+  function changeYear(value: string) {
+    const next = parseMarketplacePlanYear(value);
+    if (next === undefined) return;
+    requestId.current += 1;
+    setYear(next);
+    setResult(null);
+    setError(null);
+    setLoading(false);
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!e.currentTarget.reportValidity()) return;
+    const currentRequest = ++requestId.current;
     setError(null);
     setResult(null);
     setLoading(true);
@@ -54,26 +68,35 @@ export function EligibilityCheck() {
           income: Number(income),
           householdSize: Number(householdSize),
           age: Number(age),
-          year: SUPPORTED_MARKETPLACE_PLAN_YEAR,
+          year,
         }),
       });
       const data = await res.json();
+      if (currentRequest !== requestId.current) return;
       if (!res.ok) setError(data.error ?? "Something went wrong. Try again.");
+      else if (data.year !== year) setError("The coverage year did not match your request. Please check again.");
       else setResult(data as Result);
     } catch {
-      setError("We couldn't reach the service. Check your connection and try again.");
+      if (currentRequest === requestId.current) setError("We couldn't reach the service. Check your connection and try again.");
     } finally {
-      setLoading(false);
+      if (currentRequest === requestId.current) setLoading(false);
     }
   }
 
   const officialResource = medicaidResourceByCode(result?.state ?? state);
-  const officialMarketplace = stateBasedMarketplace(result?.state ?? state);
+  const officialMarketplace = stateBasedMarketplace(result?.state ?? state, result?.year ?? year);
 
   return (
     <div className="elig" id="coverage-check">
       <form className="elig-form page-panel" method="post" onSubmit={onSubmit} aria-busy={loading}>
         <div className="elig-grid">
+          <div className="field">
+            <label htmlFor="coverage-year">Coverage year</label>
+            <select id="coverage-year" name="year" value={year} onChange={(event) => changeYear(event.target.value)}>
+              {SUPPORTED_MARKETPLACE_PLAN_YEARS.map((value) => <option key={value} value={value}>{value}</option>)}
+            </select>
+            <p className="field-help">Choose the year you need coverage.</p>
+          </div>
           <div className="field">
             <label htmlFor="state">State</label>
             <select id="state" name="state" autoComplete="address-level1" value={state} onChange={(event) => setState(event.target.value)} required>
@@ -89,16 +112,16 @@ export function EligibilityCheck() {
               placeholder="ZIP code" value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, ""))} required />
           </div>
           <div className="field">
-            <label htmlFor="age">Your age</label>
+            <label htmlFor="age">Age for {year} coverage</label>
             <input id="age" name="age" type="text" inputMode="numeric" autoComplete="off" placeholder="Age" value={age}
               onChange={(e) => setAge(e.target.value.replace(/\D/g, ""))} required />
           </div>
           <div className="field">
-            <label htmlFor="income">Annual household income</label>
+            <label htmlFor="income">Annual household income for {year}</label>
             <input id="income" name="income" type="text" inputMode="numeric" autoComplete="off" placeholder="Annual income"
               value={income} onChange={(e) => setIncome(e.target.value.replace(/[^\d]/g, ""))} required
               aria-describedby="income-help" />
-            <p id="income-help" className="field-help">Your best estimate for this year. Used for screening, not saved as a profile.</p>
+            <p id="income-help" className="field-help">Your best estimate for {year}. Used for screening, not saved as a profile.</p>
           </div>
           <div className="field">
             <label htmlFor="householdSize">People in household</label>
@@ -120,6 +143,7 @@ export function EligibilityCheck() {
 
       {result && (
         <section className="verdict-card" data-verdict={result.verdict} role="status" aria-live="polite">
+          <p className="field-help">Coverage year: {result.year}</p>
           <span className="verdict-tag">{VERDICT_LABEL[result.verdict]}</span>
           <h2 className="verdict-headline">{result.headline}</h2>
           {result.nextSteps.length > 0 && (
@@ -133,7 +157,7 @@ export function EligibilityCheck() {
           {result.notes.map((n, i) => <p key={i} className="verdict-note">{n}</p>)}
           {result.verdict === "marketplace" ? (
             <div className="verdict-official-actions" aria-label="Marketplace next steps">
-              <Link className="cta" href="/plans">Compare 2026 Marketplace plans →</Link>
+              <Link className="cta" href={`/plans?year=${result.year}`}>Compare {result.year} Marketplace plans →</Link>
               <a href="https://www.healthcare.gov/see-plans/" target="_blank" rel="noreferrer">See official plans and prices ↗</a>
             </div>
           ) : null}

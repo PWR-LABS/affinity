@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { AmbiguousZipError, runLivePlans, ZipNotFoundError } from "@/lib/decision/live";
 import { MarketplaceApiError } from "@/lib/marketplace/client";
-import { StateNotSupportedError, SUPPORTED_MARKETPLACE_PLAN_YEAR } from "@/lib/marketplace/states";
+import { MARKETPLACE_PLAN_YEAR_ERROR, parseMarketplacePlanYear, StateNotSupportedError } from "@/lib/marketplace/states";
 
 export const dynamic = "force-dynamic";
 
@@ -19,11 +19,11 @@ export async function POST(req: Request) {
   const income = Number(b.income);
   const age = Number(b.age);
   const householdSize = Number(b.householdSize ?? 1);
-  const year = Number(b.year ?? SUPPORTED_MARKETPLACE_PLAN_YEAR);
+  const year = parseMarketplacePlanYear(b.year);
   const missing = (value: unknown) => value == null || (typeof value === "string" && value.trim() === "");
 
   if (!/^\d{5}$/.test(zip)) return NextResponse.json({ error: "Enter a valid 5-digit ZIP code." }, { status: 400 });
-  if (year !== SUPPORTED_MARKETPLACE_PLAN_YEAR) return NextResponse.json({ error: `This comparison currently supports ${SUPPORTED_MARKETPLACE_PLAN_YEAR} only.` }, { status: 400 });
+  if (year === undefined) return NextResponse.json({ error: MARKETPLACE_PLAN_YEAR_ERROR }, { status: 400 });
   if (missing(b.income) || !Number.isFinite(income) || income < 0) return NextResponse.json({ error: "Enter your annual income." }, { status: 400 });
   if (missing(b.age) || !Number.isInteger(age) || age < 0 || age > 120) return NextResponse.json({ error: "Enter a valid age." }, { status: 400 });
   if (!Number.isInteger(householdSize) || householdSize < 1 || householdSize > 12)
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
   try {
     const result = await runLivePlans({ zip, income, householdSize, age, year, doctors, drugs });
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, year });
   } catch (err) {
     if (err instanceof ZipNotFoundError) {
       return NextResponse.json({ error: "We couldn't find a county for that ZIP. Double-check your ZIP code." }, { status: 400 });

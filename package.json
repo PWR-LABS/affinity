@@ -43,6 +43,7 @@
     "eval:pilot-live-matrix": "tsx scripts/eval-pilot-live-matrix.ts",
     "eval:plan-board-pair": "tsx scripts/eval-plan-board-source-pair.ts",
     "eval:plan-year-availability": "tsx scripts/eval-plan-year-availability.ts",
+    "eval:plan-year-browser": "node scripts/eval-plan-year-browser.cjs",
     "poc:live": "bash -c 'set -a; [ -f .env ] && . ./.env; set +a; tsx scripts/poc-live.ts'",
     "eval:m0-smoke": "tsx scripts/eval-m0-smoke.ts",
     "eval:production-readiness": "tsx scripts/eval-production-readiness.ts",

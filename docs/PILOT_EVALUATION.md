@@ -6,9 +6,9 @@ Status: proposed, non-confidential. This document is a reproducible evaluation p
 
 Evaluate whether an adult who may be leaving Medicaid can identify the correct official next step and interpret a federal Marketplace plan comparison without mistaking source-reported coverage or annualized premium for a guarantee. Keep the initial test to synthetic, one-person 2026 profiles. Do not enter UH or patient records.
 
-Plan year is a safety boundary: the public comparison and exchange map are currently certified for **2026 only**. Eligibility, plan-search, and provider-lookup APIs reject other years. A 2027 evaluation must first refresh exchange classifications (including Oregon's planned transition), source figures, links, and tests rather than reuse the 2026 routing table.
+Plan year is a safety boundary: the deployed public comparison and its recorded October evaluation cover **2026 only**. The unreleased development candidate adds explicit 2026/2027 selection, year-specific routing and echoed quote context; it does not establish a deployed 2027 evaluation. In particular, Oregon uses different platforms in 2026 and 2027. A 2027 candidate must retain year-specific source comparisons and validation rather than reuse the October 2026 evidence as proof.
 
-The [November 3 readiness audit](PLAN_YEAR_2027_READINESS.md) records bounded 2027 API availability, the CMS 2027 routing classifications, and the changes and acceptance tests needed before enabling that year. It preserves an initial ambiguous-county result and a separate repeat; 2027 remains disabled.
+The [November 3 readiness audit](PLAN_YEAR_2027_READINESS.md) records bounded 2027 API availability, the CMS 2027 routing classifications, and the changes and acceptance tests identified before implementation. It preserves an initial ambiguous-county result and a separate repeat. Its 2027 rejection checks describe that observed production version, not the unreleased candidate.
 
 ## What is available for evaluation
 

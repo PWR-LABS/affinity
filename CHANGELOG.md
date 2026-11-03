@@ -4,6 +4,13 @@ Public, chronological record of what shipped. The durable doctrine lives in
 [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md). No personal data appears here — live runs are described against a **demo profile** whose ZIP /
 income / providers / medications are set locally in `.env` and never committed.
 
+## 2027 Marketplace candidate (unreleased, 2026-11-03)
+
+- Added an explicit coverage-year selector to screening and plan comparison, with the default retained at 2026. Results echo the chosen year, income/age labels identify it, and screening-to-plan navigation preserves it.
+- Made state routing year-specific: Oregon retains the federal path for 2026 and uses Explore Health for 2027. Unknown years fail before source access. Eligibility, plan search, provider lookup, and provider/drug coverage use the requested year.
+- Changing years clears results and doctor selections; late responses from an old year and mismatched response years cannot populate a new result. Added routing/transport regression tests and an optional Playwright browser check.
+- Prepared the existing bounded plan-board source-pair runner for explicit local targets and either supported year. This candidate has not been merged or deployed; no hosting, database, or LLM configuration changed.
+
 ## 2027 Marketplace readiness audit (2026-11-03)
 
 - Added a bounded, repeatable source-availability runner with synthetic profiles, reduced evidence, and tests for missing data, ambiguous geography, wrong years, deployment transitions, rejection guards, and secret-safe failures.

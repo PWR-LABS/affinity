@@ -9,8 +9,10 @@
  * Plan-year 2026 authority: CMS lists 21 full-platform SBMs and 3 SBM-FP states.
  * https://www.cms.gov/CCIIO/Resources/Fact-Sheets-and-FAQs/state-marketplaces
  * SBM-FP states (Arkansas, Oregon, Oklahoma) still use the federal eligibility/enrollment platform
- * for 2026 and are intentionally absent here. Oregon plans to transition for plan year 2027;
- * this table must be rechecked before a 2027 flow is enabled. Omitting a full SBM is unsafe:
+ * for 2026 and are intentionally absent from that year's table. The CMS 2027 map moves
+ * Oregon to its own platform, leaving Arkansas and Oklahoma on the federal platform:
+ * https://www.cms.gov/marketplace/in-person-assisters/training-webinars/training/marketplaces-map
+ * Omitting a full SBM is unsafe:
  * it can produce a federal estimate where users need their own state's exchange.
  */
 export interface StateMarketplace {
@@ -22,8 +24,29 @@ export interface StateMarketplace {
   url: string;
 }
 
-/** Exchange routing and the public comparison are currently certified for this plan year only. */
-export const SUPPORTED_MARKETPLACE_PLAN_YEAR = 2026;
+export const SUPPORTED_MARKETPLACE_PLAN_YEARS = [2026, 2027] as const;
+export type MarketplacePlanYear = (typeof SUPPORTED_MARKETPLACE_PLAN_YEARS)[number];
+/** Deliberately explicit; never roll the quote year forward from the device clock. */
+export const DEFAULT_MARKETPLACE_PLAN_YEAR: MarketplacePlanYear = 2026;
+export const MARKETPLACE_PLAN_YEAR_ERROR = "Choose 2026 or 2027 coverage.";
+
+export function parseMarketplacePlanYear(value: unknown): MarketplacePlanYear | undefined {
+  if (value === undefined) return DEFAULT_MARKETPLACE_PLAN_YEAR;
+  if (typeof value !== "number" && (typeof value !== "string" || !/^\d{4}$/.test(value.trim()))) return undefined;
+  const year = Number(value);
+  return SUPPORTED_MARKETPLACE_PLAN_YEARS.find((supported) => supported === year);
+}
+
+export class UnsupportedMarketplacePlanYearError extends Error {
+  constructor() {
+    super(MARKETPLACE_PLAN_YEAR_ERROR);
+    this.name = "UnsupportedMarketplacePlanYearError";
+  }
+}
+
+export function assertMarketplacePlanYear(year: number): asserts year is MarketplacePlanYear {
+  if (!SUPPORTED_MARKETPLACE_PLAN_YEARS.some((supported) => supported === year)) throw new UnsupportedMarketplacePlanYearError();
+}
 
 const SBM: Record<string, StateMarketplace> = {
   CA: { state: "California", name: "Covered California", url: "coveredca.com" },
@@ -49,9 +72,12 @@ const SBM: Record<string, StateMarketplace> = {
   WA: { state: "Washington", name: "Washington Healthplanfinder", url: "wahealthplanfinder.org" },
 };
 
-/** The SBM record for a two-letter state code, or undefined if the state is on the federal platform. */
-export function stateBasedMarketplace(state?: string): StateMarketplace | undefined {
-  return state ? SBM[state.toUpperCase()] : undefined;
+/** The SBM record for this year, or undefined for a federal-platform state. */
+export function stateBasedMarketplace(state?: string, year: number = DEFAULT_MARKETPLACE_PLAN_YEAR): StateMarketplace | undefined {
+  assertMarketplacePlanYear(year);
+  const code = state?.toUpperCase();
+  if (year === 2027 && code === "OR") return { state: "Oregon", name: "Explore Health", url: "explorehealthor.gov" };
+  return code ? SBM[code] : undefined;
 }
 
 /** Thrown when a request targets an SBM state the federal API can't serve — a clear redirect, not an outage. */

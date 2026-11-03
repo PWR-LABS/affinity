@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
-import { SUPPORTED_MARKETPLACE_PLAN_YEAR } from "@/lib/marketplace/states";
+import { DEFAULT_MARKETPLACE_PLAN_YEAR, parseMarketplacePlanYear, SUPPORTED_MARKETPLACE_PLAN_YEARS, type MarketplacePlanYear } from "@/lib/marketplace/states";
 
 interface SubjectStatus { key: string; label?: string; covered: boolean | null; priorAuth?: boolean }
 interface PlanRow {
@@ -14,6 +14,7 @@ interface PlanRow {
   keepsAllDoctors: boolean; doctors: SubjectStatus[]; drugs: SubjectStatus[];
 }
 interface Board {
+  year: MarketplacePlanYear;
   county?: string; state?: string; medicaidEligible: boolean; aptcMonthly: number;
   totalPlans: number; plansKeepingAllDoctors: number; doctorsTotal: number; drugsTotal: number;
   plans: PlanRow[]; notes: string[];
@@ -27,10 +28,11 @@ const covWord = (c: boolean | null, kind: "doctor" | "drug") => c === true
     ? kind === "doctor" ? "reported out-of-network by the Marketplace" : "reported not covered by the Marketplace"
     : "not answered by the Marketplace";
 
-export function PlanFinder() {
+export function PlanFinder({ initialYear = DEFAULT_MARKETPLACE_PLAN_YEAR }: { initialYear?: MarketplacePlanYear }) {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
   const [zip, setZip] = useState("");
+  const [year, setYear] = useState<MarketplacePlanYear>(initialYear);
   const [income, setIncome] = useState("");
   const [age, setAge] = useState("");
   const [householdSize, setHouseholdSize] = useState("1");
@@ -42,6 +44,7 @@ export function PlanFinder() {
   const [board, setBoard] = useState<Board | null>(null);
   const [showAll, setShowAll] = useState(false);
   const inFlight = useRef(false);
+  const requestId = useRef(0);
   const errorRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
@@ -50,18 +53,32 @@ export function PlanFinder() {
 
   const PAGE = 20;
 
+  function changeYear(value: string) {
+    const next = parseMarketplacePlanYear(value);
+    if (next === undefined) return;
+    requestId.current += 1;
+    inFlight.current = false;
+    setYear(next);
+    setBoard(null);
+    setDoctors([]);
+    setError(null);
+    setCountyHandoff(false);
+    setShowAll(false);
+    setLoading(false);
+  }
+
   const fetchDoctors = useCallback(
     async (q: string): Promise<Suggestion[]> => {
       if (!/^\d{5}$/.test(zip)) return [];
       const r = await fetch("/api/providers/autocomplete", {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, zip }),
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, zip, year }),
       });
       const d = await r.json();
       return (d.items ?? []).map((p: { npi: string; name?: string; specialty?: string }) => ({
         key: p.npi, label: p.name ?? p.npi, sub: p.specialty,
       }));
     },
-    [zip],
+    [zip, year],
   );
   const fetchDrugs = useCallback(async (q: string): Promise<Suggestion[]> => {
     const r = await fetch("/api/drugs/autocomplete", {
@@ -76,6 +93,7 @@ export function PlanFinder() {
     if (inFlight.current) return;
     if (!e.currentTarget.reportValidity()) return;
     inFlight.current = true;
+    const currentRequest = ++requestId.current;
     setError(null);
     setCountyHandoff(false);
     setBoard(null);
@@ -86,22 +104,26 @@ export function PlanFinder() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          zip: zip.trim(), income: Number(income), age: Number(age), householdSize: Number(householdSize), year: SUPPORTED_MARKETPLACE_PLAN_YEAR,
+          zip: zip.trim(), income: Number(income), age: Number(age), householdSize: Number(householdSize), year,
           doctors: doctors.map((d) => ({ npi: d.npi, label: d.label })),
           drugs: drugs.map((d) => ({ rxcui: d.rxcui, label: d.label })),
         }),
       });
       const data = await res.json();
+      if (currentRequest !== requestId.current) return;
       if (!res.ok) {
         setError(data.error ?? "Something went wrong.");
         setCountyHandoff(data.code === "county_ambiguous");
       }
+      else if (data.year !== year) setError("The coverage year did not match your request. Please search again.");
       else setBoard(data as Board);
     } catch {
-      setError("We couldn't reach the service. Try again.");
+      if (currentRequest === requestId.current) setError("We couldn't reach the service. Try again.");
     } finally {
-      inFlight.current = false;
-      setLoading(false);
+      if (currentRequest === requestId.current) {
+        inFlight.current = false;
+        setLoading(false);
+      }
     }
   }
 
@@ -110,17 +132,24 @@ export function PlanFinder() {
       <form className="elig-form page-panel" method="post" onSubmit={onSubmit} aria-busy={loading}>
         <div className="elig-grid">
           <div className="field">
+            <label htmlFor="f-year">Coverage year</label>
+            <select id="f-year" name="year" value={year} onChange={(event) => changeYear(event.target.value)}>
+              {SUPPORTED_MARKETPLACE_PLAN_YEARS.map((value) => <option key={value} value={value}>{value}</option>)}
+            </select>
+            <p className="field-help">Estimates and doctor listings apply to this year.</p>
+          </div>
+          <div className="field">
             <label htmlFor="f-zip">ZIP code</label>
             <input id="f-zip" name="zip" type="text" inputMode="numeric" autoComplete="postal-code" pattern="\d{5}" maxLength={5} placeholder="ZIP code"
               value={zip} onChange={(e) => setZip(e.target.value.replace(/\D/g, ""))} required />
           </div>
           <div className="field">
-            <label htmlFor="f-age">Your age</label>
+            <label htmlFor="f-age">Age for {year} coverage</label>
             <input id="f-age" name="age" type="text" inputMode="numeric" autoComplete="off" placeholder="Age" value={age}
               onChange={(e) => setAge(e.target.value.replace(/\D/g, ""))} required />
           </div>
           <div className="field">
-            <label htmlFor="f-income">Annual household income</label>
+            <label htmlFor="f-income">Annual household income for {year}</label>
             <input id="f-income" name="income" type="text" inputMode="numeric" autoComplete="off" placeholder="Annual income" value={income}
               onChange={(e) => setIncome(e.target.value.replace(/[^\d]/g, ""))} required />
           </div>
@@ -135,6 +164,7 @@ export function PlanFinder() {
         <div className="picker-grid">
           <div className="picker-block">
             <Typeahead
+              key={`doctors-${year}`}
               label="Add your doctors"
               placeholder={/^\d{5}$/.test(zip) ? "Search by name, e.g. Smith" : "Enter your ZIP above first"}
               fetchSuggestions={fetchDoctors}
@@ -180,12 +210,13 @@ export function PlanFinder() {
       </form>
 
       <p className="sr-only" role="status" aria-atomic="true">
-        {board ? `${board.medicaidEligible ? "You may qualify for Medicaid. " : ""}${board.totalPlans} Marketplace plans in ${board.county ?? "your county"}, ${board.state ?? "your state"} are ready below.` : ""}
+        {board ? `${board.medicaidEligible ? "You may qualify for Medicaid. " : ""}${board.totalPlans} Marketplace plans for ${board.year} in ${board.county ?? "your county"}, ${board.state ?? "your state"} are ready below.` : ""}
       </p>
       {error && <p ref={errorRef} className="elig-error" role="alert">{error}{countyHandoff ? <> <a href="https://www.healthcare.gov/see-plans/" target="_blank" rel="noreferrer">Choose your county on HealthCare.gov ↗</a></> : null}</p>}
 
       {board && (
         <section className="board" aria-label="Marketplace plan comparison results">
+          <p className="field-help">Coverage year: {board.year}</p>
           {board.medicaidEligible && (
             <div className="demo-banner" style={{ borderColor: "var(--ok)" }}>
               <span aria-hidden>◆</span>

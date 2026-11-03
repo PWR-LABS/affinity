@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { stateBasedMarketplace, StateNotSupportedError } from "@/lib/marketplace/states";
+import { DEFAULT_MARKETPLACE_PLAN_YEAR, parseMarketplacePlanYear, stateBasedMarketplace, StateNotSupportedError, UnsupportedMarketplacePlanYearError } from "@/lib/marketplace/states";
 import { STATE_MEDICAID_RESOURCES } from "@/lib/medicaid/states";
 
 test("full-platform 2026 routing matches all 21 CMS-listed state exchanges", () => {
@@ -39,4 +39,24 @@ test("StateNotSupportedError carries the marketplace for a clear redirect", () =
   assert.equal(err.name, "StateNotSupportedError");
   assert.equal(err.marketplace.url, "wahealthplanfinder.org");
   assert.match(err.message, /Washington/);
+});
+
+test("2027 routes all 22 CMS-listed state marketplaces while preserving federal-platform states", () => {
+  const cms2027 = ["CA", "CO", "CT", "DC", "GA", "ID", "IL", "KY", "ME", "MD", "MA", "MN", "NV", "NJ", "NM", "NY", "OR", "PA", "RI", "VT", "VA", "WA"].sort();
+  const routed = STATE_MEDICAID_RESOURCES.map((resource) => resource.code).filter((code) => stateBasedMarketplace(code, 2027)).sort();
+  assert.deepEqual(routed, cms2027);
+  assert.equal(stateBasedMarketplace("OR", 2026), undefined);
+  assert.equal(stateBasedMarketplace("or", 2027)?.url, "explorehealthor.gov");
+  for (const state of ["AR", "OK", "OH", "TX", "FL"]) assert.equal(stateBasedMarketplace(state, 2027), undefined);
+});
+
+test("only explicit known plan years are accepted, with an unchanged 2026 default", () => {
+  assert.equal(DEFAULT_MARKETPLACE_PLAN_YEAR, 2026);
+  assert.equal(parseMarketplacePlanYear(undefined), 2026);
+  for (const year of [2026, 2027]) {
+    assert.equal(parseMarketplacePlanYear(year), year);
+    assert.equal(parseMarketplacePlanYear(String(year)), year);
+  }
+  for (const invalid of [2025, 2028, 2027.5, Number.NaN, Infinity, null, true, false, "", " ", "year2027", [], {}, "2027.0"]) assert.equal(parseMarketplacePlanYear(invalid), undefined);
+  for (const invalid of [2025, 2028, Number.NaN, 2027.5]) assert.throws(() => stateBasedMarketplace("OH", invalid), UnsupportedMarketplacePlanYearError);
 });

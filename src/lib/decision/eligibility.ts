@@ -9,7 +9,7 @@
  */
 import { MarketplaceClient } from "@/lib/marketplace/client";
 import { resolveCounty } from "@/lib/marketplace/geography";
-import { stateBasedMarketplace } from "@/lib/marketplace/states";
+import { assertMarketplacePlanYear, stateBasedMarketplace } from "@/lib/marketplace/states";
 import { medicaidResourceByCode } from "@/lib/medicaid/states";
 
 export interface EligibilityInput {
@@ -88,6 +88,7 @@ export function multiPersonHouseholdHandoff(state: string, zip: string): Eligibi
 }
 
 export async function checkEligibility(input: EligibilityInput): Promise<EligibilityResult> {
+  assertMarketplacePlanYear(input.year);
   const requestedState = input.state.toUpperCase();
   const stateResource = medicaidResourceByCode(requestedState);
   if (!stateResource) throw new Error("Unsupported state code.");
@@ -95,7 +96,7 @@ export async function checkEligibility(input: EligibilityInput): Promise<Eligibi
   // Full state-based marketplaces are outside the federal Marketplace API. The explicit state field
   // lets us make a safe nationwide handoff before touching that API, so the result still works when a
   // ZIP lookup or federal API key cannot serve the state.
-  const requestedMarketplace = stateBasedMarketplace(requestedState);
+  const requestedMarketplace = stateBasedMarketplace(requestedState, input.year);
   if (requestedMarketplace) {
     return {
       zip: input.zip,
