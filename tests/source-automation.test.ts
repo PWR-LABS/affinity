@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { contentFingerprint, GUIDANCE_FINGERPRINT_VERSION, watchGuidance } from "../scripts/watch-guidance";
+import { contentFingerprint, GUIDANCE_FINGERPRINT_VERSION, GUIDANCE_SOURCES, watchGuidance } from "../scripts/watch-guidance";
 import { MEDICAID_GUIDANCE_REVIEWED_DAY, medicaidGuidanceCurrent } from "@/lib/medicaid/federal";
 import { publicationPlan } from "../scripts/publish-catalog-refresh.cjs";
 import { snapshotMatches } from "../scripts/verify-catalog-publication.cjs";
@@ -57,8 +57,8 @@ test("link normalization respects entities, relative URLs, base URLs and exclude
 
 test("a link-only change raises review even while the policy review date is current", async () => {
   const transport = (href: string) => (async () => new Response(`<main>${"Official guidance. ".repeat(20)}<a href="${href}">Apply</a></main>`, { headers: { "content-type": "text/html" } })) as typeof fetch;
-  const first = await watchGuidance({ fetchImpl: transport("https://old.example.gov/apply"), now: REVIEWED_AT + DAY });
-  const second = await watchGuidance({ fetchImpl: transport("https://new.example.gov/apply"), baseline: first, now: REVIEWED_AT + 2 * DAY });
+  const first = await watchGuidance({ waitImpl: async () => {}, fetchImpl: transport("https://old.example.gov/apply"), now: REVIEWED_AT + DAY });
+  const second = await watchGuidance({ waitImpl: async () => {}, fetchImpl: transport("https://new.example.gov/apply"), baseline: first, now: REVIEWED_AT + 2 * DAY });
   assert.equal(second.reviewOverdue, false);
   assert.equal(second.needsReview, true);
   assert.ok(second.records.every(({ status }) => status === "content_changed"));
@@ -66,8 +66,8 @@ test("a link-only change raises review even while the policy review date is curr
 
 test("legacy fingerprints require an explicit baseline migration without renewing policy review", async () => {
   const fetchImpl = (async () => new Response(`<main>${"Official guidance. ".repeat(20)}</main>`, { headers: { "content-type": "text/html" } })) as typeof fetch;
-  const first = await watchGuidance({ fetchImpl, now: REVIEWED_AT + DAY });
-  const next = await watchGuidance({ fetchImpl, baseline: { records: first.records }, now: REVIEWED_AT + 2 * DAY });
+  const first = await watchGuidance({ waitImpl: async () => {}, fetchImpl, now: REVIEWED_AT + DAY });
+  const next = await watchGuidance({ waitImpl: async () => {}, fetchImpl, baseline: { records: first.records }, now: REVIEWED_AT + 2 * DAY });
   assert.equal(next.fingerprintVersion, GUIDANCE_FINGERPRINT_VERSION);
   assert.equal(next.baselineVersion, null);
   assert.equal(next.needsReview, true);
@@ -77,8 +77,8 @@ test("legacy fingerprints require an explicit baseline migration without renewin
 
 test("a fetch or matching observation hash never renews a policy review", async () => {
   const fetchImpl = (async () => new Response(`<main>${"Official guidance. ".repeat(20)}</main>`, { headers: { "content-type": "text/html" } })) as typeof fetch;
-  const first = await watchGuidance({ fetchImpl, now: REVIEWED_AT + 31 * DAY });
-  const repeat = await watchGuidance({ fetchImpl, baseline: first, now: REVIEWED_AT + 32 * DAY });
+  const first = await watchGuidance({ waitImpl: async () => {}, fetchImpl, now: REVIEWED_AT + 31 * DAY });
+  const repeat = await watchGuidance({ waitImpl: async () => {}, fetchImpl, baseline: first, now: REVIEWED_AT + 32 * DAY });
   assert.ok(repeat.records.every((record) => record.status === "unchanged_observation"));
   assert.equal(repeat.reviewOverdue, true);
   assert.equal(repeat.needsReview, true);
@@ -101,4 +101,26 @@ test("a Git checkpoint alone cannot pass deployed catalog verification", () => {
   assert.equal(snapshotMatches({ ...health, release: { commit: "b".repeat(40), branch: "main" } }, status, commit, catalog), false);
   assert.equal(snapshotMatches(health, { marketplace: { ...status.marketplace, checkedAt: "old" } }, commit, catalog), false);
   assert.equal(snapshotMatches(health, { marketplace: { ...status.marketplace, status: "stale" } }, commit, catalog), false);
+});
+
+
+test("identified source requests are spaced and HTTP failures cannot become observations", async () => {
+  const events: string[] = [];
+  const report = await watchGuidance({
+    now: REVIEWED_AT + DAY,
+    waitImpl: async (milliseconds) => { assert.ok(milliseconds >= 1000); events.push("wait"); },
+    fetchImpl: (async (url, options) => {
+      events.push("fetch");
+      const headers = new Headers(options?.headers);
+      const cmsSource = ["www.medicaid.gov", "www.cms.gov"].includes(new URL(String(url)).hostname);
+      assert.equal(headers.get("user-agent"), cmsSource ? "affinity-source-watch/1.0 (+https://github.com/PWR-LABS/affinity)" : null);
+      assert.equal(headers.get("accept"), "text/html,application/pdf");
+      assert.equal(options?.cache, "no-store");
+      return new Response("Access denied", { status: 403, headers: { "content-type": "text/html" } });
+    }) as typeof fetch,
+  });
+  assert.deepEqual(events, GUIDANCE_SOURCES.flatMap((_, index) => index ? ["wait", "fetch"] : ["fetch"]));
+  assert.ok(report.records.every(record => record.status === "http_error" && record.httpStatus === 403 && record.sha256 === null));
+  assert.equal(report.needsReview, true);
+  assert.equal(report.reviewOverdue, false);
 });

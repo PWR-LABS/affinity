@@ -1,5 +1,10 @@
 # [affinity.] — build log / changelog
 
+## CMS guidance transport repair (2026-11-03)
+
+- Identified CMS/Medicaid requests with the public watcher name and repository, and spaced sequential source requests by 1.2 seconds. The fix preserves working non-CMS requests, strict content parsing, existing baselines and the policy-review date.
+- Added regression coverage for request identity, spacing and denied-source handling. See the [cloud diagnosis and verification](docs/evaluation/2026-11-03-guidance-cloud-access.md).
+
 ## Medicaid content review and source replacement (2026-11-03)
 
 - Completed a [bounded content review](docs/evaluation/2026-11-03-guidance-completion.md), dated November 3. Replaced the unavailable New York newsletter sources with the October NYC Health preparation PDF and CMS New York guide; removed unverified continuous-coverage wording and the now-past notice window.
