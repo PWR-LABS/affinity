@@ -1,5 +1,5 @@
 {
-  "observedAt": "2026-11-03T22:13:03.393Z",
+  "observedAt": "2026-11-03T22:23:44.378Z",
   "fingerprintVersion": 2,
   "policyReviewNotRenewed": true,
   "records": [
@@ -15,13 +15,13 @@
     },
     {
       "id": "NY-0",
-      "url": "https://www.health.ny.gov/health_care/medicaid/program/update/2026/no07_2026-06.htm",
-      "sha256": null
+      "url": "https://www.nyc.gov/assets/doh/downloads/pdf/hca/medicaid-work-requirements.pdf",
+      "sha256": "b2e167a264ff2b20c5f6c6efd23527d6131f2cb2cf7c712c3522e8bc11dd9085"
     },
     {
       "id": "NY-1",
-      "url": "https://www.health.ny.gov/health_care/medicaid/program/update/2026/no08_2026-07.htm",
-      "sha256": null
+      "url": "https://www.medicaid.gov/renew-info/NY",
+      "sha256": "fd1a3682db999932d1c6cd2a30aea55f9e931769c7835b8feda9e49c15cee913"
     },
     {
       "id": "OH-0",

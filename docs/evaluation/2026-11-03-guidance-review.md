@@ -1,5 +1,7 @@
 # [affinity.] — guidance review and observation migration
 
+This is the preserved initial checkpoint. The later [content review and source replacement](2026-11-03-guidance-completion.md) supersedes its current-status statements; the failed observations remain valid historical evidence.
+
 ## Outcome
 
 **PARTIAL policy review; format-2 observation migration prepared on a feature branch.**

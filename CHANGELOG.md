@@ -1,5 +1,10 @@
 # [affinity.] — build log / changelog
 
+## Medicaid content review and source replacement (2026-11-03)
+
+- Completed a [bounded content review](docs/evaluation/2026-11-03-guidance-completion.md), dated November 3. Replaced the unavailable New York newsletter sources with the October NYC Health preparation PDF and CMS New York guide; removed unverified continuous-coverage wording and the now-past notice window.
+- Restored reviewed summaries within the existing 30-day window and established matching format-2 observations for all seven active sources. Historical 403 evidence remains preserved. Tests use dates relative to the review so future content reviews do not invalidate expiry/change-detection coverage.
+
 ## Guidance observation migration candidate (2026-11-03)
 
 - Prepared format-2 observation hashes for five available official sources and preserved null hashes for two New York articles returning HTTP 403. A repeat confirmed five matching observations while review remained required.

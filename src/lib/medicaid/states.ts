@@ -91,17 +91,17 @@ export interface FeaturedMedicaidChange {
 export const FEATURED_MEDICAID_CHANGES: readonly FeaturedMedicaidChange[] = [
   {
     code: "NY",
-    timing: "2026 renewal changes · 2027 federal requirements",
+    timing: "2027 requirements · follow your renewal notice",
     dek: "Watch for a notice about your coverage.",
     facts: [
-      "New York ended extended continuous-eligibility policies for affected adults and children under six; they return to standard renewal processes with notice.",
-      "The state says members who may be subject to community engagement will receive a notice by mail or email from mid-August through September 2026.",
-      "The federal six-month renewal rule begins with applicable renewals scheduled in 2027; your state notice controls your next step.",
+      "New federal community-engagement requirements begin in January 2027 for certain adults. Exemptions apply; not every Medicaid member must meet the requirement.",
+      "NYC Health advises existing Medicaid members that the new work requirements may apply when they renew, starting March 1, 2027. Follow your own state notice rather than assuming your coverage changes on January 1.",
+      "Check whether an exemption applies and keep the documents your state requests. Contact the state Medicaid office if a notice or deadline is unclear.",
     ],
     action: "Keep your contact information current, check mail or email for state notices, and follow any official renewal instructions.",
     sources: [
-      { label: "NY coverage update", url: "https://www.health.ny.gov/health_care/medicaid/program/update/2026/no07_2026-06.htm" },
-      { label: "NY community-engagement notice", url: "https://www.health.ny.gov/health_care/medicaid/program/update/2026/no08_2026-07.htm" },
+      { label: "NYC Health preparation guide (PDF)", url: "https://www.nyc.gov/assets/doh/downloads/pdf/hca/medicaid-work-requirements.pdf" },
+      { label: "CMS New York eligibility guide", url: "https://www.medicaid.gov/renew-info/NY" },
     ],
   },
   {
