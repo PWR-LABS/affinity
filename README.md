@@ -4,7 +4,7 @@
 
 **Vision:** [`docs/AFFINITY_PRODUCT_VISION.md`](docs/AFFINITY_PRODUCT_VISION.md) · **Doctrine:** [`docs/PRODUCT_DOCTRINE.md`](docs/PRODUCT_DOCTRINE.md) · **Outside-In evaluation:** [`docs/PILOT_EVALUATION.md`](docs/PILOT_EVALUATION.md) · **Changelog:** [`CHANGELOG.md`](CHANGELOG.md)
 **Claude Code entry:** [`CLAUDE.md`](CLAUDE.md)
-**2027 candidate:** this development branch adds explicit 2026/2027 selection, year-specific routing and quote context. The deployed public service remains 2026-only. [`docs/PLAN_YEAR_2027_READINESS.md`](docs/PLAN_YEAR_2027_READINESS.md) preserves the pre-implementation source audit and acceptance checks.
+**2027 candidate:** this development branch adds explicit 2026/2027 selection, year-specific routing and quote context; [candidate verification and cost notes](docs/evaluation/2026-11-03-plan-year-candidate.md) record its local checks. The deployed public service remains 2026-only. [`docs/PLAN_YEAR_2027_READINESS.md`](docs/PLAN_YEAR_2027_READINESS.md) preserves the pre-implementation audit.
 
 **Bucket:** green healthcare/biotech family. Brand accent green `#2d9c4a`.
 

@@ -1,14 +1,16 @@
 /**
- * Compare five prewritten synthetic eligibility cases on the deployed app with
+ * Compare five prewritten synthetic eligibility cases on the selected app with
  * direct, same-day responses from the official CMS Marketplace API. This is a
  * method check, not the full 30-profile pilot protocol or an eligibility finding.
  *
  * Run with MARKETPLACE_API_KEY already in the environment. The key, keyed URLs,
  * raw upstream bodies, and any real person-level inputs must not be printed.
  */
-const APP_URL = "https://affinity.pwr-labs.ai";
+import { parseMarketplacePlanYear } from "@/lib/marketplace/states";
+
+const APP_URL = process.env.AFFINITY_EVAL_APP_URL ?? "https://affinity.pwr-labs.ai";
 const CMS_API = "https://marketplace.api.healthcare.gov/api/v1";
-const YEAR = 2026;
+const YEAR = parseMarketplacePlanYear(process.env.AFFINITY_EVAL_YEAR);
 
 interface Profile {
   id: string;
@@ -61,7 +63,7 @@ async function evaluate(profile: Profile): Promise<Json> {
 
   const geo = await official(`/counties/by/zip/${profile.zip}`, "GET");
   const counties = Array.isArray(geo.counties) ? geo.counties as Json[] : [];
-  const county = counties[0];
+  const county = counties.length === 1 ? counties[0] : undefined;
   if (!county || county.state !== profile.state || typeof county.fips !== "string") {
     throw new Error("CMS county lookup did not resolve to the prewritten state");
   }
@@ -74,6 +76,7 @@ async function evaluate(profile: Profile): Promise<Json> {
   const plans = Array.isArray(search.plans) ? search.plans as Json[] : [];
   const premiums = plans.map((plan) => plan.premium).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
   const source = {
+    year: YEAR,
     state: county.state,
     county: county.name,
     medicaidEligible: Boolean(firstEstimate.is_medicaid_chip),
@@ -90,6 +93,7 @@ async function evaluate(profile: Profile): Promise<Json> {
         ? "marketplace"
         : "unknown";
   const observed = {
+    year: app.year,
     state: app.state,
     county: app.county,
     verdict: app.verdict,
@@ -105,6 +109,10 @@ async function evaluate(profile: Profile): Promise<Json> {
 }
 
 async function main(): Promise<void> {
+  if (YEAR === undefined) throw new Error("unsupported_plan_year");
+  const target = new URL(APP_URL);
+  if (target.username || target.password || target.search || target.hash || target.pathname !== "/"
+    || (target.protocol !== "https:" && !(target.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(target.hostname)))) throw new Error("invalid_app_target");
   if (!process.env.MARKETPLACE_API_KEY?.trim()) throw new Error("MARKETPLACE_API_KEY is unset");
   const cases: Json[] = [];
   for (const profile of PROFILES) {
@@ -120,6 +128,7 @@ async function main(): Promise<void> {
   console.log(JSON.stringify({
     evaluatedAt: new Date().toISOString(),
     app: APP_URL,
+    targetKind: ["localhost", "127.0.0.1", "[::1]"].includes(target.hostname) ? "local_candidate" : "remote_service",
     source: "https://developer.cms.gov/marketplace-api/api-spec",
     sourceApi: CMS_API,
     year: YEAR,

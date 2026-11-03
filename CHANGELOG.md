@@ -10,6 +10,7 @@ income / providers / medications are set locally in `.env` and never committed.
 - Made state routing year-specific: Oregon retains the federal path for 2026 and uses Explore Health for 2027. Unknown years fail before source access. Eligibility, plan search, provider lookup, and provider/drug coverage use the requested year.
 - Changing years clears results and doctor selections; late responses from an old year and mismatched response years cannot populate a new result. Added routing/transport regression tests and an optional Playwright browser check.
 - Prepared the existing bounded plan-board source-pair runner for explicit local targets and either supported year. This candidate has not been merged or deployed; no hosting, database, or LLM configuration changed.
+- Recorded [local candidate evidence and cost implications](docs/evaluation/2026-11-03-plan-year-candidate.md): five 2027 eligibility profiles, 20 sampled 2027 plan rows, a separate 20-row 2026 control, and seven browser checks passed. These are bounded technical checks, not public deployment or independent coverage certification.
 
 ## 2027 Marketplace readiness audit (2026-11-03)
 

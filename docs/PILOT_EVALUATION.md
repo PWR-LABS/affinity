@@ -10,6 +10,8 @@ Plan year is a safety boundary: the deployed public comparison and its recorded 
 
 The [November 3 readiness audit](PLAN_YEAR_2027_READINESS.md) records bounded 2027 API availability, the CMS 2027 routing classifications, and the changes and acceptance tests identified before implementation. It preserves an initial ambiguous-county result and a separate repeat. Its 2027 rejection checks describe that observed production version, not the unreleased candidate.
 
+The subsequent [local 2027 candidate verification](evaluation/2026-11-03-plan-year-candidate.md) records a five-profile eligibility comparison, two-profile/20-row 2027 plan-board comparison, separate 2026 control, and bounded browser checks. It does not establish a deployed candidate or complete the intended-reviewer, assistive-technology or governance work below.
+
 ## What is available for evaluation
 
 - Official Medicaid application pages or program portals for all 50 states and D.C.; renewal may require a different state-specific path.

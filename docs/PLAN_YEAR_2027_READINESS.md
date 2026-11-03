@@ -2,6 +2,8 @@
 
 Observed November 3, 2026. Live API observation times below are UTC from the execution host. Public-source publication/update dates remain separate from observation time.
 
+This is the retained pre-implementation audit. The [subsequent development candidate](evaluation/2026-11-03-plan-year-candidate.md) implements year selection and routing and records separate local verification; it has not been deployed.
+
 **Outcome: 2027 source data are available in the bounded sample; consumer support remains NOT ENABLED.** The public eligibility, plan-search, and provider-lookup routes still reject 2027. This audit changes tooling and documentation only. It is not a source-paired 2027 quote replay, independent network verification, or authorization for a pilot or deployment.
 
 ## Verified source availability
