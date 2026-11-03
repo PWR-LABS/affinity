@@ -4,6 +4,8 @@ import { test } from "node:test";
 import { DEFAULT_MARKETPLACE_PLAN_YEAR, MARKETPLACE_CATALOG, SUPPORTED_MARKETPLACE_PLAN_YEARS, parseMarketplacePlanYear, stateBasedMarketplace, StateNotSupportedError, UnsupportedMarketplacePlanYearError } from "@/lib/marketplace/states";
 import { STATE_MEDICAID_RESOURCES } from "@/lib/medicaid/states";
 
+// These assertions describe the frozen historical fixture, never the generated production catalog.
+
 test("full-platform 2026 routing matches all 21 CMS-listed state exchanges", () => {
   const cmsFullPlatform = ["CA", "CO", "CT", "DC", "GA", "ID", "IL", "KY", "ME", "MD", "MA", "MN", "NV", "NJ", "NM", "NY", "PA", "RI", "VT", "VA", "WA"].sort();
   const routed = STATE_MEDICAID_RESOURCES.map((resource) => resource.code).filter((code) => stateBasedMarketplace(code, 2026)).sort();

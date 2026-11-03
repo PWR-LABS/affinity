@@ -32,6 +32,7 @@ jobs:
           MARKETPLACE_API_KEY: ${{ secrets.MARKETPLACE_API_KEY }}
       - name: Validate before publication
         run: |
+          npm run eval:catalog-transitions
           npm run typecheck
           npm run eval:production-readiness
           npm run build

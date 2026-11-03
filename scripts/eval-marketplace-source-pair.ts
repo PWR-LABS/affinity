@@ -7,6 +7,7 @@
  * raw upstream bodies, and any real person-level inputs must not be printed.
  */
 import { parseMarketplacePlanYear } from "@/lib/marketplace/states";
+import { sourceStateRoute } from "./source-state-route";
 
 const APP_URL = process.env.AFFINITY_EVAL_APP_URL ?? "https://affinity.pwr-labs.ai";
 const CMS_API = "https://marketplace.api.healthcare.gov/api/v1";
@@ -52,7 +53,7 @@ async function official(path: string, method: "GET" | "POST", body?: Json): Prom
   return readJson(response, `CMS ${path.split("?")[0]}`);
 }
 
-async function evaluate(profile: Profile): Promise<Json> {
+export async function evaluateEligibilityProfile(profile: Profile): Promise<Json> {
   const input = { state: profile.state, zip: profile.zip, income: profile.income, age: profile.age, householdSize: 1, year: YEAR };
   const app = await readJson(await fetch(`${APP_URL}/api/eligibility`, {
     method: "POST",
@@ -60,6 +61,16 @@ async function evaluate(profile: Profile): Promise<Json> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(input),
   }), "[affinity.] eligibility");
+
+  const route = await sourceStateRoute((path) => official(path, "GET"), YEAR, profile.state);
+  if (route.marketplace) {
+    const source = { year: YEAR, state: profile.state, verdict: "state_marketplace", medicaidEligible: false, aptcMonthly: 0, inCoverageGap: false };
+    const observed = Object.fromEntries(Object.keys(source).map((field) => [field, app[field]]));
+    const differences = Object.entries(source).filter(([field, value]) => observed[field] !== value).map(([field]) => field);
+    const steps = Array.isArray(app.nextSteps) ? app.nextSteps.join(" ") : "";
+    if (!steps.includes(route.marketplace.name)) differences.push("officialExchangeName");
+    return { id: profile.id, input, evidenceBasis: "official_exchange_handoff", source: { ...source, marketplace: route.marketplace }, observed, differences, pairedAt: new Date().toISOString() };
+  }
 
   const geo = await official(`/counties/by/zip/${profile.zip}`, "GET");
   const counties = Array.isArray(geo.counties) ? geo.counties as Json[] : [];
@@ -105,7 +116,7 @@ async function evaluate(profile: Profile): Promise<Json> {
   };
   const differences: string[] = (Object.keys(source) as Array<keyof typeof source>).filter((field) => source[field] !== observed[field]);
   if (sourceVerdict !== observed.verdict) differences.push("verdict");
-  return { id: profile.id, input, source: { ...source, verdict: sourceVerdict }, observed, differences, pairedAt: new Date().toISOString() };
+  return { id: profile.id, input, evidenceBasis: "federal_estimate", source: { ...source, verdict: sourceVerdict }, observed, differences, pairedAt: new Date().toISOString() };
 }
 
 async function main(): Promise<void> {
@@ -117,7 +128,7 @@ async function main(): Promise<void> {
   const cases: Json[] = [];
   for (const profile of PROFILES) {
     try {
-      cases.push(await evaluate(profile));
+      cases.push(await evaluateEligibilityProfile(profile));
     } catch (error) {
       // Keep the error coarse. Fetch exceptions may otherwise contain a URL with the API key.
       cases.push({ id: profile.id, input: { state: profile.state, zip: profile.zip, income: profile.income, age: profile.age, householdSize: 1, year: YEAR }, error: error instanceof Error && /HTTP \d{3}/.test(error.message) ? error.message : "source_pair_unavailable" });
@@ -132,14 +143,15 @@ async function main(): Promise<void> {
     source: "https://developer.cms.gov/marketplace-api/api-spec",
     sourceApi: CMS_API,
     year: YEAR,
-    scope: "Five synthetic one-person eligibility profiles; direct official API response versus live app; not full plan-board, enrollment, or human-use validation",
-    counts: { planned: PROFILES.length, paired: paired.length, mismatched: mismatched.length, unavailable: cases.length - paired.length },
+    scope: "Five fixed synthetic profiles; direct CMS estimates for federal states and official exchange handoffs for own-platform states, counted separately; not enrollment or human-use validation",
+    counts: { planned: PROFILES.length, paired: paired.length, estimatePairs: paired.filter((row) => row.evidenceBasis === "federal_estimate").length,
+      handoffPairs: paired.filter((row) => row.evidenceBasis === "official_exchange_handoff").length, mismatched: mismatched.length, unavailable: cases.length - paired.length },
     cases,
   }, null, 2));
   if (mismatched.length || paired.length !== PROFILES.length) process.exitCode = 1;
 }
 
-main().catch((error) => {
+if (process.argv[1]?.endsWith("eval-marketplace-source-pair.ts")) main().catch((error) => {
   console.error(error instanceof Error && error.message === "MARKETPLACE_API_KEY is unset" ? error.message : "source_pair_unavailable");
   process.exitCode = 1;
 });

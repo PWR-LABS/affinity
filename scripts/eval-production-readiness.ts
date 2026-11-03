@@ -9,6 +9,7 @@
 import { spawnSync } from "node:child_process";
 
 const GATES = [
+  "eval:marketplace-catalog",
   "test",
   "eval:m0-smoke",
   "eval:api-mrf-diff",

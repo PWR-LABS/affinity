@@ -1,0 +1,359 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-03T19:27:39.629Z",
+  "expiresAt": "2026-11-11T19:27:39.629Z",
+  "defaultYear": 2027,
+  "years": {
+    "2026": {
+      "models": {
+        "AK": "FFM",
+        "AL": "FFM",
+        "AR": "SupportedSBM",
+        "AZ": "FFM",
+        "CA": "SBM",
+        "CO": "SBM",
+        "CT": "SBM",
+        "DC": "SBM",
+        "DE": "FFM",
+        "FL": "FFM",
+        "GA": "SBM",
+        "HI": "FFM",
+        "IA": "FFM",
+        "ID": "SBM",
+        "IL": "SBM",
+        "IN": "FFM",
+        "KS": "FFM",
+        "KY": "SBM",
+        "LA": "FFM",
+        "MA": "SBM",
+        "MD": "SBM",
+        "ME": "SBM",
+        "MI": "FFM",
+        "MN": "SBM",
+        "MO": "FFM",
+        "MS": "FFM",
+        "MT": "FFM",
+        "NC": "FFM",
+        "ND": "FFM",
+        "NE": "FFM",
+        "NH": "FFM",
+        "NJ": "SBM",
+        "NM": "SBM",
+        "NV": "SBM",
+        "NY": "SBM",
+        "OH": "FFM",
+        "OK": "SupportedSBM",
+        "OR": "SupportedSBM",
+        "PA": "SBM",
+        "RI": "SBM",
+        "SC": "FFM",
+        "SD": "FFM",
+        "TN": "FFM",
+        "TX": "FFM",
+        "UT": "FFM",
+        "VA": "SBM",
+        "VT": "SBM",
+        "WA": "SBM",
+        "WI": "FFM",
+        "WV": "FFM",
+        "WY": "FFM"
+      },
+      "marketplaces": {
+        "CA": {
+          "state": "California",
+          "name": "Covered California",
+          "url": "coveredca.com"
+        },
+        "CO": {
+          "state": "Colorado",
+          "name": "Connect for Health Colorado",
+          "url": "connectforhealthco.com"
+        },
+        "CT": {
+          "state": "Connecticut",
+          "name": "Access Health CT",
+          "url": "accesshealthct.com"
+        },
+        "DC": {
+          "state": "District of Columbia",
+          "name": "DC Health Link",
+          "url": "dchealthlink.com"
+        },
+        "GA": {
+          "state": "Georgia",
+          "name": "Georgia Access",
+          "url": "georgiaaccess.gov"
+        },
+        "ID": {
+          "state": "Idaho",
+          "name": "Your Health Idaho",
+          "url": "yourhealthidaho.org"
+        },
+        "IL": {
+          "state": "Illinois",
+          "name": "Get Covered Illinois",
+          "url": "getcoveredillinois.gov"
+        },
+        "KY": {
+          "state": "Kentucky",
+          "name": "Kynect",
+          "url": "kynect.ky.gov"
+        },
+        "MA": {
+          "state": "Massachusetts",
+          "name": "Massachusetts Health Connector",
+          "url": "mahealthconnector.org"
+        },
+        "MD": {
+          "state": "Maryland",
+          "name": "Maryland Health Connection",
+          "url": "marylandhealthconnection.gov"
+        },
+        "ME": {
+          "state": "Maine",
+          "name": "CoverME.gov",
+          "url": "coverme.gov"
+        },
+        "MN": {
+          "state": "Minnesota",
+          "name": "MNSure",
+          "url": "mnsure.org"
+        },
+        "NJ": {
+          "state": "New Jersey",
+          "name": "Get Covered NJ",
+          "url": "nj.gov/getcoverednj"
+        },
+        "NM": {
+          "state": "New Mexico",
+          "name": "BeWellNM",
+          "url": "bewellnm.com"
+        },
+        "NV": {
+          "state": "Nevada",
+          "name": "Nevada Health Link",
+          "url": "nevadahealthlink.com"
+        },
+        "NY": {
+          "state": "New York",
+          "name": "NY State of Health",
+          "url": "nystateofhealth.ny.gov"
+        },
+        "PA": {
+          "state": "Pennsylvania",
+          "name": "Pennie",
+          "url": "pennie.com"
+        },
+        "RI": {
+          "state": "Rhode Island",
+          "name": "HealthSourceRI",
+          "url": "healthsourceri.com"
+        },
+        "VA": {
+          "state": "Virginia",
+          "name": "Virginia's Insurance Marketplace",
+          "url": "marketplace.virginia.gov"
+        },
+        "VT": {
+          "state": "Vermont",
+          "name": "Vermont Health Connect",
+          "url": "healthconnect.vermont.gov"
+        },
+        "WA": {
+          "state": "Washington",
+          "name": "Washington HealthPlanFinder",
+          "url": "wahealthplanfinder.org"
+        }
+      }
+    },
+    "2027": {
+      "models": {
+        "AK": "FFM",
+        "AL": "FFM",
+        "AR": "SupportedSBM",
+        "AZ": "FFM",
+        "CA": "SBM",
+        "CO": "SBM",
+        "CT": "SBM",
+        "DC": "SBM",
+        "DE": "FFM",
+        "FL": "FFM",
+        "GA": "SBM",
+        "HI": "FFM",
+        "IA": "FFM",
+        "ID": "SBM",
+        "IL": "SBM",
+        "IN": "FFM",
+        "KS": "FFM",
+        "KY": "SBM",
+        "LA": "FFM",
+        "MA": "SBM",
+        "MD": "SBM",
+        "ME": "SBM",
+        "MI": "FFM",
+        "MN": "SBM",
+        "MO": "FFM",
+        "MS": "FFM",
+        "MT": "FFM",
+        "NC": "FFM",
+        "ND": "FFM",
+        "NE": "FFM",
+        "NH": "FFM",
+        "NJ": "SBM",
+        "NM": "SBM",
+        "NV": "SBM",
+        "NY": "SBM",
+        "OH": "FFM",
+        "OK": "SupportedSBM",
+        "OR": "SBM",
+        "PA": "SBM",
+        "RI": "SBM",
+        "SC": "FFM",
+        "SD": "FFM",
+        "TN": "FFM",
+        "TX": "FFM",
+        "UT": "FFM",
+        "VA": "SBM",
+        "VT": "SBM",
+        "WA": "SBM",
+        "WI": "FFM",
+        "WV": "FFM",
+        "WY": "FFM"
+      },
+      "marketplaces": {
+        "CA": {
+          "state": "California",
+          "name": "Covered California",
+          "url": "coveredca.com"
+        },
+        "CO": {
+          "state": "Colorado",
+          "name": "Connect for Health Colorado",
+          "url": "connectforhealthco.com"
+        },
+        "CT": {
+          "state": "Connecticut",
+          "name": "Access Health CT",
+          "url": "accesshealthct.com"
+        },
+        "DC": {
+          "state": "District of Columbia",
+          "name": "DC Health Link",
+          "url": "dchealthlink.com"
+        },
+        "GA": {
+          "state": "Georgia",
+          "name": "Georgia Access",
+          "url": "georgiaaccess.gov"
+        },
+        "ID": {
+          "state": "Idaho",
+          "name": "Your Health Idaho",
+          "url": "yourhealthidaho.org"
+        },
+        "IL": {
+          "state": "Illinois",
+          "name": "Get Covered Illinois",
+          "url": "getcoveredillinois.gov"
+        },
+        "KY": {
+          "state": "Kentucky",
+          "name": "Kynect",
+          "url": "kynect.ky.gov"
+        },
+        "MA": {
+          "state": "Massachusetts",
+          "name": "Massachusetts Health Connector",
+          "url": "mahealthconnector.org"
+        },
+        "MD": {
+          "state": "Maryland",
+          "name": "Maryland Health Connection",
+          "url": "marylandhealthconnection.gov"
+        },
+        "ME": {
+          "state": "Maine",
+          "name": "CoverME.gov",
+          "url": "coverme.gov"
+        },
+        "MN": {
+          "state": "Minnesota",
+          "name": "MNSure",
+          "url": "mnsure.org"
+        },
+        "NJ": {
+          "state": "New Jersey",
+          "name": "Get Covered NJ",
+          "url": "nj.gov/getcoverednj"
+        },
+        "NM": {
+          "state": "New Mexico",
+          "name": "BeWellNM",
+          "url": "bewellnm.com"
+        },
+        "NV": {
+          "state": "Nevada",
+          "name": "Nevada Health Link",
+          "url": "nevadahealthlink.com"
+        },
+        "NY": {
+          "state": "New York",
+          "name": "NY State of Health",
+          "url": "nystateofhealth.ny.gov"
+        },
+        "OR": {
+          "state": "Oregon",
+          "name": "Explore Health",
+          "url": "explorehealthor.gov"
+        },
+        "PA": {
+          "state": "Pennsylvania",
+          "name": "Pennie",
+          "url": "pennie.com"
+        },
+        "RI": {
+          "state": "Rhode Island",
+          "name": "HealthSourceRI",
+          "url": "healthsourceri.com"
+        },
+        "VA": {
+          "state": "Virginia",
+          "name": "Virginia's Insurance Marketplace",
+          "url": "marketplace.virginia.gov"
+        },
+        "VT": {
+          "state": "Vermont",
+          "name": "Vermont Health Connect",
+          "url": "healthconnect.vermont.gov"
+        },
+        "WA": {
+          "state": "Washington",
+          "name": "Washington HealthPlanFinder",
+          "url": "wahealthplanfinder.org"
+        }
+      }
+    }
+  },
+  "evidence": {
+    "source": "https://marketplace.api.healthcare.gov/api/v1",
+    "advertisedYears": [
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026,
+      2027
+    ],
+    "probedYears": [
+      2026,
+      2027
+    ],
+    "probeProfiles": 10
+  }
+}

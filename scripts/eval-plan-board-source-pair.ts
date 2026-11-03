@@ -8,6 +8,7 @@
 import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
 import { parseMarketplacePlanYear } from "@/lib/marketplace/states";
+import { sourceStateRoute } from "./source-state-route";
 
 const APP_URL = process.env.AFFINITY_EVAL_APP_URL ?? "https://affinity.pwr-labs.ai";
 const CMS_API = "https://marketplace.api.healthcare.gov/api/v1";
@@ -98,13 +99,27 @@ function differences(source: Json, observed: Json): string[] {
   return Object.keys(observed).filter((field) => source[field] !== observed[field]);
 }
 
-async function evaluate(profile: typeof PROFILES[number]): Promise<Json> {
-  const app = await readJson(await fetch(`${APP_URL}/api/plans`, {
+export async function evaluatePlanProfile(profile: typeof PROFILES[number]): Promise<Json> {
+  const response = await fetch(`${APP_URL}/api/plans`, {
     method: "POST",
     signal: AbortSignal.timeout(90_000),
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ zip: profile.zip, income: profile.income, age: profile.age, householdSize: 1, year: YEAR, doctors: [], drugs: [] }),
-  }), "app");
+  });
+  const route = await sourceStateRoute((path) => official(path, "GET"), YEAR, profile.state);
+  if (route.marketplace) {
+    const app = await response.json() as Json;
+    const message = typeof app.error === "string" ? app.error : "";
+    const profileDifferences = [
+      ...(response.status === 400 ? [] : ["expectedOfficialHandoff"]),
+      ...(message.includes(route.marketplace.name) ? [] : ["officialExchangeName"]),
+      ...(message.includes(route.marketplace.hostname) ? [] : ["officialExchangeUrl"]),
+    ];
+    return { id: profile.id, input: { ...profile, householdSize: 1, year: YEAR }, evidenceBasis: "official_exchange_handoff",
+      source: { state: profile.state, year: YEAR, marketplace: route.marketplace }, observed: { httpStatus: response.status, error: message },
+      profileDifferences, rows: [], checkedAt: new Date().toISOString() };
+  }
+  const app = await readJson(response, "app");
   const geo = await official(`/counties/by/zip/${profile.zip}`, "GET");
   const county = Array.isArray(geo.counties) && geo.counties.length === 1 ? geo.counties[0] as Json | undefined : undefined;
   if (!county || county.state !== profile.state || typeof county.fips !== "string") throw new Error("cms_county_unresolved");
@@ -135,6 +150,7 @@ async function evaluate(profile: typeof PROFILES[number]): Promise<Json> {
   ];
   return {
     id: profile.id,
+    evidenceBasis: "federal_plan_rows",
     input: { ...profile, householdSize: 1, year: YEAR },
     source: { county: county.name, state: county.state, aptcMonthly: aptc, totalPlans: search.total, firstPagePlans: sourcePlans.length },
     observed: { year: app.year, county: app.county, state: app.state, aptcMonthly: app.aptcMonthly, totalPlans: app.totalPlans },
@@ -156,7 +172,7 @@ async function main(): Promise<void> {
   const profiles: Json[] = [];
   for (const profile of PROFILES) {
     try {
-      const result = await evaluate(profile);
+      const result = await evaluatePlanProfile(profile);
       profiles.push(result);
       const rowDifferences = (result.rows as Json[]).filter((row) => (row.differences as string[]).length > 0).length;
       console.log(`${(result.profileDifferences as string[]).length || rowDifferences ? "DIFF" : "PASS"} ${profile.id}`);
@@ -176,8 +192,10 @@ async function main(): Promise<void> {
     targetKind: ["localhost", "127.0.0.1", "[::1]"].includes(target.hostname) ? "local_candidate" : "remote_service",
     liveCommit: process.env.AFFINITY_LIVE_COMMIT ?? "unverified",
     source: "https://developer.cms.gov/marketplace-api/api-spec",
-    scope: "Two synthetic one-person profiles; only first 10 source plans per profile checked against the selected target; no coverage, documents, or full annual cost validation. liveCommit, if supplied, is a caller assertion, not independently verified deployment identity.",
+    scope: "Two fixed synthetic profiles; first 10 quote rows for federal profiles and official exchange handoffs for own-platform profiles, counted separately; no coverage or full care-cost validation. liveCommit is a caller assertion, not independently verified identity.",
     counts: { plannedProfiles: PROFILES.length, evaluatedProfiles: evaluated.length, unavailableProfiles: PROFILES.length - evaluated.length,
+      quotedProfiles: evaluated.filter((profile) => profile.evidenceBasis === "federal_plan_rows").length,
+      handoffProfiles: evaluated.filter((profile) => profile.evidenceBasis === "official_exchange_handoff").length,
       comparedRows: comparedRows.length, mismatchedRows: mismatchedRows.length, mismatchedProfiles: mismatchedProfiles.length },
     profiles,
   };
@@ -187,7 +205,7 @@ async function main(): Promise<void> {
   if (evaluated.length !== PROFILES.length || mismatchedRows.length || mismatchedProfiles.length) process.exitCode = 1;
 }
 
-main().catch((error) => {
+if (process.argv[1]?.endsWith("eval-plan-board-source-pair.ts")) main().catch((error) => {
   console.error(error instanceof Error && /^(marketplace_key_unset|output_path_missing)$/.test(error.message) ? error.message : "plan_board_pair_failed");
   process.exitCode = 1;
 });
