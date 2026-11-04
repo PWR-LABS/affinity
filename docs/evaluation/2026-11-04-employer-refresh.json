@@ -1,0 +1,26 @@
+{
+  "observedAt": "2026-11-04T20:45:06.519Z",
+  "counts": {
+    "memberships": 79414,
+    "planLinks": 14949
+  },
+  "searchRows": 12,
+  "page": "recent listings; checker available",
+  "database": [
+    {
+      "bytes": "1265743551"
+    }
+  ],
+  "sourceDate": "2026-11-01",
+  "positive": {
+    "value": "yes",
+    "evidenceStatus": "listed",
+    "sourceUpdated": "2026-11-01T00:00:00.000Z"
+  },
+  "absent": {
+    "value": "unknown",
+    "evidenceStatus": "incomplete_index"
+  },
+  "scope": "One Medical Mutual SuperMed source file; completeness unverified",
+  "databaseBytesBefore": 1244427967
+}

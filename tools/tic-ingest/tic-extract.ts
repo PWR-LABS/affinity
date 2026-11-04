@@ -13,7 +13,7 @@ import {
   pathMatches,
   scalarFromToken,
   type JsonToken,
-} from "./lib/streaming.ts";
+} from "./lib/streaming";
 
 type ProviderGroup = {
   npi?: unknown;
@@ -59,6 +59,10 @@ export type ExtractSummary = {
 export type RunExtractOptions = {
   input: string;
   out: string;
+  /** Preserve the downloaded source URL when parsing a local immutable archive. */
+  sourceUrl?: string;
+  /** Optional hard cap for bounded refresh jobs. */
+  maxPairs?: number;
   allowlistPath?: string;
   progress?: boolean;
 };
@@ -69,7 +73,7 @@ class ExtractionState {
   zeroNpiDropped = 0;
   tinInNpiDropped = 0;
 
-  constructor(private readonly allowlist: Set<string> | undefined) {}
+  constructor(private readonly allowlist: Set<string> | undefined, private readonly maxPairs = Infinity) {}
 
   resetOutputCounts(): void {
     this.pairs.clear();
@@ -111,6 +115,7 @@ class ExtractionState {
 
       const key = `${npi}|${tinValue}`;
       if (!this.pairs.has(key)) {
+        if (this.pairs.size >= this.maxPairs) throw new Error("Membership limit exceeded");
         this.pairs.set(key, { npi, tinType, tinValue });
         this.npis.add(npi);
       }
@@ -148,7 +153,7 @@ const V1_IN_NETWORK_REFERENCE_PATH = [
 export async function runExtract(options: RunExtractOptions): Promise<ExtractSummary> {
   const started = Date.now();
   const allowlist = options.allowlistPath ? await readAllowlist(options.allowlistPath) : undefined;
-  const state = new ExtractionState(allowlist);
+  const state = new ExtractionState(allowlist, options.maxPairs);
   const progress =
     options.progress === false ? undefined : startProgress(() => `rows=${state.pairs.size} npis=${state.npis.size}`);
 
@@ -163,7 +168,7 @@ export async function runExtract(options: RunExtractOptions): Promise<ExtractSum
       await runV1SecondPass(options.input, firstPass.references, state);
     }
 
-    await writeSortedNdjson(options.out, options.input, firstPass.metadata, schema, state.pairs);
+    await writeSortedNdjson(options.out, options.sourceUrl ?? options.input, firstPass.metadata, schema, state.pairs);
   } finally {
     if (progress) clearInterval(progress);
   }
