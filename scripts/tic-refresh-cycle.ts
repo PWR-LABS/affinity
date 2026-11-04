@@ -20,7 +20,7 @@ async function main(){
  const statusPath=join(stateRoot,'status.json');
  let db:PrismaClient|undefined;
  const blocksPath=join(stateRoot,'source-blocks.json');
- const policy='150mb-200k-strict-zip-v2';
+ const policy='150mb-200k-strict-zip-memory-v3';
  let blocks:Record<string,{etag:string;reason:string;policy:string}>={};
  try{blocks=JSON.parse(await readFile(blocksPath,'utf8'));}catch{}
  let lastPublishedAt:string|undefined;
@@ -31,6 +31,7 @@ async function main(){
   const guard=volumeSessionGuard();
   db=new PrismaClient({datasourceUrl:await credential(),log:[]});
   const runId=new Date().toISOString().replace(/[:.]/g,'-');
+  await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{phase:'discovery'},results});
   const selected=process.argv.includes('--issuer') ? [process.argv[process.argv.indexOf('--issuer')+1]] : ['mmoh','cigna','anthem'];
   if(selected.some(x=>!['mmoh','cigna','anthem'].includes(x)))throw new Error('Unknown issuer');
   const maxFiles=Number(process.env.AFFINITY_REFRESH_MAX_FILES??1000);
@@ -54,6 +55,7 @@ async function main(){
     if(attempted>=maxFiles){results.push({issuer,state:'deferred',reason:'run_file_budget'});break;}
     guard();await storageBudget(500_000_000);
     const tocPath=candidate.tocPath??discovery.tocPath;
+    const transportUrl=candidate.transportUrl??candidate.url;
     const path=new URL(candidate.url).origin+new URL(candidate.url).pathname;
     const priorRows=await db.$queryRaw<Array<{id:string;url:string;active:boolean;sourceLastUpdated:Date|null;receiptPath:string|null}>>`SELECT f.id,f.url,f.active,f."sourceLastUpdated",p."receiptPath" FROM "TicFile" f LEFT JOIN "TicRefreshPublication" p ON p."fileId"=f.id WHERE split_part(f.url,'?',1)=${path} ORDER BY f."sourceLastUpdated" DESC,f."fetchedAt" DESC`;
     const prior=priorRows.find(p=>p.active&&sourceIdentity(p.url)===sourceIdentity(candidate.url));
@@ -62,7 +64,7 @@ async function main(){
       const saved=await validatePublication(JSON.parse(await readFile(prior.receiptPath,'utf8')));
       const mappingsSame=planMappingIdentity(await tocPlans(tocPath,candidate.url))===planMappingIdentity(saved.plans);
       const meta=JSON.parse(await readFile(join(prior.receiptPath,'../download.json'),'utf8'));
-      const head=await fetch(candidate.url,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
+      const head=await fetch(transportUrl,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
       if(head.ok&&meta.etag&&head.headers.get('etag')===meta.etag&&mappingsSame){
        const replay=await publishManaged(db,saved,prior.receiptPath,guard,archiveRoot);
        latestSources[issuer]={sourceDate:replay.sourceDate,publishedAt:replay.publishedAt};
@@ -76,16 +78,16 @@ async function main(){
     const key=sourceKey(candidate.url);
     let etag:string|null=null;
     try {
-      const head=await fetch(candidate.url,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
+      const head=await fetch(transportUrl,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
       if(head.ok)etag=head.headers.get('etag');
       if(etag&&blocks[key]?.etag===etag&&blocks[key]?.policy===policy){results.push({issuer,source:path,state:'blocked',reason:blocks[key].reason});continue;}
     }catch{/* A bounded GET can still succeed when HEAD is unavailable. */}
     attempted++;
-    await atomicJson(statusPath,{version:1,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'download_validate_publish'},results});
+    await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'download_validate_publish'},results});
     const dir=join(directory,sourceKey(candidate.url));await ensureArchiveDirectory(dir);
     try{
      const sourcePath=join(dir,'source.json.gz');
-     const download=await downloadFile(candidate.url,sourcePath,150_000_000,guard);
+     const download=await downloadFile(transportUrl,sourcePath,150_000_000,guard);
      guard();await atomicJson(join(dir,'download.json'),download);
      guard();
      const receipt=await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard});
@@ -103,18 +105,18 @@ async function main(){
      if(e instanceof Deferred)throw e;
      const reason=safeReason(e);
      results.push({issuer,source:path,state:'blocked',reason});
-     if(etag && /source_size_limit|Membership limit exceeded|Empty or incomplete extraction|Unarchived or malformed provider reference|Unresolved provider reference|requires ZIP adapter|Source is not JSON|extraction_time_limit|Source is stale/.test(reason)){
+     if(etag && /source_size_limit|Membership limit exceeded|Empty or incomplete extraction|Unarchived or malformed provider reference|Unresolved provider reference|Duplicate provider reference|reference_memory_limit|requires ZIP adapter|Source is not JSON|extraction_time_limit|Source is stale/.test(reason)){
       blocks[key]={etag,reason,policy};await atomicJson(blocksPath,blocks);
      }
     }
-    await atomicJson(statusPath,{version:1,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),results});
+    await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),results});
    }
   }
   const state=results.some(x=>x.state==='blocked'||x.state==='deferred')?'partial':'complete_for_discovered_scope';
-  const receipt={version:1,state,lastPublishedAt,latestSources,observedAt:new Date().toISOString(),results};
+  const receipt={version:1,pid:process.pid,state,lastPublishedAt,latestSources,observedAt:new Date().toISOString(),results};
   await atomicJson(statusPath,receipt);console.log(JSON.stringify(receipt));
  }catch(e){
-  const receipt={version:1,lastPublishedAt,latestSources,state:e instanceof Deferred?'deferred':'failed',reason:safeReason(e),observedAt:new Date().toISOString(),results};
+  const receipt={version:1,pid:process.pid,lastPublishedAt,latestSources,state:e instanceof Deferred?'deferred':'failed',reason:safeReason(e),observedAt:new Date().toISOString(),results};
   await atomicJson(statusPath,receipt);console.log(JSON.stringify(receipt));
   if(!(e instanceof Deferred))process.exitCode=1;
  }finally{await db?.$disconnect();await unlock();}

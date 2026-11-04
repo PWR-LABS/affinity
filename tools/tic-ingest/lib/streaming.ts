@@ -72,8 +72,11 @@ export class JsonValueCollector {
   value: unknown;
   done = false;
 
+  constructor(private readonly guardToken?: (token: JsonToken) => void) {}
+
   push(token: JsonToken): void {
     if (this.done) return;
+    this.guardToken?.(token);
 
     switch (token.name) {
       case "startObject": {

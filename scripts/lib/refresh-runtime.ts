@@ -4,6 +4,7 @@ import { mkdir, open, rename, readFile, stat, realpath, unlink } from 'node:fs/p
 import { resolve, join } from 'node:path';
 import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
+import { DatabaseSync } from 'node:sqlite';
 import { sourceIdentity } from './issuer-discovery';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { inspectVolume } = require('./refresh-volume-guard.cjs');
@@ -51,24 +52,34 @@ export async function credential() {
 export async function lockRun(directory = stateRoot) {
   await mkdir(directory, { recursive: true, mode: 0o700 });
   const path = join(directory, 'run.lock');
-  for (let i=0;i<2;i++) {
-    try {
-      const f = await open(path, 'wx', 0o600);
-      await f.writeFile(String(process.pid)); await f.close();
-      return async () => { await unlink(path); };
-    } catch (e) {
-      if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
-      const pid = Number(await readFile(path, 'utf8'));
-      // An empty/malformed lock may belong to a process still acquiring it. Fail closed.
-      if (!Number.isSafeInteger(pid) || pid <= 0) throw new Deferred('publisher_lock_unknown');
-      try { process.kill(pid, 0); throw new Deferred('publisher_already_running'); }
-      catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ESRCH') throw error;
-        await unlink(path);
-      }
+  // The OS releases SQLite's write reservation even after SIGKILL/OOM. Never
+  // unlink its inode: all contenders must coordinate through the same database.
+  const mutexPath=join(directory,'run-mutex.sqlite');
+  await (await open(mutexPath,'a',0o600)).close();
+  const mutex=new DatabaseSync(mutexPath);
+  try { mutex.exec('PRAGMA busy_timeout=0; BEGIN IMMEDIATE'); }
+  catch(error) { mutex.close(); if((error as Error).message.includes('locked')) throw new Deferred('publisher_already_running'); throw error; }
+  try {
+    // Honor a still-running publisher from the older PID-lock runtime as well.
+    let previous:string|undefined;
+    try { previous=await readFile(path,'utf8'); } catch(error) { if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error; }
+    if(previous!==undefined){
+      const pid=Number(previous);
+      if(!Number.isSafeInteger(pid)||pid<=0)throw new Deferred('publisher_lock_unknown');
+      try { process.kill(pid,0);throw new Deferred('publisher_already_running'); }
+      catch(error){if((error as NodeJS.ErrnoException).code!=='ESRCH')throw error;}
     }
-  }
-  throw new Deferred('publisher_lock_race');
+    const owner=String(process.pid);
+    await (await open(path,'w',0o600)).close();
+    const file=await open(path,'r+');try{await file.writeFile(owner);await file.sync();}finally{await file.close();}
+    let released=false;
+    return async()=>{
+      if(released)return;released=true;
+      try { if(await readFile(path,'utf8')===owner)await unlink(path); }
+      finally { mutex.exec('ROLLBACK');mutex.close(); }
+    };
+  } catch(error) { mutex.exec('ROLLBACK');mutex.close();throw error; }
+
 }
 export function sourceKey(url: string) {
   return createHash('sha256').update(sourceIdentity(url)).digest('hex');

@@ -37,3 +37,15 @@ test('repeated referenced groups preserve one membership while conflicting ident
  await assert.rejects(runExtract({input,out:join(dir,'rejected.jsonl'),strictReferences:true,progress:false}),/Duplicate provider reference/);
  }finally{await rm(dir,{recursive:true,force:true});}
 });
+
+test('strict reference memory budgets reject one large group and cumulative small groups before output', async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'affinity-reference-budget-'));
+ try {
+  const input=join(dir,'source.json'),out=join(dir,'members.jsonl');
+  const references=Array.from({length:30},(_,id)=>({provider_group_id:id,provider_groups:[{npi:[1234567890],tin:{type:'ein',value:'111111111'}}]}));
+  await writeFile(input,JSON.stringify({provider_references:references,in_network:[]}));
+  await assert.rejects(runExtract({input,out,strictReferences:true,progress:false,maxGroupBudget:1000}),/reference_memory_limit/);
+  await assert.rejects(runExtract({input,out,strictReferences:true,progress:false,maxGroupBudget:100000,maxReferenceBudget:12000}),/reference_memory_limit/);
+  await assert.rejects(stat(out));
+ }finally{await rm(dir,{recursive:true,force:true});}
+});

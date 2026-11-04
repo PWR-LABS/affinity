@@ -67,6 +67,9 @@ export type RunExtractOptions = {
   strictReferences?: boolean;
   guard?: () => void;
   maxMs?: number;
+  /** Conservative allocation accounting for strict local refreshes. */
+  maxReferenceBudget?: number;
+  maxGroupBudget?: number;
   allowlistPath?: string;
   progress?: boolean;
 };
@@ -165,7 +168,7 @@ export async function runExtract(options: RunExtractOptions): Promise<ExtractSum
   let schema: "v1" | "v2" = "v2";
 
   try {
-    firstPass = await runFirstPass(options.input, state, options.strictReferences, started + (options.maxMs ?? Infinity), options.guard);
+    firstPass = await runFirstPass(options.input, state, options.strictReferences, started + (options.maxMs ?? Infinity), options.guard, options.maxReferenceBudget, options.maxGroupBudget);
     if (firstPass.sawProviderReferences) {
       schema = "v1";
       state.resetOutputCounts();
@@ -204,7 +207,7 @@ async function main(): Promise<void> {
   process.stderr.write(`${JSON.stringify(summary)}\n`);
 }
 
-async function runFirstPass(input: string, state: ExtractionState, strict = false, deadline = Infinity, guard?: () => void): Promise<FirstPassResult> {
+async function runFirstPass(input: string, state: ExtractionState, strict = false, deadline = Infinity, guard?: () => void, maxReferenceBudget = 64 * 1024 * 1024, maxGroupBudget = 16 * 1024 * 1024): Promise<FirstPassResult> {
   const opened = await openDecodedInput(input,{guard});
   if (!opened.stream) throw new Error(`unable to open input: ${input}`);
 
@@ -217,6 +220,19 @@ async function runFirstPass(input: string, state: ExtractionState, strict = fals
   let sawProviderReferences = false;
   let remoteRefsFetched = 0;
   let remoteRefs404 = 0;
+  let referenceBudget = 0;
+  const collector = (reference: boolean) => {
+    let groupBudget = 0;
+    return new JsonValueCollector(strict ? token => {
+      // Charge chunks as well as packed values, before allocating the object.
+      // This deliberately overestimates JSON payload size and bounds many tiny
+      // objects as well as a single giant provider array.
+      const cost = 64 + (typeof token.value === 'string' ? token.value.length * 2 : 0);
+      groupBudget += cost;
+      if (reference) referenceBudget += cost;
+      if (groupBudget > maxGroupBudget || referenceBudget > maxReferenceBudget) throw new Error('reference_memory_limit');
+    } : undefined);
+  };
 
   let tokens = 0;
   await parseJsonTokens(opened.stream, (token) => {
@@ -240,11 +256,15 @@ async function runFirstPass(input: string, state: ExtractionState, strict = fals
         const reference = providerReferenceCollector.value as ProviderReference;
         if (strict && (!normalizeText(reference.provider_group_id) || !Array.isArray(reference.provider_groups) || reference.location)) throw new Error('Unarchived or malformed provider reference');
         if (strict && references.has(normalizeText(reference.provider_group_id))) throw new Error('Duplicate provider reference identifier');
+        if (strict) {
+          references.set(normalizeText(reference.provider_group_id), reference.provider_groups as ProviderGroup[]);
+        } else {
         const promise = recordProviderReference(reference, references).then((status) => {
           if (status === "fetched") remoteRefsFetched += 1;
           if (status === "404") remoteRefs404 += 1;
         });
         remoteFetches.push(promise);
+        }
         providerReferenceCollector = undefined;
       }
     }
@@ -253,10 +273,10 @@ async function runFirstPass(input: string, state: ExtractionState, strict = fals
       const path = tracker.pathForStart();
       if (!hadCollector) {
         if (pathMatches(path, ROOT_PROVIDER_REFERENCE_PATH)) {
-          providerReferenceCollector = new JsonValueCollector();
+          providerReferenceCollector = collector(true);
           providerReferenceCollector.push(token);
         } else if (!sawProviderReferences && pathMatches(path, V2_PROVIDER_GROUP_PATH)) {
-          providerGroupCollector = new JsonValueCollector();
+          providerGroupCollector = collector(false);
           providerGroupCollector.push(token);
         }
       }
