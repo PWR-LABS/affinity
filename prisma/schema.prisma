@@ -236,7 +236,8 @@ model PartDFormularyDrug {
 /// One issuer Transparency-in-Coverage in-network file (a shard) we've indexed.
 model TicFile {
   id                String          @id @default(cuid())
-  url               String          @unique
+  url               String
+  active            Boolean         @default(true)
   reportingEntity   String
   /// The file's own `last_updated_on` — freshness as the SOURCE reports it.
   sourceLastUpdated DateTime?
@@ -246,8 +247,10 @@ model TicFile {
   fetchedAt         DateTime
   memberships       TicMembership[]
   planLinks         TicPlanLink[]
+  refreshPublication TicRefreshPublication?
 
   @@index([reportingEntity])
+  @@index([url])
 }
 
 /// Provider ↔ file membership: NPI appears in this in-network file under this TIN.
@@ -292,4 +295,19 @@ model EmployerEin {
   @@unique([ein, nameNorm])
   @@index([nameNorm])
   @@index([state])
+}
+
+/// Only generations created by the Mini publisher are eligible for managed retention.
+model TicRefreshPublication {
+  id          String   @id
+  stableKey   String
+  fileId      String   @unique
+  file        TicFile  @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  sourceDate  String
+  contentHash String
+  receiptPath String
+  withdrawn   Boolean  @default(false)
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([stableKey, sourceDate], map: "TicRefreshPublication_stableKey")
 }

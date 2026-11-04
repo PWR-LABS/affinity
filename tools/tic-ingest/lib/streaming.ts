@@ -202,7 +202,7 @@ export async function parseJsonTokens(
     const finish = (error?: unknown) => {
       if (settled) return;
       settled = true;
-      if (error) reject(error);
+      if (error) { stream.destroy(); jsonParser.destroy(); reject(error); }
       else resolve();
     };
 
@@ -307,6 +307,11 @@ async function sniffGzip(stream: Readable): Promise<Readable> {
           ? pass.pipe(createGunzip())
           : pass;
 
+      // Propagate source removal/I/O failures through the decoding chain and release
+      // upstream file descriptors when bounded extraction aborts early.
+      stream.on("error", (error) => decoded.destroy(error));
+      if (decoded !== pass) pass.on("error", (error) => decoded.destroy(error));
+      decoded.on("close", () => { stream.destroy(); if (decoded !== pass) pass.destroy(); });
       if (prefix.length > 0) pass.write(prefix);
       if (ended) {
         pass.end();

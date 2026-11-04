@@ -56,7 +56,10 @@
     "eval:tic-reconcile": "tsx scripts/eval-tic-reconcile.ts",
     "partd:load": "tsx scripts/partd-load.ts",
     "partd:region-backfill": "tsx scripts/partd-region-backfill.ts",
-    "eval:partd-reconcile": "tsx scripts/eval-partd-reconcile.ts"
+    "eval:partd-reconcile": "tsx scripts/eval-partd-reconcile.ts",
+    "refresh:employers": "node --import tsx scripts/tic-refresh-cycle.ts",
+    "refresh:volume": "node scripts/check-refresh-volume.cjs",
+    "eval:refresh-recovery": "node --import tsx scripts/eval-managed-refresh.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
