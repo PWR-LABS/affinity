@@ -8,6 +8,7 @@ import { receiptSchema, sha256, publishPublication, type TicPublication } from '
 export function logicalKey(url: string) {
   return sourceIdentity(url).replace(/\d{4}-\d{2}-\d{2}/g, '{date}').replace(/reporting_month=\d{4}-\d{2}/g, 'reporting_month={month}');
 }
+export function planMappingIdentity(plans:TicPublication['plans']){return JSON.stringify(plans.map(p=>[p.planName,p.planIdType,p.planId,p.planMarketType]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))));}
 export function fingerprint(r: TicPublication) {
   return createHash('sha256').update(JSON.stringify([r.sourceSha256,r.sourceDate,r.reportingEntity,r.schema,r.plans.map(p=>[p.planName,p.planIdType,p.planId,p.planMarketType]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)))])).digest('hex');
 }

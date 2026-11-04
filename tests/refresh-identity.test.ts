@@ -10,3 +10,11 @@ test('signatures do not identify content but semantic query selectors do',()=>{
  assert.equal(logicalKey('https://example.com/source?Signature=one'),logicalKey('https://example.com/source?Signature=two'));
  assert.notEqual(logicalKey('https://example.com/source?network=one'),logicalKey('https://example.com/source?network=two'));
 });
+
+test('plan order changes do not force a new logical mapping',async()=>{
+ const {planMappingIdentity}=await import('../scripts/lib/managed-publication');
+ const a={planName:'A',planIdType:'ein' as const,planId:'111111111',planMarketType:'group'};
+ const b={...a,planName:'B'};
+ assert.equal(planMappingIdentity([a,b]),planMappingIdentity([b,a]));
+ assert.notEqual(planMappingIdentity([a]),planMappingIdentity([b]));
+});

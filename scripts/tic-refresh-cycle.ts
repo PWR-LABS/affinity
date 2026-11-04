@@ -10,7 +10,7 @@ import { preparePublication } from './tic-refresh';
 import { ticSourceCurrent } from '../src/lib/tic/freshness';
 import { validatePublication, tocPlans } from '../src/lib/tic/publication';
 import { verifyServing } from './lib/refresh-serving-check';
-import { publishManaged } from './lib/managed-publication';
+import { publishManaged,planMappingIdentity } from './lib/managed-publication';
 import { stateRoot, archiveRoot, atomicJson, credential, lockRun, Deferred, requireVolume, volumeSessionGuard, storageBudget, downloadFile, sourceKey, ensureArchiveDirectory } from './lib/refresh-runtime';
 type Item = {issuer:string; source?:string; state:string; reason?:string; memberships?:number; plans?:number; sourceDate?:string};
 async function main(){
@@ -59,7 +59,7 @@ async function main(){
     if(prior?.receiptPath && ticSourceCurrent(prior.sourceLastUpdated?.toISOString(), new Date().toISOString())){
      try {
       const saved=await validatePublication(JSON.parse(await readFile(prior.receiptPath,'utf8')));
-      const mappingsSame=JSON.stringify(await tocPlans(tocPath,candidate.url))===JSON.stringify(saved.plans);
+      const mappingsSame=planMappingIdentity(await tocPlans(tocPath,candidate.url))===planMappingIdentity(saved.plans);
       const meta=JSON.parse(await readFile(join(prior.receiptPath,'../download.json'),'utf8'));
       const head=await fetch(candidate.url,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
       if(head.ok&&meta.etag&&head.headers.get('etag')===meta.etag&&mappingsSame){
@@ -93,9 +93,10 @@ async function main(){
      const result=await publishManaged(db,receipt,join(dir,'publication.json'),()=>{guard();requireVolume();},archiveRoot);
      guard();await atomicJson(join(dir,'published.json'),result);
      if('archiveRetention' in result && 'state' in result.archiveRetention)results.push({issuer,source:path,state:'blocked',reason:'archive_retention_review_required'});
-     lastPublishedAt=new Date().toISOString();
-     latestSources[issuer]={sourceDate:receipt.sourceDate,publishedAt:lastPublishedAt};
-     results.push({issuer,source:path,state:'published',sourceDate:receipt.sourceDate,memberships:result.memberships,plans:result.plans});
+     const replayed='replayed' in result&&result.replayed;
+     if(!replayed)lastPublishedAt=new Date().toISOString();
+     latestSources[issuer]={sourceDate:receipt.sourceDate,publishedAt:result.publishedAt};
+     results.push({issuer,source:path,state:replayed?'verified_unchanged':'published',sourceDate:receipt.sourceDate,memberships:result.memberships,plans:result.plans});
      try{await verifyServing(db,result.fileId);}catch{results.push({issuer,source:path,state:'blocked',reason:'published_but_public_readback_failed'});}
     }catch(e){
      if(e instanceof Deferred)throw e;
