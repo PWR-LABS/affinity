@@ -20,3 +20,15 @@ The publisher adds a new file and all its memberships/plan links in **one databa
 The result records the exact new file ID and source URL. If a committed publication must be withdrawn, first verify both against that result and recheck the intended database. Delete only that newly added file ID in a transaction; its memberships and links cascade. Existing sources are untouched, and the archived, verified candidate can be published again if appropriate. Do not delete older datasets as part of this bounded workflow.
 
 The publisher makes no paid resource changes. Refresh cadence, nationwide selection, source inventory completeness, retirement of old generations, and automated retention are separate work.
+
+## Mini schedule and removable SSD
+
+The local Codex heartbeat `affinity-mini-issuer-refresh` checks daily at 06:00 Eastern. It creates no Render cron service. The Mini owns orchestration; the SSD is optional between processing runs and is never part of public request serving. A disconnected SSD is an expected deferral, even if it is attached to no computer.
+
+Before SSD I/O, run `node scripts/check-refresh-volume.cjs` and require JSON `state: ready`. The read-only guard verifies the actual mounted volume UUID, mount point, writable state and 150 GB available-space floor. It never creates `/Volumes/dev`. An absent, wrong, read-only or low-space disk returns `deferred`; callers must not treat exit code zero alone as permission to process. The separate 100 GB aggregate task-data cap still applies.
+
+Store only small orchestration checkpoints on the Mini internal disk at `~/Library/Application Support/affinity/refresh/status.json`; keep raw/normalized bulk data on SSD. Never substitute an internal-disk folder for an absent mount. Defer until the next daily run, without repeated unchanged alerts. Warn if deferral threatens the source freshness window (within seven days of the 60-day limit).
+
+Recheck identity before each write phase and publication. If storage disappears mid-run, abandon incomplete candidates and preserve last committed production data. Revalidate hashes/counts after reconnecting; incomplete downloads must restart unless a validated resume mechanism exists. After an uncertain database commit, read back the exact source/file identity before retrying. Local receipt loss is not proof that a transaction failed. Existing freshness checks continue aging evidence into unknown; never alter dates to hide a missed refresh.
+
+This slice installs a tested preflight and updates the orchestration instructions. It does not claim full disconnect recovery has been integration-tested or that every issuer supports unattended publication. Secure persistent publication credentials, broad issuer support and retention remain separate unfinished work. No physical disconnect was performed during verification.
