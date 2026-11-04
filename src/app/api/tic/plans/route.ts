@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { ticSourceWindow } from "@/lib/tic/freshness";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export async function GET(req: Request) {
   if (q.length < 2) return NextResponse.json({ items: [] });
   try {
     const links = await prisma.ticPlanLink.findMany({
-      where: { planName: { contains: q, mode: "insensitive" } },
+      where: { planName: { contains: q, mode: "insensitive" }, file: { sourceLastUpdated: ticSourceWindow(new Date()), memberships: { some: {} } } },
       distinct: ["planIdType", "planId", "planName"],
       take: 12,
       select: {

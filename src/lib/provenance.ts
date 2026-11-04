@@ -116,7 +116,7 @@ export function renderCoverageAnswer(a: CoverageAnswer): string {
     a.value === "yes"
       ? a.formularyTier
         ? `on formulary (tier ${a.formularyTier})`
-        : "shown in-network"
+        : a.provenance.source === "ISSUER_TIC_MRF" ? "listed in an issuer file" : "shown in-network"
       : a.value === "no"
         ? "shown NOT covered"
         : "coverage unknown";

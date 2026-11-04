@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-11-04T20:23:43.655Z",
+  "passed": [
+    "real join returns a dated, source-attributed listing",
+    "API withholds partial absence, missing plans, stale, undated, and future-dated matches",
+    "search offers only recent files with joined provider data",
+    "desktop submits real lookup; editing the provider clears the previous answer",
+    "late response cannot restore an answer after the plan changes",
+    "mobile renders stale-source explanation without horizontal overflow",
+    "readiness rejects stale/future/undated data and unrelated fresh plan/provider rows"
+  ]
+}

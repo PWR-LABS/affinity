@@ -22,8 +22,8 @@ export default async function Verify() {
         <p className="page-subtitle">
           <strong>Beta.</strong> We check the issuer&rsquo;s own federally mandated Transparency-in-Coverage
           network file — the same data insurers publish about themselves — and tell you what it says, how fresh
-          it is, and how much to trust it. Never a bare &ldquo;in-network.&rdquo; Coverage of plans is growing
-          issuer by issuer.
+          it is, and how much to trust it. Listings must be dated within the last 60 days. Our index
+          is partial: a missing doctor is not an out-of-network result. Confirm your exact plan with the insurer.
         </p>
       </div>
 
@@ -32,9 +32,10 @@ export default async function Verify() {
       {readiness.employer ? (
         <VerifyDoctor />
       ) : (
-        <CoverageUnavailable>
-          The checker is built, but this environment does not currently hold both the commercial plan links and
-          provider memberships it needs. No network answer will be guessed from an empty index.
+        <CoverageUnavailable title="Recent employer sources unavailable.">
+          We do not currently have usable employer plan and provider listings with source dates within
+          the last 60 days. Data may be missing, undated, or overdue for refresh. Check your insurer’s
+          directory and confirm with the provider; this is not evidence that a doctor is out of network.
         </CoverageUnavailable>
       )}
     </div>

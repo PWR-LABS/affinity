@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
 
@@ -12,13 +12,14 @@ interface VerifyResult {
   source: string;
   sourceUpdated: string | null;
   rendered: string;
+  explanation: string;
   needsConfirmation: boolean;
 }
 
 const VERDICT: Record<VerifyResult["value"], { tag: string; key: string }> = {
-  yes: { tag: "Shown in-network", key: "covered" },
+  yes: { tag: "Listed in issuer file", key: "covered" },
   no: { tag: "Shown NOT in-network", key: "not-covered" },
-  unknown: { tag: "Unknown — not in the index", key: "unknown" },
+  unknown: { tag: "Coverage unknown", key: "unknown" },
 };
 
 export function VerifyDoctor() {
@@ -29,7 +30,13 @@ export function VerifyDoctor() {
   const [einDirect, setEinDirect] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<VerifyResult | null>(null);
+  const [storedResult, setResult] = useState<(VerifyResult & { requestKey: string }) | null>(null);
+  const requestKey = JSON.stringify([zip, doctor, npiDirect, plan, einDirect]);
+  const latestKey = useRef(requestKey);
+  latestKey.current = requestKey;
+  const sequence = useRef(0);
+  const result = storedResult?.requestKey === requestKey ? storedResult : null;
+  useEffect(() => { setResult(null); setError(null); setLoading(false); sequence.current++; }, [requestKey]);
 
   const fetchDoctors = useCallback(
     async (q: string): Promise<Suggestion[]> => {
@@ -77,6 +84,8 @@ export function VerifyDoctor() {
 
   async function onVerify() {
     if (!npi || !planSel) return;
+    const key = requestKey;
+    const id = ++sequence.current;
     setError(null);
     setResult(null);
     setLoading(true);
@@ -87,12 +96,13 @@ export function VerifyDoctor() {
         body: JSON.stringify({ npi, planIdType: planSel.idType, planId: planSel.id, label: doctor?.label }),
       });
       const data = await res.json();
+      if (latestKey.current !== key || sequence.current !== id) return;
       if (!res.ok) setError(data.error ?? "Something went wrong.");
-      else setResult(data as VerifyResult);
+      else setResult({ ...data, requestKey: key });
     } catch {
-      setError("We couldn't reach the service. Try again.");
+      if (latestKey.current === key && sequence.current === id) setError("We couldn't reach the service. Try again.");
     } finally {
-      setLoading(false);
+      if (latestKey.current === key && sequence.current === id) setLoading(false);
     }
   }
 
@@ -189,18 +199,10 @@ export function VerifyDoctor() {
           <div className="conf-meter" aria-label={`Confidence ${Math.round(result.confidence * 100)}%`}>
             <div className="conf-meter-fill" style={{ width: `${Math.round(result.confidence * 100)}%` }} />
           </div>
-          <p className="verdict-sub">
-            {result.value === "unknown" ? (
-              <>No issuer file for this plan is in our commercial index. The {Math.round(result.confidence * 100)}% score reflects limited evidence, not a likelihood of coverage.</>
-            ) : (
-              <>Confidence {Math.round(result.confidence * 100)}% · one source (the issuer&rsquo;s federally mandated
-              Transparency-in-Coverage file{result.sourceUpdated ? `, updated ${result.sourceUpdated.slice(0, 10)}` : ""}).</>
-            )}
-          </p>
+          <p className="verdict-sub">{result.explanation}</p>
           <p className="verdict-note">
-            {result.value === "unknown"
-              ? "This plan isn't in our commercial index yet — we only answer from sources we actually hold. Check the issuer's own directory, or try the plan-name search above."
-              : "Commercial coverage here is doctors-only for now (no federal drug-list feed exists for employer plans). Always confirm with the provider's office and your plan before relying on this."}
+            The confidence score describes source evidence, not your probability of coverage.
+            Confirm your exact plan, network, and doctor with the insurer and provider before relying on this result.
           </p>
         </section>
       )}
