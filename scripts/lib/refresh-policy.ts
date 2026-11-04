@@ -13,7 +13,7 @@ export const REFRESH_POLICY = Object.freeze({
   databaseBytes: 2_500_000_000,
 });
 /** Reserve the entire possible download, scratch DB and compact output before I/O. */
-export function sourceWorkspaceReserve(sourceBytes = REFRESH_POLICY.sourceBytes) {
+export function sourceWorkspaceReserve(sourceBytes:number = REFRESH_POLICY.sourceBytes) {
   if (!Number.isSafeInteger(sourceBytes) || sourceBytes <= 0 || sourceBytes > REFRESH_POLICY.sourceBytes) throw new Error('source_size_limit');
   return sourceBytes + REFRESH_POLICY.scratchBytes + 500_000_000;
 }

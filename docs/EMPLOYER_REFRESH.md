@@ -56,3 +56,9 @@ The compact Anthem projection scope is explicitly captured in the Mini's protect
 The Mini heartbeat invokes the owned pinned worktree through `scripts/run-mini-refresh.sh`, rather than reimplementing discovery in a chat. The wrapper validates Node24.22.1+, fixes its working directory and holds an idle-sleep assertion. Overlap is an expected deferral. The runner preserves source-date checkpoints and distinguishes actual insertion from durable replay. Repeated reference IDs are expanded once per source after closure validation; duplicate definition IDs are rejected in strict mode.
 
 Strict refresh collection has conservative memory budgets (16 MiB per group/reference, 64 MiB total reference accounting) before any publication. The small worker supervisor records abnormal exits without overwriting another run. Cached Anthem lineage retains its original URL; renewed official transport signatures are accepted only for the same object identity.
+
+## SSD-backed expansion (in development)
+
+The larger-input path keeps provider references and normalization scratch on the verified SSD. Local input limits are independent of publication limits: 2 GB source archives, 4 GB scratch, and bounded decoded bytes/time. Each attempt reserves its complete workspace before I/O. Daily execution attempts at most eight new candidates by default, while still replaying accepted sources and reporting cached blocks; the whole cycle has a four-hour deadline.
+
+The compact cloud contract remains unchanged: 200,000 memberships and 30,000 plan links per complete source, and the existing conservative 2.5 GB database staging budget. A capacity receipt records the measured starting size and reservation before a new publication; the transaction independently rechecks. Larger local inputs do not authorize paid resource changes or partial/truncated uploads. See the [measured development receipt](evaluation/2026-11-04-ssd-large-source-processing.md) for current acceptance status.
