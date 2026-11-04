@@ -47,7 +47,7 @@ async function main(){
     const path=new URL(candidate.url).origin+new URL(candidate.url).pathname;
     const priorRows=await db.$queryRaw<Array<{id:string;url:string;active:boolean;sourceLastUpdated:Date|null;receiptPath:string|null}>>`SELECT f.id,f.url,f.active,f."sourceLastUpdated",p."receiptPath" FROM "TicFile" f LEFT JOIN "TicRefreshPublication" p ON p."fileId"=f.id WHERE split_part(f.url,'?',1)=${path} ORDER BY f."sourceLastUpdated" DESC,f."fetchedAt" DESC`;
     const prior=priorRows.find(p=>p.active&&sourceIdentity(p.url)===sourceIdentity(candidate.url));
-    if(prior?.receiptPath && ticSourceCurrent(prior.sourceLastUpdated, new Date().toISOString())){
+    if(prior?.receiptPath && ticSourceCurrent(prior.sourceLastUpdated?.toISOString(), new Date().toISOString())){
      try {
       const saved=await validatePublication(JSON.parse(await readFile(prior.receiptPath,'utf8')));
       const mappingsSame=JSON.stringify(await tocPlans(discovery.tocPath,candidate.url))===JSON.stringify(saved.plans);
