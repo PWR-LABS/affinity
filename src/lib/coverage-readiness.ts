@@ -10,6 +10,7 @@ export interface CoverageReadiness {
 export async function employerIndexReady(db = prisma, now = new Date()): Promise<boolean> {
   const file = await db.ticFile.findFirst({
     where: {
+      active: true,
       sourceLastUpdated: ticSourceWindow(now),
       memberships: { some: {} },
       planLinks: { some: {} },

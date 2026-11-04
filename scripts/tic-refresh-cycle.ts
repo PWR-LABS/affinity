@@ -45,25 +45,22 @@ async function main(){
     if(attempted>=maxFiles){results.push({issuer,state:'deferred',reason:'run_file_budget'});break;}
     guard();await storageBudget(500_000_000);
     const path=new URL(candidate.url).origin+new URL(candidate.url).pathname;
-    const priorRows=await db.$queryRaw<Array<{id:string;url:string;sourceLastUpdated:Date|null;receiptPath:string|null}>>`SELECT f.id,f.url,f."sourceLastUpdated",p."receiptPath" FROM "TicFile" f LEFT JOIN "TicRefreshPublication" p ON p."fileId"=f.id WHERE split_part(f.url,'?',1)=${path}`;
-    const prior=priorRows.filter(p=>sourceIdentity(p.url)===sourceIdentity(candidate.url));
-    if(prior.length){
+    const priorRows=await db.$queryRaw<Array<{id:string;url:string;active:boolean;sourceLastUpdated:Date|null;receiptPath:string|null}>>`SELECT f.id,f.url,f.active,f."sourceLastUpdated",p."receiptPath" FROM "TicFile" f LEFT JOIN "TicRefreshPublication" p ON p."fileId"=f.id WHERE split_part(f.url,'?',1)=${path} ORDER BY f."sourceLastUpdated" DESC,f."fetchedAt" DESC`;
+    const prior=priorRows.find(p=>p.active&&sourceIdentity(p.url)===sourceIdentity(candidate.url));
+    if(prior?.receiptPath && ticSourceCurrent(prior.sourceLastUpdated, new Date().toISOString())){
      try {
-      if(!ticSourceCurrent(prior[0].sourceLastUpdated?.toISOString(),new Date().toISOString()))throw new Error('existing_source_stale_requires_versioned_replacement');
-      if(prior[0].receiptPath){
-       const saved=await validatePublication(JSON.parse(await readFile(prior[0].receiptPath,'utf8')));
-       if(JSON.stringify(await tocPlans(discovery.tocPath,candidate.url))!==JSON.stringify(saved.plans))throw new Error('existing_source_plan_mapping_changed');
-       const meta=JSON.parse(await readFile(join(prior[0].receiptPath,'../download.json'),'utf8'));
-       const head=await fetch(candidate.url,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
-       if(!head.ok||!meta.etag||head.headers.get('etag')!==meta.etag)throw new Error('existing_source_requires_content_revalidation');
-       await publishManaged(db,saved,prior[0].receiptPath,guard,archiveRoot);
+      const saved=await validatePublication(JSON.parse(await readFile(prior.receiptPath,'utf8')));
+      const mappingsSame=JSON.stringify(await tocPlans(discovery.tocPath,candidate.url))===JSON.stringify(saved.plans);
+      const meta=JSON.parse(await readFile(join(prior.receiptPath,'../download.json'),'utf8'));
+      const head=await fetch(candidate.url,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
+      if(head.ok&&meta.etag&&head.headers.get('etag')===meta.etag&&mappingsSame){
+       const replay=await publishManaged(db,saved,prior.receiptPath,guard,archiveRoot);
+       results.push({issuer,source:path,state:'verified_unchanged',memberships:replay.memberships,plans:replay.plans});
+       continue;
       }
-      const memberships=await db.ticMembership.count({where:{fileId:prior[0].id}});
-      const plans=await db.ticPlanLink.count({where:{fileId:prior[0].id}});
-      if(!memberships||!plans)throw new Error('existing_source_incomplete');
-      results.push({issuer,source:path,state:prior[0].receiptPath?'verified_unchanged':'legacy_already_indexed',memberships,plans});
-     }catch(e){if(e instanceof Deferred)throw e;results.push({issuer,source:path,state:'blocked',reason:safeReason(e)});}
-     continue;
+      // A changed ETag or mapping requires complete download, validation and a new
+      // atomic content version; it must never be skipped merely because URL repeats.
+     }catch(e){if(e instanceof Deferred)throw e;results.push({issuer,source:path,state:'blocked',reason:safeReason(e)});continue;}
     }
     const key=sourceKey(candidate.url);
     let etag:string|null=null;

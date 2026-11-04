@@ -9,7 +9,7 @@ async function main() {
   if (owner.hostname !== 'dpg-d93fiqpkh4rs73d75cjg-a.ohio-postgres.render.com' || owner.pathname !== '/affinity_db_grhk' || owner.searchParams.get('sslmode') !== 'require') throw new Error('Wrong database');
   const db = new PrismaClient({ datasourceUrl: owner.toString(), log: [] });
   try {
-    await db.$executeRawUnsafe('CREATE TABLE IF NOT EXISTS "TicRefreshPublication" ("id" text PRIMARY KEY, "stableKey" text NOT NULL, "fileId" text NOT NULL UNIQUE REFERENCES "TicFile"(id) ON DELETE CASCADE, "sourceDate" text NOT NULL, "contentHash" text NOT NULL, "receiptPath" text NOT NULL, "createdAt" timestamptz NOT NULL DEFAULT now())');
+    await db.$executeRawUnsafe('CREATE TABLE IF NOT EXISTS "TicRefreshPublication" ("id" text PRIMARY KEY, "stableKey" text NOT NULL, "fileId" text NOT NULL UNIQUE REFERENCES "TicFile"(id) ON DELETE CASCADE, "sourceDate" text NOT NULL, "contentHash" text NOT NULL, "receiptPath" text NOT NULL, "withdrawn" boolean NOT NULL DEFAULT false, "createdAt" timestamptz NOT NULL DEFAULT now())');
     await db.$executeRawUnsafe('CREATE INDEX IF NOT EXISTS "TicRefreshPublication_stableKey" ON "TicRefreshPublication" ("stableKey", "sourceDate")');
     const existing = await db.$queryRawUnsafe<Array<{rolname:string}>>("SELECT rolname FROM pg_roles WHERE rolname = 'affinity_refresh'");
     if (existing.length) throw new Error('Publisher role already exists; preserve credential instead of rotating blindly');
@@ -18,6 +18,8 @@ async function main() {
     await db.$executeRawUnsafe('GRANT CONNECT ON DATABASE affinity_db_grhk TO affinity_refresh');
     await db.$executeRawUnsafe('GRANT USAGE ON SCHEMA public TO affinity_refresh');
     await db.$executeRawUnsafe('GRANT SELECT, INSERT, DELETE ON "TicFile", "TicMembership", "TicPlanLink", "TicRefreshPublication" TO affinity_refresh');
+    await db.$executeRawUnsafe('GRANT UPDATE(active) ON \"TicFile\" TO affinity_refresh');
+    await db.$executeRawUnsafe('GRANT UPDATE(withdrawn) ON \"TicRefreshPublication\" TO affinity_refresh');
     await mkdir(stateRoot,{recursive:true,mode:0o700}); await chmod(stateRoot,0o700);
     owner.username = 'affinity_refresh'; owner.password = password;
     await atomicJson(join(stateRoot,'database.json'), { url: owner.toString() });

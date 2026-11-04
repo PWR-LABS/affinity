@@ -93,16 +93,16 @@ async function main(): Promise<void> {
     }
 
     const planInfo = byFile.get(fileUrl);
-    const file = await prisma.ticFile.upsert({
-      where: { url: fileUrl },
-      create: {
+    if (!new URL(process.env.DATABASE_URL ?? "").hostname.match(/^(localhost|127\.0\.0\.1)$/)) throw new Error("Legacy loader is restricted to local fixtures; use managed refresh for production");
+    const existing = await prisma.ticFile.findFirst({where:{url:fileUrl,refreshPublication:null}});
+    const file = existing ? await prisma.ticFile.update({where:{id:existing.id},data:{sourceLastUpdated:lastUpdatedOn?new Date(lastUpdatedOn):null,schemaMode,fetchedAt}}) : await prisma.ticFile.create({
+      data: {
         url: fileUrl,
         reportingEntity: planInfo?.reportingEntity ?? reportingEntity,
         sourceLastUpdated: lastUpdatedOn ? new Date(lastUpdatedOn) : null,
         schemaMode,
         fetchedAt,
       },
-      update: { sourceLastUpdated: lastUpdatedOn ? new Date(lastUpdatedOn) : null, schemaMode, fetchedAt },
     });
 
     // Replace wholesale for idempotency.

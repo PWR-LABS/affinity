@@ -68,11 +68,11 @@ export async function lockRun(directory = stateRoot) {
 export function sourceKey(url: string) {
   return createHash('sha256').update(sourceIdentity(url)).digest('hex');
 }
-export async function downloadFile(url: string, path: string, maxBytes: number, guard: () => void = requireVolume, fetcher = fetch) {
+export async function downloadFile(url: string, path: string, maxBytes: number, guard: () => void = requireVolume, fetcher = fetch, timeoutMs = 120000) {
   const u = new URL(url);
   if (u.protocol !== 'https:' || u.username || u.password) throw new Error('HTTPS source required');
   guard();
-  const response = await fetcher(url, { signal: AbortSignal.timeout(120000), redirect: 'error', headers: { 'Accept-Encoding': 'identity' } });
+  const response = await fetcher(url, { signal: AbortSignal.timeout(timeoutMs), redirect: 'error', headers: { 'Accept-Encoding': 'identity' } });
   if (!response.ok || !response.body) throw new Error(`Source HTTP ${response.status}`);
   if (Number(response.headers.get('content-length')) > maxBytes) { await response.body.cancel(); throw new Error('source_size_limit'); }
   const partial = path + '.partial';

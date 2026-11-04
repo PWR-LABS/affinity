@@ -84,7 +84,7 @@ export async function queryTicAnswer(args: {
   const fetchedAt = new Date().toISOString();
 
   const links = await db.ticPlanLink.findMany({
-    where: { planIdType: args.planIdType, planId: args.planId },
+    where: { planIdType: args.planIdType, planId: args.planId, file: { active: true } },
     select: { fileId: true, file: { select: { url: true, sourceLastUpdated: true } } },
   });
   const fileIds = [...new Set(links.map((l) => l.fileId))];
