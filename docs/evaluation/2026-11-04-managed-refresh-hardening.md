@@ -34,7 +34,7 @@ The pinned installed Mini command completed a14-source Cigna replay without dupl
 
 Full eligible Anthem publication is the remaining data run. Current compact-scope validation is complete; nationwide/whole-plan completeness is still unverified. No paid Render resource change was made.
 
-## Live failure hardening — 22:50 UTC
+## Live failure hardening — 22:47 UTC
 
 PR11 is live at `cc710a2f2762f984a09c47c57f6143881cea35c1`; public health reports that exact commit and a healthy database. The first larger eligible Anthem source exhausted the worker's 1 GB heap while collecting references, before any publication. Its protected source archive was retained.
 
@@ -43,3 +43,24 @@ Strict extraction now caps conservatively charged allocation units at 16 MiB per
 Air independently reproduced a stale-PID-lock takeover race. The replacement holds a SQLite write reservation on an internal persistent inode throughout each run; OS cleanup releases it on process death. A real subprocess SIGKILL followed by two competing takeovers yields exactly one owner. Release is owner-checked and idempotent. Tests also prove an abnormal worker exit preserves published results and cannot overwrite a different worker's status.
 
 Air's second reproduced finding concerned expired signed download URLs in cached Anthem projections. Candidates now retain the immutable parent URL for lineage and use the current official inventory URL only for transport after signature-independent identity matching. Changed host, path or semantic query parameters fail closed. The regression passes. All 202 prior application tests and this additional transport regression pass; typecheck passes. No serving code changed in this local-runner patch, so its merge can skip a Render build.
+
+## Completed source pass — 23:01 UTC
+
+The installed runtime `fcda13a670266abc3d88e8b9238125e5c74aee8f` has the same tree as merged main `0e0eb2c216891773964eec8ae28c32f38fd8fd63`. Air independently read and accepted both reviewed fixes at that exact revision; Mini executed the tests and production run. PR12 skipped the redundant Render build as intended. The public serving release remains healthy at PR11 `cc710a2f2762f984a09c47c57f6143881cea35c1`.
+
+All 297 selected Anthem files received a terminal disposition: 10 accepted (nine new publications plus the earlier canary replay), 121 above the 150 MB download cap, and 166 above the reference-memory accounting cap. No failed or incomplete candidate published. The ten accepted files contain 149,184 membership records and 47,975 plan links; these are file-level records, not distinct providers or complete-plan certificates.
+
+Production readback confirms 70 current managed source files, all dated 2026-11-01:
+
+| Issuer | Files | Membership records | Plan links |
+| --- | ---: | ---: | ---: |
+| Medical Mutual | 46 | 530,069 | 18,676 |
+| Cigna | 14 | 309,551 | 180 |
+| Anthem | 10 | 149,184 | 47,975 |
+| Total | 70 | 988,804 | 66,831 |
+
+Database size is 1,507,530,431 bytes within the unchanged 5 GB allocation. One inactive legacy version remains retained. SSD usage is approximately 22 GiB within the 100 GB task cap. No paid service, cron, disk, tier or autoscaling change occurred. Medical Mutual's four gaps and Cigna's two unresolved historical names remain explicit, alongside the 287 bounded Anthem gaps. This completes the bounded source pass, not nationwide or whole-plan coverage.
+
+Cleanup verified: temporary database-owner bridges removed, test PostgreSQL stopped, extra standalone sleep assertion stopped, no task-opened browser tabs retained. The active wrapper owns its own sleep assertion. Mini power settings already have system/disk sleep disabled on AC; no settings change was made. Protected publisher credential remains owner-only 0600. The exact scheduled all-issuer command is undergoing its final replay check before closing the operational receipt.
+
+The first final all-issuer replay exposed nine unnecessary Medical Mutual extractions: its HEAD response advertised a different ETag than the identical GET bytes, despite unchanged source hashes and identical plan mappings. Production data remained intact. A real conditional GET with the archived ETag returned 304. The runner now requests the same identity encoding for HEAD and GET, accepts a conditional 304 only for already validated unchanged mappings, and can reuse the validated receipt after a full download proves the same source hash and exact source URL. A changed source hash or plan mapping still requires preparation. Redundant downloaded bytes are removed only after publication readback and dual hash checks, with the original retained and a deletion manifest saved. The added tests reject changed duplicate bytes and disconnects. All 205 application tests and typecheck pass.
