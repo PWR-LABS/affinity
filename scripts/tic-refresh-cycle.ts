@@ -6,9 +6,10 @@ import { hostname } from 'node:os';
 import { discoverAnthemSelection } from './lib/anthem-selection';
 import { discoverAnthemProjections, type ProjectedCandidate } from './lib/anthem-large-toc';
 import { discoverIssuer, sourceIdentity, type IssuerDiscovery } from './lib/issuer-discovery';
+import { conditionalSourceUnchanged, reclaimDuplicateDownload } from './lib/unchanged-source';
 import { preparePublication } from './tic-refresh';
 import { ticSourceCurrent } from '../src/lib/tic/freshness';
-import { validatePublication, tocPlans } from '../src/lib/tic/publication';
+import { validatePublication, tocPlans, type TicPublication } from '../src/lib/tic/publication';
 import { verifyServing } from './lib/refresh-serving-check';
 import { publishManaged,planMappingIdentity } from './lib/managed-publication';
 import { stateRoot, archiveRoot, atomicJson, credential, lockRun, Deferred, requireVolume, volumeSessionGuard, storageBudget, downloadFile, sourceKey, ensureArchiveDirectory } from './lib/refresh-runtime';
@@ -59,13 +60,16 @@ async function main(){
     const path=new URL(candidate.url).origin+new URL(candidate.url).pathname;
     const priorRows=await db.$queryRaw<Array<{id:string;url:string;active:boolean;sourceLastUpdated:Date|null;receiptPath:string|null}>>`SELECT f.id,f.url,f.active,f."sourceLastUpdated",p."receiptPath" FROM "TicFile" f LEFT JOIN "TicRefreshPublication" p ON p."fileId"=f.id WHERE split_part(f.url,'?',1)=${path} ORDER BY f."sourceLastUpdated" DESC,f."fetchedAt" DESC`;
     const prior=priorRows.find(p=>p.active&&sourceIdentity(p.url)===sourceIdentity(candidate.url));
+    let replayCandidate:TicPublication|undefined;
     if(prior?.receiptPath && ticSourceCurrent(prior.sourceLastUpdated?.toISOString(), new Date().toISOString())){
      try {
       const saved=await validatePublication(JSON.parse(await readFile(prior.receiptPath,'utf8')));
       const mappingsSame=planMappingIdentity(await tocPlans(tocPath,candidate.url))===planMappingIdentity(saved.plans);
+      if(mappingsSame&&saved.sourceUrl===candidate.url)replayCandidate=saved;
       const meta=JSON.parse(await readFile(join(prior.receiptPath,'../download.json'),'utf8'));
-      const head=await fetch(transportUrl,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
-      if(head.ok&&meta.etag&&head.headers.get('etag')===meta.etag&&mappingsSame){
+      const head=await fetch(transportUrl,{method:'HEAD',headers:{'Accept-Encoding':'identity'},redirect:'error',signal:AbortSignal.timeout(30000)}).catch(()=>undefined);
+      const unchanged=mappingsSame&&meta.etag&&((head?.ok&&head.headers.get('etag')===meta.etag)||await conditionalSourceUnchanged(transportUrl,meta.etag));
+      if(unchanged){
        const replay=await publishManaged(db,saved,prior.receiptPath,guard,archiveRoot);
        latestSources[issuer]={sourceDate:replay.sourceDate,publishedAt:replay.publishedAt};
        results.push({issuer,source:path,state:'verified_unchanged',memberships:replay.memberships,plans:replay.plans});
@@ -78,9 +82,9 @@ async function main(){
     const key=sourceKey(candidate.url);
     let etag:string|null=null;
     try {
-      const head=await fetch(transportUrl,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
+      const head=await fetch(transportUrl,{method:'HEAD',headers:{'Accept-Encoding':'identity'},redirect:'error',signal:AbortSignal.timeout(30000)});
       if(head.ok)etag=head.headers.get('etag');
-      if(etag&&blocks[key]?.etag===etag&&blocks[key]?.policy===policy){results.push({issuer,source:path,state:'blocked',reason:blocks[key].reason});continue;}
+      if(!replayCandidate&&etag&&blocks[key]?.etag===etag&&blocks[key]?.policy===policy){results.push({issuer,source:path,state:'blocked',reason:blocks[key].reason});continue;}
     }catch{/* A bounded GET can still succeed when HEAD is unavailable. */}
     attempted++;
     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'download_validate_publish'},results});
@@ -90,16 +94,18 @@ async function main(){
      const download=await downloadFile(transportUrl,sourcePath,150_000_000,guard);
      guard();await atomicJson(join(dir,'download.json'),download);
      guard();
-     const receipt=await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard});
+     const reuse=replayCandidate?.sourceSha256===download.sha256;
+     const receipt=reuse ? replayCandidate! : await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard});
      guard();await validatePublication(receipt);
      // A source reaching the publication path is complete and hash-verified; its transaction is atomic.
-     const result=await publishManaged(db,receipt,join(dir,'publication.json'),()=>{guard();requireVolume();},archiveRoot);
+     const result=await publishManaged(db,receipt,reuse ? prior!.receiptPath! : join(dir,'publication.json'),()=>{guard();requireVolume();},archiveRoot);
      guard();await atomicJson(join(dir,'published.json'),result);
      if('archiveRetention' in result && 'state' in result.archiveRetention)results.push({issuer,source:path,state:'blocked',reason:'archive_retention_review_required'});
      const replayed='replayed' in result&&result.replayed;
      if(!replayed)lastPublishedAt=new Date().toISOString();
      latestSources[issuer]={sourceDate:receipt.sourceDate,publishedAt:result.publishedAt};
      results.push({issuer,source:path,state:replayed?'verified_unchanged':'published',sourceDate:receipt.sourceDate,memberships:result.memberships,plans:result.plans});
+     if(reuse)await reclaimDuplicateDownload(sourcePath,receipt.sourcePath,download.sha256,guard);
      try{await verifyServing(db,result.fileId);}catch{results.push({issuer,source:path,state:'blocked',reason:'published_but_public_readback_failed'});}
     }catch(e){
      if(e instanceof Deferred)throw e;
