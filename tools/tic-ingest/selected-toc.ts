@@ -22,6 +22,9 @@ export interface SelectedTocOptions {
   input: string; selected: string; outDir: string; guard?: () => void;
   /** Deterministic fixtures only; CLI always uses the real clock. */
   now?: Date; limits?: Partial<Limits>;
+  /** Explicit compact serving scope. Exact type:id identities; never inferred from file location. */
+  planIdentities?: string[];
+  onProgress?: (stats:{compressedBytes:number;decodedBytes:number;structures:number;elapsedMs:number})=>void;
 }
 export class SelectedTocError extends Error {
   cleanupPending = false; temporaryPath?: string;
@@ -43,8 +46,8 @@ function obj(value: Json | undefined): { [key: string]: Json } {
   if (!value || typeof value !== 'object' || Array.isArray(value) || value instanceof RawNumber) return fail('mapping', 'Expected a source object');
   return value;
 }
-function text(value: Json | undefined): string {
-  if (typeof value !== 'string' || !value.trim()) return fail('mapping', 'Required source string is missing or malformed');
+function text(value: Json | undefined, field = 'source value'): string {
+  if (typeof value !== 'string' || !value.trim()) return fail('mapping', 'Required '+field+' string is missing or malformed');
   return value;
 }
 const SIGNATURE_KEYS = new Set(['signature', 'expires', 'policy', 'key-pair-id', 'x-amz-algorithm',
@@ -114,7 +117,12 @@ export async function buildSelectedToc(options: SelectedTocOptions): Promise<Sel
   for (const k of Object.keys(limits) as Array<keyof Limits>) {
     if (!Number.isSafeInteger(limits[k]) || limits[k] <= 0 || limits[k] > SELECTED_TOC_LIMITS[k]) fail('limit', 'Limits must be positive integers at or below the tested maxima');
   }
+  const startedAt=Date.now();let lastProgress=startedAt;
+  const identityCache=new Map<string,ReturnType<typeof identity>>();
+  const referenceIdentity=(value:string)=>{let parsed=identityCache.get(value);if(!parsed){parsed=identity(value);if(identityCache.size<20000)identityCache.set(value,parsed);}return parsed;};
   const guard = () => { try { options.guard?.(); } catch { fail('storage', 'Storage identity guard failed'); } };
+  const planIdentities=options.planIdentities ? new Set(options.planIdentities) : undefined;
+  if(planIdentities && (!planIdentities.size || planIdentities.size>10000 || [...planIdentities].some(p=>!/^(ein|hios):[a-zA-Z0-9-]+$/.test(p))))fail('limit','Invalid explicit plan identity scope');
   const outRoot = resolve(options.outDir), inputPath = resolve(options.input), selectedPath = resolve(options.selected);
   guard();
   let root;
@@ -150,6 +158,8 @@ export async function buildSelectedToc(options: SelectedTocOptions): Promise<Sel
   let parsePipe: Promise<void> | undefined;
   const streams: Array<{ destroy: () => unknown }> = [];
   let committed = false;
+  let semanticError: SelectedTocError | undefined;
+  let originalTokenError:unknown;
   try {
     const before = await handle.stat({ bigint: true });
     if (!before.isFile() || before.size > BigInt(limits.inputBytes)) fail('limit', 'Input must be a bounded complete local regular gzip file');
@@ -186,21 +196,23 @@ export async function buildSelectedToc(options: SelectedTocOptions): Promise<Sel
       const structure = obj(value), plans = structure.reporting_plans;
       if (!Array.isArray(plans) || !plans.length) fail('mapping', 'Reporting structure lacks reporting plans');
       for (const value of plans) {
-        const p = obj(value); text(p.plan_name); text(p.plan_id);
-        if (!['ein', 'hios'].includes(text(p.plan_id_type).toLowerCase())) fail('mapping', 'Invalid plan identifier type');
-        if (p.plan_market_type !== undefined) text(p.plan_market_type);
+        const p = obj(value);
+        if (p.plan_name !== undefined && typeof p.plan_name !== 'string') fail('mapping', 'Malformed optional plan name');
+        text(p.plan_id, 'p.plan_id');
+        if (!['ein', 'hios'].includes(text(p.plan_id_type, 'p.plan_id_type').toLowerCase())) fail('mapping', 'Invalid plan identifier type');
+        if (p.plan_market_type !== undefined) text(p.plan_market_type, 'p.plan_market_type');
       }
       const files = structure.in_network_files === undefined ? [] : structure.in_network_files;
       if (!Array.isArray(files)) fail('mapping', 'Malformed in-network reference array');
       if (structure.allowed_amount_file !== undefined) {
-        const allowed = obj(structure.allowed_amount_file); identity(text(allowed.location));
-        if (allowed.description !== undefined) text(allowed.description);
+        const allowed = obj(structure.allowed_amount_file); referenceIdentity(text(allowed.location, 'allowed.location'));
+        if (allowed.description !== undefined) text(allowed.description, 'allowed.description');
       }
       if (!files.length && structure.allowed_amount_file === undefined) fail('mapping', 'Reporting structure contains no file references');
       const matched = new Set<number>();
       for (const value of files) {
-        const file = obj(value), location = text(file.location), actual = identity(location);
-        if (file.description !== undefined) text(file.description);
+        const file = obj(value), location = text(file.location, 'file.location'), actual = referenceIdentity(location);
+        if (file.description !== undefined) text(file.description, 'file.description');
         const exact = byKey.get(actual.key), path = byPath.get(actual.pathKey);
         if (exact && path && exact !== path) fail('mapping', 'Overlapping URL/path selections identify one source twice');
         const selected = exact ?? path; if (!selected) continue;
@@ -210,7 +222,8 @@ export async function buildSelectedToc(options: SelectedTocOptions): Promise<Sel
         if (selected.references > limits.referencesPerFile) fail('limit', 'Source reference variants exceed the per-file cap');
         matched.add(selected.id);
       }
-      const planJson = matched.size ? plans.map(canonical) : [];
+      const scopedPlans=planIdentities ? plans.filter(p=>{const v=obj(p);return planIdentities.has(text(v.plan_id_type).toLowerCase()+':'+text(v.plan_id));}) : plans;
+      const planJson = matched.size ? scopedPlans.map(canonical) : [];
       for (const id of matched) {
         const selected = selections[id];
         for (const plan of planJson) {
@@ -277,20 +290,26 @@ export async function buildSelectedToc(options: SelectedTocOptions): Promise<Sel
     const parentHash = createHash('sha256');
     const raw = handle.createReadStream({ autoClose: false, start: 0, highWaterMark: 65_536 });
     const hashInput = new Transform({ transform(chunk: Buffer, _, done) {
-      try { guard(); compressedBytes += chunk.length; if (compressedBytes > limits.inputBytes) fail('limit', 'Compressed input exceeds its cap'); parentHash.update(chunk); done(null, chunk); }
-      catch (error) { done(error as Error); }
+      try { guard(); compressedBytes += chunk.length; if (compressedBytes > limits.inputBytes) fail('limit', 'Compressed input exceeds its cap'); parentHash.update(chunk);
+        if(Date.now()-lastProgress>=30000){lastProgress=Date.now();options.onProgress?.({compressedBytes,decodedBytes,structures:structuresSeen,elapsedMs:Date.now()-startedAt});}
+        done(null, chunk); }
+      catch (error) { if(error instanceof SelectedTocError)semanticError??=error; done(error as Error); }
     } });
     const unzip = createGunzip();
     const utf8 = new TextDecoder('utf-8', { fatal: true });
     const decoded = new Transform({ transform(chunk: Buffer, _, done) {
       try { guard(); utf8.decode(chunk, { stream: true }); decodedBytes += chunk.length; if (decodedBytes > limits.decodedBytes) fail('limit', 'Decoded input exceeds its cap'); done(null, chunk); }
-      catch (error) { done(error as Error); }
+      catch (error) { if(error instanceof SelectedTocError)semanticError??=error; done(error as Error); }
     }, flush(done) {
-      try { utf8.decode(); done(); } catch (error) { done(error as Error); }
+      try { utf8.decode(); done(); } catch (error) { if(error instanceof SelectedTocError)semanticError??=error; done(error as Error); }
     } });
     streams.push(raw, hashInput, unzip, decoded);
     parsePipe = pipeline(raw, hashInput, unzip, decoded);
-    try { await Promise.all([parsePipe, parseJsonTokens(decoded, onToken)]); }
+    try {
+      const outcomes=await Promise.allSettled([parsePipe,parseJsonTokens(decoded,(token)=>{try{onToken(token);}catch(error){originalTokenError??=error;if(error instanceof SelectedTocError)semanticError??=error;throw error;}})]);
+      const failed=outcomes.filter((x): x is PromiseRejectedResult=>x.status==='rejected');
+      if(failed.length)throw (failed.find(x=>x.reason instanceof SelectedTocError)??failed[0]).reason;
+    }
     catch (error) {
       for (const stream of streams) stream.destroy();
       await parsePipe.catch(() => {}); throw error;
@@ -313,7 +332,7 @@ export async function buildSelectedToc(options: SelectedTocOptions): Promise<Sel
     const readPlans = db.prepare('SELECT j FROM plans WHERE s=? ORDER BY j'), readRefs = db.prepare('SELECT j FROM refs WHERE s=? ORDER BY j');
     const projections: Array<Record<string, Json>> = [];
     for (const selected of [...selections].sort((a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0)) {
-      if (!selected.matchedKey) continue;
+      if (!selected.matchedKey || (planIdentities && !selected.plans)) continue;
       if (!selected.plans || !selected.references) fail('mapping', 'Matched source has no complete plan mapping');
       const file = sha(selected.key) + '.json.gz', path = join(stage, file), gzipHash = createHash('sha256'), decodedHash = createHash('sha256');
       let projectionBytes = 0, gzipBytes = 0;
@@ -329,14 +348,14 @@ export async function buildSelectedToc(options: SelectedTocOptions): Promise<Sel
       }
       const meter = new Transform({ transform(chunk: Buffer, _, done) {
         try { guard(); projectionBytes += chunk.length; if (projectionBytes > limits.projectionBytes) fail('limit', 'Projection decoded byte cap exceeded'); decodedHash.update(chunk); done(null, chunk); }
-        catch (error) { done(error as Error); }
+        catch (error) { if(error instanceof SelectedTocError)semanticError??=error; done(error as Error); }
       } });
       const compressed = new Transform({ transform(chunk: Buffer, _, done) {
         try {
           guard(); gzipBytes += chunk.length; outputBytes += chunk.length;
           if (gzipBytes > limits.projectionGzipBytes || dbBytes + outputBytes > limits.tempBytes) fail('limit', 'Projection compressed or temporary disk cap exceeded');
           peakTempBytes = Math.max(peakTempBytes, dbBytes + outputBytes); gzipHash.update(chunk); done(null, chunk);
-        } catch (error) { done(error as Error); }
+        } catch (error) { if(error instanceof SelectedTocError)semanticError??=error; done(error as Error); }
       } });
       guard();
       await pipeline(Readable.from(chunks(), { objectMode: false }), meter, createGzip({ level: 9 }), compressed, createWriteStream(path, { flags: 'wx', mode: 0o600 }));
@@ -349,11 +368,12 @@ export async function buildSelectedToc(options: SelectedTocOptions): Promise<Sel
       });
     }
     guard(); db.close(); db = undefined; await rm(dbPath);
-    const unresolved = selections.filter(s => !s.matchedKey).map(s => ({ selected: s.requested, identity: s.key, reason: 'No exact identity encountered at validated parent EOF; replacement or retirement unknown' }));
+    const unresolved = selections.filter(s => !s.matchedKey || (planIdentities && !s.plans)).map(s => ({ selected: s.requested, identity: s.key, reason: s.matchedKey ? 'No exact plan mapping within the explicit employer scope at validated EOF' : 'No exact identity encountered at validated parent EOF; replacement or retirement unknown' }));
     const receipt: Json = {
       version: 1, scope: SCOPE, status: unresolved.length ? 'partial' : 'selected-projections-complete',
       parent: { sha256: parentSha256, compressedBytes, decodedBytes, metadata, sourceDate, validatedJsonEof: true },
-      selection: { sha256: sha(selectionBytes), count: selections.length }, projections, unresolved,
+      selection: { sha256: sha(selectionBytes), count: selections.length },
+      planSelection: planIdentities ? {identities:[...planIdentities].sort(),count:planIdentities.size,scope:'explicit employer identities only; other employers unverified'} : null, projections, unresolved,
       observedAt: now.toISOString(), limits, stats: { structuresSeen, maxStructureBytes, maxStructureNodes, peakTempBytes, peakRssMiB: process.resourceUsage().maxRSS / 1024 },
     };
     const receiptBytes = Buffer.from(canonical(receipt) + '\n');
@@ -369,9 +389,10 @@ export async function buildSelectedToc(options: SelectedTocOptions): Promise<Sel
     guard(); await rename(stage, directory); committed = true;
     return { directory, receiptPath: join(directory, 'receipt.json'), parentSha256, projected: projections.length, unresolved: unresolved.length, scope: SCOPE };
   } catch (error) {
-    const safe = error instanceof SelectedTocError ? error : new SelectedTocError(
+    error=semanticError??originalTokenError??error;
+    const safe = semanticError ?? (error instanceof SelectedTocError ? error : new SelectedTocError(
       String((error as NodeJS.ErrnoException).code).includes('SQLITE') ? 'limit' : 'parse',
-      'Selected TOC build failed; no projection directory was committed');
+      'Selected TOC build failed; no projection directory was committed'));
     if (safe !== error) Object.defineProperty(safe, 'cause', { value: error });
     if (db) { try { db.close(); } catch {} db = undefined; }
     for (const stream of streams) stream.destroy();

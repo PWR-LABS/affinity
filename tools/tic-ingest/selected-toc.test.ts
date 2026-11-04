@@ -146,6 +146,7 @@ test('selection, scalar, single-structure, node, depth and cumulative mapping ca
     { limits: { receiptBytes: 32 } },
   ];
   for (const c of cases) {
+    t.diagnostic(JSON.stringify(c.limits));
     const f = await fixture(t, c.content, c.selected); await rejected({ ...f, limits: c.limits }, 'limit');
     assert.deepEqual(await readdir(f.outDir), []);
   }
@@ -202,4 +203,26 @@ test('disk-backed mapping fixture completes with 60000 distinct two-kilobyte pla
   assert.ok(receipt.stats.peakTempBytes > 100_000_000, 'Distinct plan payloads must really be stored on disk');
   assert.ok(receipt.stats.peakRssMiB < 256, 'RSS includes SQLite, gzip and Node native allocations');
   t.diagnostic(JSON.stringify({ decodedBytes: receipt.parent.decodedBytes, mappings: 60_000, peakTempBytes: receipt.stats.peakTempBytes, peakRssMiB: receipt.stats.peakRssMiB }));
+});
+
+test('real Anthem optional plan name omission is preserved without inventing metadata',async t=>{
+ const unnamed={plan_id_type:'EIN',plan_id:'351863470',plan_sponsor_name:'Fixture sponsor',plan_market_type:'group'};
+ const f=await fixture(t,toc([structure([A],[unnamed])]));
+ const result=await buildSelectedToc(f),r=await readReceipt(result);
+ const projected=JSON.parse(gunzipSync(await readFile(join(result.directory,r.projections[0].file))).toString());
+ assert.deepEqual(projected.reporting_structure[0].reporting_plans,[unnamed]);
+ const {tocPlans}=await import('../../src/lib/tic/publication');
+ const mapped=await tocPlans(join(result.directory,r.projections[0].file),A);
+ assert.equal(mapped[0].planName,'');assert.equal(mapped[0].planId,'351863470');
+ const malformed=await fixture(t,toc([structure([A],[{...unnamed,plan_name:23}])]));await rejected(malformed,'mapping');
+});
+
+test('explicit compact employer scope preserves all matching plan variants and reports excluded sources',async t=>{
+ const f=await fixture(t,toc([structure([A],[plan('111111111'),plan('222222222')]),structure([A],[plan('111111111',{plan_name:'Second exact plan'})]),structure([B],[plan('222222222')])]),[A,B]);
+ const result=await buildSelectedToc({...f,planIdentities:['ein:111111111']}),r=await readReceipt(result);
+ assert.equal(r.projections.length,1);assert.equal(r.projections[0].plans,2);
+ assert.equal(r.unresolved.length,1);assert.match(r.unresolved[0].reason,/explicit employer scope/);
+ assert.deepEqual(r.planSelection.identities,['ein:111111111']);
+ const data=JSON.parse(gunzipSync(await readFile(join(result.directory,r.projections[0].file))).toString());
+ assert.ok(data.reporting_structure[0].reporting_plans.every((p:{plan_id:string})=>p.plan_id==='111111111'));
 });

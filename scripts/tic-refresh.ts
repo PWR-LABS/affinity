@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { runExtract } from '../tools/tic-ingest/tic-extract';
-export async function preparePublication(args: { sourcePath: string; sourceUrl: string; tocPath: string; tocUrl: string; directory: string; guard?: () => void }): Promise<TicPublication> {
+export async function preparePublication(args: { sourcePath: string; sourceUrl: string; tocPath: string; tocUrl: string; directory: string; tocProjection?: TicPublication['tocProjection']; guard?: () => void }): Promise<TicPublication> {
   httpsUrl.parse(args.sourceUrl); httpsUrl.parse(args.tocUrl);
   const sourcePath = resolve(args.sourcePath), tocPath = resolve(args.tocPath);
   if ((await stat(sourcePath)).size > 150_000_000) throw new Error('Source exceeds bounded 150 MB refresh limit');

@@ -1,4 +1,4 @@
-import { statSync, realpathSync } from 'node:fs';
+import { statSync, realpathSync, statfsSync,writeFileSync,renameSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { mkdir, open, rename, readFile, stat, realpath, unlink } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
@@ -19,9 +19,14 @@ export function volumeSessionGuard() {
   const device = statSync(archiveRoot).dev;
   return () => {
     try {
+      const space=statfsSync(archiveRoot);
+      if(space.bavail*space.bsize<150e9)throw new Deferred('ssd_free_space_floor');
       if (statSync(archiveRoot).dev !== device || realpathSync(archiveRoot) !== archiveRoot) throw new Error();
-    } catch { throw new Deferred('ssd_disconnected'); }
+    } catch(e) { if(e instanceof Deferred)throw e; throw new Deferred('ssd_disconnected'); }
   };
+}
+export function progressJson(path:string,value:unknown){
+ const temp=path+'.'+process.pid+'.tmp';writeFileSync(temp,JSON.stringify(value)+'\n',{mode:0o600});renameSync(temp,path);
 }
 export async function atomicJson(path: string, value: unknown) {
   const temp = `${path}.${process.pid}.tmp`;

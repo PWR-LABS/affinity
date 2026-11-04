@@ -1,3 +1,4 @@
+import { reclaimRetiredArchives } from './archive-retention';
 import { createHash } from 'node:crypto';
 import { sourceIdentity } from './issuer-discovery';
 import { readFile } from 'node:fs/promises';
@@ -12,8 +13,9 @@ export function fingerprint(r: TicPublication) {
 }
 export async function publishManaged(db: PrismaClient, r: TicPublication, receiptPath: string, guard:()=>void, root: string) {
   const stableKey = logicalKey(r.sourceUrl), contentHash = fingerprint(r);
-  const id = createHash('sha256').update(stableKey + '\n' + contentHash).digest('hex');
-  const previous = await db.$queryRaw<Array<{id:string;fileId:string;contentHash:string;receiptPath:string;sourceDate:string}>>`SELECT * FROM "TicRefreshPublication" WHERE "stableKey"=${stableKey} AND withdrawn=false ORDER BY "sourceDate" DESC, "createdAt" DESC`;
+  let id = createHash('sha256').update(stableKey + '\n' + contentHash).digest('hex');
+  const previous = await db.$queryRaw<Array<{id:string;fileId:string;contentHash:string;receiptPath:string;sourceDate:string}>>`SELECT * FROM "TicRefreshPublication" WHERE regexp_replace("stableKey",'reporting_month=[0-9]{4}-[0-9]{2}','reporting_month={month}','g')=${stableKey} AND withdrawn=false ORDER BY "sourceDate" DESC, "createdAt" DESC`;
+  id=previous.find(p=>p.contentHash===contentHash)?.id??id;
   const newer = previous.filter(p => p.sourceDate > r.sourceDate);
   if (newer.length) throw new Error('Source date regression');
   const retire = previous.filter(p=>p.id !== id).slice(1);
@@ -27,7 +29,10 @@ export async function publishManaged(db: PrismaClient, r: TicPublication, receip
       if (!resolve(path).startsWith(resolve(root) + '/') || await sha256(path) !== hash) throw new Error('Retention archive unavailable');
     }
   }
-  return publishPublication(db,r,{id,stableKey,contentHash,receiptPath,guard,retire});
+  const result=await publishPublication(db,r,{id,stableKey,contentHash,receiptPath,guard,retire});
+  if(!retire.length)return result;
+  try {return {...result,archiveRetention:await reclaimRetiredArchives(db,retire,root,guard)};}
+  catch {return {...result,archiveRetention:{state:'deferred',reason:'Retired archive cleanup requires review; database commit verified'}};}
 }
 
 /** Explicit recovery: withdraw the exact active managed file and reactivate its predecessor. */
@@ -36,7 +41,7 @@ export async function withdrawManaged(db: PrismaClient, fileId: string, guard:()
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(184937022)`;guard();
   const current=await tx.$queryRaw<Array<{stableKey:string}>>`SELECT p."stableKey" FROM "TicRefreshPublication" p JOIN "TicFile" f ON f.id=p."fileId" WHERE p."fileId"=${fileId} AND f.active=true AND p.withdrawn=false`;
   if(current.length!==1)throw new Error('Withdrawal target is not active managed data');
-  const prior=await tx.$queryRaw<Array<{fileId:string}>>`SELECT "fileId" FROM "TicRefreshPublication" WHERE "stableKey"=${current[0].stableKey} AND "fileId"<>${fileId} AND withdrawn=false ORDER BY "sourceDate" DESC,"createdAt" DESC LIMIT 1`;
+  const prior=await tx.$queryRaw<Array<{fileId:string}>>`SELECT "fileId" FROM "TicRefreshPublication" WHERE regexp_replace("stableKey",'reporting_month=[0-9]{4}-[0-9]{2}','reporting_month={month}','g')=${current[0].stableKey.replace(/reporting_month=\d{4}-\d{2}/g,'reporting_month={month}')} AND "fileId"<>${fileId} AND withdrawn=false ORDER BY "sourceDate" DESC,"createdAt" DESC LIMIT 1`;
   if(prior.length!==1)throw new Error('No retained rollback generation');
   if(!await tx.ticMembership.count({where:{fileId:prior[0].fileId}})||!await tx.ticPlanLink.count({where:{fileId:prior[0].fileId}}))throw new Error('Rollback generation incomplete');
   await tx.$executeRaw`UPDATE "TicRefreshPublication" SET withdrawn=true WHERE "fileId"=${fileId}`;
