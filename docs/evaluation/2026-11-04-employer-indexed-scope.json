@@ -1,0 +1,1548 @@
+{
+  "recordedAt": "2026-11-04T21:00:20Z",
+  "scope": "read-only production source paths observed immediately before recordedAt; signed query strings omitted",
+  "rows": [
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-06T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_020_02E0_in-network-rates_1_of_2.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-06T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_020_02E0_in-network-rates_2_of_2.json.gz"
+    },
+    {
+      "plan_links": 3094,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_051_06B0_in-network-rates_4_of_5.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_051_06E0_in-network-rates_4_of_9.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_051_06E0_in-network-rates_8_of_9.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_051_06X0_in-network-rates_3_of_5.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_070_09D0_in-network-rates_01_of_02.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_121_16P0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-15T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_140_13C0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-06T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_150_20D0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-03T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_170_22T0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-06T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_240_28F0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 41,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-06T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_240_28G0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-06T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_240_28Q0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_250_31B0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_290_37D0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_301_71B0_in-network-rates_01_of_03.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_301_71I0_in-network-rates_01_of_03.json.gz"
+    },
+    {
+      "plan_links": 3093,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33B0_in-network-rates_01_of_10.json.gz"
+    },
+    {
+      "plan_links": 3093,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33B0_in-network-rates_02_of_10.json.gz"
+    },
+    {
+      "plan_links": 3093,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33B0_in-network-rates_04_of_10.json.gz"
+    },
+    {
+      "plan_links": 3093,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33B0_in-network-rates_07_of_10.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33D0_in-network-rates_01_of_10.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33D0_in-network-rates_02_of_10.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33D0_in-network-rates_03_of_10.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33D0_in-network-rates_04_of_10.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33D0_in-network-rates_05_of_10.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33D0_in-network-rates_06_of_10.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33D0_in-network-rates_07_of_10.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33D0_in-network-rates_08_of_10.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33D0_in-network-rates_09_of_10.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-06T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_320_33D0_in-network-rates_10_of_10.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_340_46E0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_340_46F0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-28T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_361_50J0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-31T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_362_52G0_in-network-rates_01_of_04.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-03T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_362_52G0_in-network-rates_02_of_04.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-05T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_362_52G0_in-network-rates_03_of_04.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_362_52G0_in-network-rates_04_of_04.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-31T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_362_52V0_in-network-rates_01_of_01.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-08T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_370_55D0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-08T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_370_55K0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_378_49T0_in-network-rates_01_of_03.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-08T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_380_56D0_in-network-rates_1_of_1.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-15T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_430_65E0_in-network-rates_1_of_4.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-15T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_430_65E0_in-network-rates_4_of_4.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-15T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_430_65J1_in-network-rates_1_of_2.json.gz"
+    },
+    {
+      "plan_links": 3093,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_443_69B0_in-network-rates_02_of_02.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_443_69C0_in-network-rates_01_of_02.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_460_70B0_in-network-rates_01_of_09.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_460_70B0_in-network-rates_02_of_09.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_460_70B0_in-network-rates_03_of_09.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_460_70B0_in-network-rates_04_of_09.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_460_70B0_in-network-rates_05_of_09.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_460_70B0_in-network-rates_06_of_09.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_460_70B0_in-network-rates_07_of_09.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-05-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_460_70B0_in-network-rates_08_of_09.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-03T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_471_12H0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 3093,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01B0_in-network-rates_5_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_10_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_11_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_12_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_13_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_14_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_15_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_16_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_17_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_18_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_19_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_1_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_20_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_21_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_22_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_23_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_24_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_25_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_26_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_27_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_28_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_2_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_3_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_4_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_5_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_6_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_7_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_8_of_29.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01C0_in-network-rates_9_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_10_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_11_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_12_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_13_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_14_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_15_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_16_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_17_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_18_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_19_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_1_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_20_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_21_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_22_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_23_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_24_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_25_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_26_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_27_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_28_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_2_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_3_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_4_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_6_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_7_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_8_of_29.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_510_01I0_in-network-rates_9_of_29.json.gz"
+    },
+    {
+      "plan_links": 3093,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08B0_in-network-rates_12_of_35.json.gz"
+    },
+    {
+      "plan_links": 3093,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08B0_in-network-rates_34_of_35.json.gz"
+    },
+    {
+      "plan_links": 3093,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08B0_in-network-rates_35_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_10_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_11_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_12_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_13_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_14_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_15_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_16_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_17_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_18_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_19_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_1_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_20_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_21_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_22_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_23_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_24_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_25_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_28_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_29_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_2_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_34_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_35_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_3_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_4_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_5_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_6_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_7_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_8_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08D0_in-network-rates_9_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_10_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_11_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_12_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_13_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_14_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_15_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_16_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_17_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_18_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_19_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_1_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_20_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_21_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_22_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_23_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_24_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_25_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_28_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_29_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_2_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_34_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_35_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_3_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_4_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_5_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_6_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_7_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_8_of_35.json.gz"
+    },
+    {
+      "plan_links": 39,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08N0_in-network-rates_9_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_10_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_11_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_12_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_13_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_14_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_15_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_16_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_17_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_18_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_19_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_1_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_20_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_21_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_22_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_23_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_24_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_25_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_28_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_29_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_2_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_34_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_35_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_3_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_4_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_5_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_6_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_7_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_8_of_35.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2020-08-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_690_08Q0_in-network-rates_9_of_35.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_700_23E0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_700_23P0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_710_26H0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_710_26R0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-01T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_800_72B0_in-network-rates_01_of_02.json.gz"
+    },
+    {
+      "plan_links": 75,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-11T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_850_47W0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0001_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0002_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0003_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0004_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0005_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0006_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0007_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0008_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0009_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0010_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0011_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0012_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0013_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0014_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0015_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0016_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0017_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0018_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0019_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0020_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0021_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0022_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0023_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0024_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0025_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0026_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0027_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0028_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0029_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-27T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_890_58D0_in-network-rates_0030_of_30.json.gz"
+    },
+    {
+      "plan_links": 50,
+      "reportingEntity": "Anthem Inc",
+      "sourceLastUpdated": "2026-06-07T00:00:00Z",
+      "source_path": "https://anthembcbsoh.mrf.bcbs.com/2026-07_973_54B0_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_chicago-il-connect-network_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_cigna-managed-care-hmo-of-nh_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_florida-connect_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_houston-flexcare_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_indianapolis-hmo_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_metro-new-york-gppo_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_metro-ny-seamless-hmo-network_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_nc-connect-hmo-rural_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_north-new-jersey-hmo_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_orlando-ipa-hmo_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_pittsburgh-gppo_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_san-antonio-commercial_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_south-carolina_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_st-louis-hmo_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_tampa-ipa-mixed-hmo_in-network-rates.json.gz"
+    },
+    {
+      "plan_links": 0,
+      "reportingEntity": "Cigna Health Life Insurance Company",
+      "sourceLastUpdated": "2026-07-01T00:00:00Z",
+      "source_path": "https://d25kgz5rikkq4n.cloudfront.net/cost_transparency/mrf/in-network-rates/reporting_month=2026-07/2026-07-01_cigna-health-life-insurance-company_wichita-gppo_in-network-rates.json.gz"
+    }
+  ]
+}
