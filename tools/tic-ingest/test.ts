@@ -9,8 +9,20 @@ import { once } from "node:events";
 import { createGzip, gzipSync } from "node:zlib";
 import test from "node:test";
 
+import { runExtract } from "./tic-extract.ts";
+
 const toolRoot = fileURLToPath(new URL(".", import.meta.url));
 const tsxBin = join(toolRoot, "node_modules", ".bin", "tsx");
+
+test("bounded local extraction preserves source URL and refuses excessive membership counts", async () => {
+  const work = await makeTempDir("tic-refresh-");
+  const options = { input: join(toolRoot, "fixtures/tic-in-network-v2-sample.json"), out: join(work, "out.ndjson"), sourceUrl: "https://example.com/source.json", progress: false };
+  await assert.rejects(runExtract({ ...options, maxPairs: 1 }), /Membership limit exceeded/);
+  await runExtract({ ...options, maxPairs: 100 });
+  const records = await readNdjson(options.out);
+  assert.ok(records.length > 1);
+  assert.ok(records.every(record => record.file_url === options.sourceUrl));
+});
 
 test("fixture invocations produce byte-identical expected files", async () => {
   const work = await makeTempDir("tic-fixtures-");
