@@ -60,7 +60,7 @@ export function VerifyDoctor() {
     if (!r.ok) return []; // index absent in this environment — verify via EIN still explains it clearly
     return (d.items ?? []).map((p: { planIdType: string; planId: string; planName: string; issuer: string }) => ({
       key: `${p.planIdType}:${p.planId}:${p.planName}`,
-      label: p.planName,
+      label: p.planName || `Plan name unavailable · ${p.planIdType.toUpperCase()} ${p.planId}`,
       sub: `${p.issuer} · ${p.planIdType.toUpperCase()} ${p.planId}`,
     }));
   }, []);

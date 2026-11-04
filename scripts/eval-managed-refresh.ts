@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, rm, stat, realpath, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PrismaClient } from '@prisma/client';
@@ -11,7 +11,7 @@ assert.equal(url.hostname,'127.0.0.1');assert.equal(url.pathname,'/affinity_empl
 const db=new PrismaClient();
 const passed:string[]=[];
 async function main(){
- const root=await mkdtemp(join(tmpdir(),'affinity-managed-'));
+ const root=await mkdtemp(join(await realpath(tmpdir()),'affinity-managed-'));
  try{
  await db.$executeRawUnsafe('CREATE TABLE IF NOT EXISTS "TicRefreshPublication" ("id" text PRIMARY KEY, "stableKey" text NOT NULL, "fileId" text NOT NULL UNIQUE REFERENCES "TicFile"(id) ON DELETE CASCADE, "sourceDate" text NOT NULL, "contentHash" text NOT NULL, "receiptPath" text NOT NULL, "createdAt" timestamptz NOT NULL DEFAULT now())');
  await db.ticFile.deleteMany();
@@ -20,16 +20,17 @@ async function main(){
  for(let i=0;i<4;i++){
  const date=new Date(Date.now()-(4-Math.min(i,2))*86400000).toISOString().slice(0,10);
  const sourceUrl=`https://example.com/reused-network.json`;
- const sourcePath=join(root,`source-${i}.json`),tocPath=join(root,`toc-${i}.json`),membershipPath=join(root,`members-${i}.jsonl`);
+ const dir=join(root,String(i));await (await import('node:fs/promises')).mkdir(dir);
+ const sourcePath=join(dir,'source.json'),tocPath=join(dir,'toc.json'),membershipPath=join(dir,'members.jsonl');
  const plans=[{planName:'Synthetic',planId:'111111111',planIdType:'ein' as const,planMarketType:'group'}];
  await writeFile(sourcePath,JSON.stringify({date,revision:i}));
  await writeFile(tocPath,JSON.stringify({reporting_structure:[{in_network_files:[{location:sourceUrl}],reporting_plans:[{plan_name:'Synthetic',plan_id:'111111111',plan_id_type:'ein',plan_market_type:'group'}]}]}));
  const rows=Array.from({length:1001},(_,j)=>JSON.stringify({npi:String(1000000000+j+i),tin_type:'ein',tin_value:'111111111',file_url:sourceUrl,reporting_entity:'Test',last_updated_on:date,schema:'v1'}));
  await writeFile(membershipPath,rows.join('\n')+'\n');
  const r:TicPublication={version:1,scope:'selected-file-only; plan completeness unverified',sourceUrl,tocUrl:'https://example.com/toc',sourcePath,tocPath,membershipPath,sourceSha256:await sha256(sourcePath),tocSha256:await sha256(tocPath),membershipSha256:await sha256(membershipPath),membershipCount:rows.length,sourceDate:date,reportingEntity:'Test',schema:'v1',plans,preparedAt:new Date().toISOString()};
- receipts.push(r);await writeFile(join(root,`receipt-${i}.json`),JSON.stringify(r));
+ receipts.push(r);await writeFile(join(root,String(i),'publication.json'),JSON.stringify(r));
  }
- const publish=(i:number,guard=()=>{})=>publishManaged(db,receipts[i],join(root,`receipt-${i}.json`),guard,root);
+ const publish=(i:number,guard=()=>{})=>publishManaged(db,receipts[i],join(root,String(i),'publication.json'),guard,root);
  await publish(0);await publish(1);
  assert.equal((await db.ticFile.findUniqueOrThrow({where:{id:legacy.id}})).active,false);
  assert.equal((await queryTicAnswer({npi:'1000000000',planIdType:'ein',planId:'111111111',db})).value,'unknown');
@@ -41,6 +42,10 @@ async function main(){
  assert.equal(await db.ticFile.count(),3);assert.equal(await db.ticMembership.count(),2002);
  passed.push('disconnect after retention deletion but before commit restores retired generation atomically');
  const result=await publish(2);
+ assert.equal('archiveRetention' in result&&'removedFiles' in result.archiveRetention&&result.archiveRetention.removedFiles,2);
+ await assert.rejects(stat(receipts[0].sourcePath),{code:'ENOENT'});
+ assert.ok(await stat(receipts[0].tocPath));
+ passed.push('retired managed raw and normalized bytes reclaimed only after commit; TOC and manifest retained');
  assert.equal(await db.ticFile.count(),3);assert.equal(await db.ticMembership.count(),2002);
  assert.ok(await db.ticFile.findUnique({where:{id:legacy.id}}));
  assert.equal(await db.ticFile.count({where:{sourceLastUpdated:new Date(receipts[0].sourceDate)}}),0);
@@ -58,6 +63,17 @@ async function main(){
  await withdrawManaged(db,revised.fileId,()=>{});
  assert.equal(await db.ticMembership.count({where:{file:{active:true}}}),1001);
  passed.push('withdrawal of newest generation preserves preceding serving generation');
+ await db.ticFile.deleteMany();
+ const c=receipts[2];const oldUrl=c.sourceUrl;
+ c.sourceUrl='https://example.com/reporting_month=2026-11/2026-11-01_network.json';
+ await writeFile(c.membershipPath,(await readFile(c.membershipPath,'utf8')).replaceAll(oldUrl,c.sourceUrl));
+ await writeFile(c.tocPath,(await readFile(c.tocPath,'utf8')).replaceAll(oldUrl,c.sourceUrl));
+ c.membershipSha256=await sha256(c.membershipPath);c.tocSha256=await sha256(c.tocPath);
+ await writeFile(join(root,'2','publication.json'),JSON.stringify(c));
+ const first=await publish(2);
+ await db.$executeRaw`UPDATE "TicRefreshPublication" SET id='legacy-month-identity',"stableKey"=replace("stableKey",'reporting_month={month}','reporting_month=2026-11')`;
+ const oldIdentityReplay=await publish(2);assert.equal(oldIdentityReplay.fileId,first.fileId);assert.equal(await db.ticFile.count(),1);
+ passed.push('first-run monthly source ledger reconciles without duplicate publication after key normalization');
  console.log(JSON.stringify({checkedAt:new Date().toISOString(),passed},null,2));
  }finally{await db.ticFile.deleteMany();await db.$disconnect();await rm(root,{recursive:true,force:true});}
 }

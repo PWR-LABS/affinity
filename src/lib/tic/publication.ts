@@ -6,6 +6,7 @@ import { createInterface } from 'node:readline';
 import { gunzipSync } from 'node:zlib';
 import { z } from 'zod';
 import type { PrismaClient } from '@prisma/client';
+import { lineageSchema, validateTocLineage } from './toc-lineage';
 import { ticSourceCurrent } from './freshness';
 
 export const httpsUrl = z.string().url().refine(s => new URL(s).protocol === 'https:');
@@ -15,7 +16,7 @@ export const member = z.object({
   file_url: httpsUrl, reporting_entity: z.string().min(1),
   last_updated_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), schema: z.enum(['v1', 'v2']),
 });
-const plan = z.object({ planName: z.string().min(1), planIdType: z.enum(['ein','hios']), planId: z.string().min(1), planMarketType: z.string() });
+const plan = z.object({ planName: z.string(), planIdType: z.enum(['ein','hios']), planId: z.string().min(1), planMarketType: z.string() });
 export const receiptSchema = z.object({
   version: z.literal(1), scope: z.literal('selected-file-only; plan completeness unverified'),
   sourceUrl: httpsUrl, tocUrl: httpsUrl,
@@ -23,6 +24,7 @@ export const receiptSchema = z.object({
   membershipPath: z.string(), membershipSha256: hash,
   membershipCount: z.number().int().positive().max(200_000),
   sourceDate: z.string(), reportingEntity: z.string().min(1), schema: z.enum(['v1','v2']),
+  tocProjection: lineageSchema.optional(),
   plans: z.array(plan).min(1).max(30_000), preparedAt: z.string(),
 });
 export type TicPublication = z.infer<typeof receiptSchema>;
@@ -39,7 +41,7 @@ export async function tocPlans(path: string, sourceUrl: string) {
   for (const structure of toc.reporting_structure ?? []) {
     if (!structure.in_network_files?.some((f: { location: string }) => f.location === sourceUrl)) continue;
     for (const p of structure.reporting_plans ?? []) {
-      const parsed = plan.parse({ planName: p.plan_name, planIdType: p.plan_id_type?.toLowerCase(), planId: p.plan_id, planMarketType: p.plan_market_type ?? '' });
+      const parsed = plan.parse({ planName: p.plan_name ?? '', planIdType: p.plan_id_type?.toLowerCase(), planId: p.plan_id, planMarketType: p.plan_market_type ?? '' });
       plans.set(JSON.stringify(parsed), parsed);
     }
   }
@@ -59,6 +61,7 @@ export async function validatePublication(input: unknown): Promise<TicPublicatio
   for (const [path, expected] of [[r.sourcePath, r.sourceSha256], [r.tocPath, r.tocSha256], [r.membershipPath, r.membershipSha256]]) {
     if (await sha256(path) !== expected) throw new Error('Publication hash mismatch');
   }
+  if (r.tocProjection) await validateTocLineage(r.tocProjection,r.tocPath,r.tocSha256,r.sourceUrl);
   if (JSON.stringify(await tocPlans(r.tocPath, r.sourceUrl)) !== JSON.stringify(r.plans)) throw new Error('Plan mapping differs from archived TOC');
   let count = 0;
   for await (const row of rows(r.membershipPath)) {
@@ -113,13 +116,13 @@ export async function publishPublication(db: PrismaClient, input: unknown, manag
       managed.guard();
       // Activate only this content version; retain prior bytes for rollback without
       // letting a superseded provider listing continue to answer current lookups.
-      await tx.$executeRaw`UPDATE "TicFile" SET active=false WHERE id<>${file.id} AND (url=${r.sourceUrl} OR id IN (SELECT "fileId" FROM "TicRefreshPublication" WHERE "stableKey"=${managed.stableKey}))`;
+      await tx.$executeRaw`UPDATE "TicFile" SET active=false WHERE id<>${file.id} AND (url=${r.sourceUrl} OR id IN (SELECT "fileId" FROM "TicRefreshPublication" WHERE regexp_replace("stableKey",'reporting_month=[0-9]{4}-[0-9]{2}','reporting_month={month}','g')=${managed.stableKey}))`;
       await tx.$executeRaw`INSERT INTO "TicRefreshPublication" (id,"stableKey","fileId","sourceDate","contentHash","receiptPath") VALUES (${managed.id},${managed.stableKey},${file.id},${r.sourceDate},${managed.contentHash},${managed.receiptPath})`;
       // Delete only generations this publisher owns and has independently archive-verified.
       for (const old of managed.retire) {
-        const owned = await tx.$queryRaw<Array<{fileId:string}>>`SELECT "fileId" FROM "TicRefreshPublication" WHERE id=${old.id} AND "fileId"=${old.fileId} AND "stableKey"=${managed.stableKey} AND "contentHash"=${old.contentHash} AND "sourceDate" <= ${r.sourceDate} AND withdrawn=false`;
+        const owned = await tx.$queryRaw<Array<{fileId:string}>>`SELECT "fileId" FROM "TicRefreshPublication" WHERE id=${old.id} AND "fileId"=${old.fileId} AND regexp_replace("stableKey",'reporting_month=[0-9]{4}-[0-9]{2}','reporting_month={month}','g')=${managed.stableKey} AND "contentHash"=${old.contentHash} AND "sourceDate" <= ${r.sourceDate} AND withdrawn=false`;
         if (owned.length !== 1) throw new Error('Retention ownership changed');
-        const survivors = await tx.$queryRaw<Array<{count:bigint}>>`SELECT count(*) AS count FROM "TicRefreshPublication" WHERE "stableKey"=${managed.stableKey} AND withdrawn=false AND "createdAt" > (SELECT "createdAt" FROM "TicRefreshPublication" WHERE id=${old.id})`;
+        const survivors = await tx.$queryRaw<Array<{count:bigint}>>`SELECT count(*) AS count FROM "TicRefreshPublication" WHERE regexp_replace("stableKey",'reporting_month=[0-9]{4}-[0-9]{2}','reporting_month={month}','g')=${managed.stableKey} AND withdrawn=false AND "createdAt" > (SELECT "createdAt" FROM "TicRefreshPublication" WHERE id=${old.id})`;
         if (Number(survivors[0].count) < 2) throw new Error('Retention requires current and rollback generations');
         await tx.ticFile.delete({where:{id:old.fileId}});
       }

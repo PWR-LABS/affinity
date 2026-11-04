@@ -205,7 +205,7 @@ async function main(): Promise<void> {
 }
 
 async function runFirstPass(input: string, state: ExtractionState, strict = false, deadline = Infinity, guard?: () => void): Promise<FirstPassResult> {
-  const opened = await openDecodedInput(input);
+  const opened = await openDecodedInput(input,{guard});
   if (!opened.stream) throw new Error(`unable to open input: ${input}`);
 
   const metadata: Metadata = { reportingEntity: "", lastUpdatedOn: "", version: "" };
@@ -239,6 +239,7 @@ async function runFirstPass(input: string, state: ExtractionState, strict = fals
       if (providerReferenceCollector.done) {
         const reference = providerReferenceCollector.value as ProviderReference;
         if (strict && (!normalizeText(reference.provider_group_id) || !Array.isArray(reference.provider_groups) || reference.location)) throw new Error('Unarchived or malformed provider reference');
+        if (strict && references.has(normalizeText(reference.provider_group_id))) throw new Error('Duplicate provider reference identifier');
         const promise = recordProviderReference(reference, references).then((status) => {
           if (status === "fetched") remoteRefsFetched += 1;
           if (status === "404") remoteRefs404 += 1;
@@ -294,10 +295,11 @@ async function runFirstPass(input: string, state: ExtractionState, strict = fals
 }
 
 async function runV1SecondPass(input: string, references: ReferenceTable, state: ExtractionState, strict = false, deadline = Infinity, guard?: () => void): Promise<void> {
-  const opened = await openDecodedInput(input);
+  const opened = await openDecodedInput(input,{guard});
   if (!opened.stream) throw new Error(`unable to open input: ${input}`);
 
   const tracker = new JsonPathTracker();
+  const emittedReferences = new Set<string>();
 
   let tokens = 0;
   await parseJsonTokens(opened.stream, (token) => {
@@ -331,8 +333,9 @@ async function runV1SecondPass(input: string, references: ReferenceTable, state:
         const referenceId = normalizeText(scalarFromToken(token));
         const groups = references.get(referenceId);
         if (strict && !groups) throw new Error('Unresolved provider reference');
-        if (groups) {
+        if (groups && !emittedReferences.has(referenceId)) {
           for (const group of groups) state.addProviderGroup(group);
+          emittedReferences.add(referenceId);
         }
       }
       tracker.value();

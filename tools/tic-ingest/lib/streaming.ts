@@ -1,3 +1,5 @@
+import { open } from 'node:fs/promises';
+import { openZipJson } from './zip-json';
 import { createReadStream } from "node:fs";
 import { Readable, PassThrough } from "node:stream";
 import { createGunzip } from "node:zlib";
@@ -224,7 +226,7 @@ export async function parseJsonTokens(
 
 export async function openDecodedInput(
   input: string,
-  options: { tolerate404?: boolean; method?: "GET" | "HEAD" } = {},
+  options: { tolerate404?: boolean; method?: "GET" | "HEAD"; guard?:()=>void } = {},
 ): Promise<{ stream: Readable | null; status?: number; headers?: Headers }> {
   if (/^https?:\/\//i.test(input)) {
     return openHttpInput(input, options);
@@ -234,6 +236,10 @@ export async function openDecodedInput(
     return { stream: null, status: 200, headers: new Headers() };
   }
 
+  options.guard?.();
+  const file=await open(input,'r');const magic=Buffer.alloc(4);
+  try{await file.read(magic,0,4,0);}finally{await file.close();}
+  if(magic.readUInt32LE(0)===0x04034b50)return {stream:await openZipJson(input,{guard:options.guard})};
   return { stream: await sniffGzip(createReadStream(input)) };
 }
 

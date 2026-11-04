@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { runExtract } from '../tools/tic-ingest/tic-extract';
-export async function preparePublication(args: { sourcePath: string; sourceUrl: string; tocPath: string; tocUrl: string; directory: string; guard?: () => void }): Promise<TicPublication> {
+export async function preparePublication(args: { sourcePath: string; sourceUrl: string; tocPath: string; tocUrl: string; directory: string; tocProjection?: TicPublication['tocProjection']; guard?: () => void }): Promise<TicPublication> {
   httpsUrl.parse(args.sourceUrl); httpsUrl.parse(args.tocUrl);
   const sourcePath = resolve(args.sourcePath), tocPath = resolve(args.tocPath);
   if ((await stat(sourcePath)).size > 150_000_000) throw new Error('Source exceeds bounded 150 MB refresh limit');
@@ -14,8 +14,8 @@ export async function preparePublication(args: { sourcePath: string; sourceUrl: 
   const prefix = Buffer.alloc(1024);
   let read = 0;
   try { read = (await source.read(prefix,0,prefix.length,0)).bytesRead; } finally { await source.close(); }
-  if (prefix[0] === 0x50 && prefix[1] === 0x4b) throw new Error('Source container requires ZIP adapter');
-  if (!(prefix[0] === 0x1f && prefix[1] === 0x8b) && !prefix.subarray(0,read).toString().trimStart().startsWith('{')) throw new Error('Source is not JSON/gzip rate data');
+  const zip = prefix[0] === 0x50 && prefix[1] === 0x4b;
+  if (!zip && !(prefix[0] === 0x1f && prefix[1] === 0x8b) && !prefix.subarray(0,read).toString().trimStart().startsWith('{')) throw new Error('Source is not JSON/gzip rate data');
   const sourceSha256 = await sha256(sourcePath), tocSha256 = await sha256(tocPath);
   const plans = await tocPlans(tocPath, args.sourceUrl);
   args.guard?.();
