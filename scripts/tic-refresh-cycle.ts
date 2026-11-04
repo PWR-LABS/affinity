@@ -123,4 +123,7 @@ function safeReason(e:unknown){
  if(message.includes('://') || message.includes('Invocation') || message.length>180)return 'operation_failed_check_protected_checkpoint';
  return message;
 }
-main().catch(()=>{console.error('Refresh could not acquire local state; no publication attempted.');process.exitCode=1;});
+main().catch(error=>{
+ if(error instanceof Deferred){console.log(JSON.stringify({state:'deferred',reason:error.message,observedAt:new Date().toISOString()}));return;}
+ console.error('Refresh could not acquire local state; no publication attempted.');process.exitCode=1;
+});
