@@ -37,6 +37,8 @@ export async function atomicJson(path: string, value: unknown) {
 }
 export async function storageBudget(extra = 0) {
   requireVolume();
+  const space=statfsSync(archiveRoot);
+  if(space.bavail*space.bsize-extra<150e9)throw new Deferred('ssd_free_space_reservation');
   const bytes = Number(execFileSync('/usr/bin/du', ['-sk', archiveRoot], { encoding: 'utf8', timeout: 60000 }).split(/\s/)[0]) * 1024;
   if (!Number.isFinite(bytes) || bytes + extra > 100e9) throw new Deferred('ssd_task_budget');
 }

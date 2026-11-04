@@ -1,5 +1,11 @@
 # [affinity.] — build log / changelog
 
+## Managed Mini refresh hardening (2026-11-04)
+
+- Completed official issuer discovery, restricted unattended publishing, atomic content activation, bounded retention, rollback, optional-SSD recovery, crash handling and idempotent replay. Daily processing runs on Mini at 06:00 Eastern.
+- Verified 70 current managed files: 46 Medical Mutual, 14 Cigna and 10 Anthem; all dated November 1. Full replay verified all 70 unchanged with zero duplicate generations. Explicit larger-source and discovery gaps remain.
+- Kept Render resources unchanged; local-only hardening merges skipped redundant web builds. [Acceptance and source limits](docs/evaluation/2026-11-04-managed-refresh-hardening.md).
+
 ## Bounded employer refresh (2026-11-04)
 
 - Published one current Medical Mutual SuperMed file dated November 1: 79,414 provider memberships and 14,949 deduplicated plan links. The live checker again has recent listings; absent providers remain unknown. No full-plan or nationwide completeness claim.
