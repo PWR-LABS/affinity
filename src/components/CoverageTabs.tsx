@@ -24,7 +24,7 @@ export function CoverageTabs({ active, readiness }: CoverageTabsProps) {
         >
           <span>{tab.label}</span>
           <span className="coverage-tab-status" data-ready={tab.ready ? "true" : "false"}>
-            {tab.ready ? "Loaded" : "Index pending"}
+            {tab.key === "employer" ? (tab.ready ? "Recent listings" : "Recent sources unavailable") : (tab.ready ? "Loaded" : "Index pending")}
           </span>
         </Link>
       ))}
@@ -32,10 +32,10 @@ export function CoverageTabs({ active, readiness }: CoverageTabsProps) {
   );
 }
 
-export function CoverageUnavailable({ children }: { children: React.ReactNode }) {
+export function CoverageUnavailable({ children, title = "Source index not loaded here yet." }: { children: React.ReactNode; title?: string }) {
   return (
     <div className="coverage-unavailable" role="status">
-      <strong>Source index not loaded here yet.</strong>
+      <strong>{title}</strong>
       <p>{children}</p>
     </div>
   );

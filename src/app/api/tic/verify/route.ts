@@ -36,6 +36,9 @@ export async function POST(req: Request) {
       confidence: answer.confidence,
       source: answer.provenance.source,
       sourceUpdated: answer.provenance.sourceLastUpdated ?? null,
+      evidenceStatus: answer.evidenceStatus,
+      explanation: answer.explanation,
+      sourceUrl: answer.provenance.sourceUrl ?? null,
       rendered: renderCoverageAnswer(answer),
       needsConfirmation: needsConfirmation(answer),
     });

@@ -1,5 +1,11 @@
 # [affinity.] — build log / changelog
 
+## Employer evidence safety candidate (2026-11-04)
+
+- Unmatched employer lookups now remain unknown because current imports do not certify complete plan coverage. Missing, stale, and undated evidence receive distinct explanations; only source listings dated within 60 days can produce a positive listing.
+- Readiness and plan search require recent provider and plan data joined through the same file. The interface identifies listings rather than promising network coverage, and clears results when the selected doctor or plan changes.
+- Added real database/API/browser checks with synthetic records, plus regression tests for freshness and reconciliation. See [candidate verification](docs/evaluation/2026-11-04-employer-evidence-safety.md). Production activation remains separate.
+
 ## CMS guidance transport repair (2026-11-03)
 
 - Identified CMS/Medicaid requests with the public watcher name and repository, and spaced sequential source requests by 1.2 seconds. The fix preserves working non-CMS requests, strict content parsing, existing baselines and the policy-review date.

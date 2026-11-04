@@ -1,3 +1,4 @@
+import { ticSourceWindow } from "@/lib/tic/freshness";
 import { prisma } from "@/lib/prisma";
 
 export interface CoverageReadiness {
@@ -5,12 +6,17 @@ export interface CoverageReadiness {
   partD: boolean;
 }
 
-async function employerIndexReady(): Promise<boolean> {
-  const [membership, plan] = await Promise.all([
-    prisma.ticMembership.findFirst({ select: { id: true } }),
-    prisma.ticPlanLink.findFirst({ select: { id: true } }),
-  ]);
-  return Boolean(membership && plan);
+/** Availability of recent listings, NOT certification of plan completeness. */
+export async function employerIndexReady(db = prisma, now = new Date()): Promise<boolean> {
+  const file = await db.ticFile.findFirst({
+    where: {
+      sourceLastUpdated: ticSourceWindow(now),
+      memberships: { some: {} },
+      planLinks: { some: {} },
+    },
+    select: { id: true },
+  });
+  return Boolean(file);
 }
 
 async function partDIndexReady(): Promise<boolean> {
