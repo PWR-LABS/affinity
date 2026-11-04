@@ -23,7 +23,7 @@ async function main(){
  let db:PrismaClient|undefined;
  const blocksPath=join(stateRoot,'source-blocks.json');
  const policy=REFRESH_POLICY.version;
- const cycleStarted=Date.now();
+ const cycleStarted=performance.now();
  let blocks:Record<string,{etag:string;reason:string;policy:string}>={};
  try{blocks=JSON.parse(await readFile(blocksPath,'utf8'));}catch{}
  let lastPublishedAt:string|undefined;
@@ -31,7 +31,8 @@ async function main(){
  try {const previous=JSON.parse(await readFile(statusPath,'utf8'));lastPublishedAt=previous.lastPublishedAt;latestSources=previous.latestSources??{};} catch {}
  try{
   requireVolume(); await storageBudget();
-  const guard=volumeSessionGuard();
+  const guardVolume=volumeSessionGuard();
+  const guard=()=>{if(performance.now()-cycleStarted>REFRESH_POLICY.cycleMs)throw new Deferred('cycle_time_budget');guardVolume();};
   db=new PrismaClient({datasourceUrl:await credential(),log:[]});
   const runId=new Date().toISOString().replace(/[:.]/g,'-');
   await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{phase:'discovery'},results});
@@ -55,7 +56,6 @@ async function main(){
    results.push({issuer,state:'discovered',reason:discovery.scope});
    if((issuer==='cigna'&&discovery.candidates.length<16)||discovery.unresolvedCount)results.push({issuer,state:'blocked',reason:'unresolved_source_selection; see discovery scope'});
    for(const candidate of discovery.candidates){
-    if(Date.now()-cycleStarted>REFRESH_POLICY.cycleMs)throw new Deferred('cycle_time_budget');
     guard();await storageBudget();
     const tocPath=candidate.tocPath??discovery.tocPath;
     const transportUrl=candidate.transportUrl??candidate.url;
