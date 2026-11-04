@@ -18,3 +18,9 @@ test('plan order changes do not force a new logical mapping',async()=>{
  assert.equal(planMappingIdentity([a,b]),planMappingIdentity([b,a]));
  assert.notEqual(planMappingIdentity([a]),planMappingIdentity([b]));
 });
+
+test('Anthem month-only filenames share retention identity without merging distinct networks',()=>{
+ const source=(month:string,network='425_61B0')=>`https://anthembcbsoh.mrf.bcbs.com/${month}_${network}_in-network-rates_2_of_10.json.gz`;
+ assert.equal(logicalKey(source('2026-11')),logicalKey(source('2027-01')));
+ assert.notEqual(logicalKey(source('2026-11')),logicalKey(source('2026-11','425_61C0')));
+});
