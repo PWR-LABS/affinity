@@ -20,7 +20,7 @@ async function main(){
  const statusPath=join(stateRoot,'status.json');
  let db:PrismaClient|undefined;
  const blocksPath=join(stateRoot,'source-blocks.json');
- const policy='150mb-200k-strict-v1';
+ const policy='150mb-200k-strict-zip-v2';
  let blocks:Record<string,{etag:string;reason:string;policy:string}>={};
  try{blocks=JSON.parse(await readFile(blocksPath,'utf8'));}catch{}
  let lastPublishedAt:string|undefined;

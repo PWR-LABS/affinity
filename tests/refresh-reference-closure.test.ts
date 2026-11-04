@@ -25,3 +25,15 @@ test('token validation failure destroys upstream input instead of leaking an ope
  await assert.rejects(parseJsonTokens(input,()=>{throw new Error('stop');}),/stop/);
  assert.equal(input.destroyed,true);
 });
+
+test('repeated referenced groups preserve one membership while conflicting identifiers fail closed',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'affinity-refs-'));
+ try{
+ const input=join(dir,'source.json'),out=join(dir,'members.jsonl');
+ const reference={provider_group_id:7,provider_groups:[{npi:[1234567890],tin:{type:'ein',value:'111111111'}}]};
+ const base={reporting_entity_name:'Fixture',last_updated_on:'2026-11-01',version:'2.0.1',provider_references:[reference],in_network:[{negotiated_rates:Array.from({length:10000},()=>({provider_references:[7]}))}]};
+ await writeFile(input,JSON.stringify(base));const r=await runExtract({input,out,strictReferences:true,progress:false,maxPairs:1});assert.equal(r.pairs_emitted,1);
+ await writeFile(input,JSON.stringify({...base,provider_references:[reference,{...reference,provider_groups:[{npi:[9999999999],tin:{type:'ein',value:'222222222'}}]}]}));
+ await assert.rejects(runExtract({input,out:join(dir,'rejected.jsonl'),strictReferences:true,progress:false}),/Duplicate provider reference/);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});

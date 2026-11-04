@@ -55,5 +55,5 @@ export async function discoverAnthemProjections(tocUrl:string,selectedPath:strin
   candidates.push({url:p.sourceUrl,stableKey:sourceKey(p.sourceUrl),tocPath,tocProjection:lineage});
  }
  await atomicJson(join(stateRoot,'large-toc-status.json'),{state:'validated',observedAt:new Date().toISOString(),projected:candidates.length,unresolved:receipt.unresolved.length,parentSha256:lineage.parentSha256});
- return {unresolvedCount:receipt.unresolved.length,tocUrl,tocPath:'',sourceDate:receipt.parent.sourceDate as string,candidates,scope:`Anthem four-EIN selected scope; ${candidates.length} complete parent-verified file mappings; ${receipt.unresolved.length} unresolved. Whole-plan and national completeness unverified.`};
+ return {unresolvedCount:receipt.unresolved.length,tocUrl,tocPath:'',sourceDate:receipt.parent.sourceDate as string,candidates,scope:`Anthem four-EIN file selection and ${planScope.identities.length} existing employer identities; ${candidates.length} complete parent-verified file mappings; ${receipt.unresolved.length} unresolved. Whole-plan and national completeness unverified.`};
 }
