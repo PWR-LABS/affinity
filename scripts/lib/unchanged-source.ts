@@ -4,9 +4,11 @@ import { sha256 } from '../../src/lib/tic/publication';
 
 /** Some issuer CDNs reject HEAD but honor a normal conditional GET. */
 export async function conditionalSourceUnchanged(url:string,etag:string,fetcher=fetch):Promise<boolean>{
+ try {
  const response=await fetcher(url,{headers:{'If-None-Match':etag,'Accept-Encoding':'identity'},redirect:'error',signal:AbortSignal.timeout(30000)});
  await response.body?.cancel();
  return response.status===304;
+ } catch { return false; } // A failed metadata request never bypasses the bounded full GET.
 }
 
 /** Remove only this run's duplicate download after its existing publication readback. */

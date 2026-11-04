@@ -9,6 +9,7 @@ test('HEAD-incompatible sources can prove unchanged with a conditional GET; 200 
  const fetcher=(async(_url:unknown,init:RequestInit)=>{assert.equal(new Headers(init.headers).get('If-None-Match'),'"version"');return new Response(null,{status:304});}) as typeof fetch;
  assert.equal(await conditionalSourceUnchanged('https://example.com/data','"version"',fetcher),true);
  assert.equal(await conditionalSourceUnchanged('https://example.com/data','"version"',(async()=>new Response('new content')) as typeof fetch),false);
+ assert.equal(await conditionalSourceUnchanged('https://example.com/data','"version"',(async()=>{throw new Error('conditional requests unsupported');}) as typeof fetch),false);
 });
 test('duplicate reclamation preserves the original and manifest, and refuses changed bytes',async()=>{
  const dir=await realpath(await mkdtemp(join(tmpdir(),'affinity-duplicate-')));const original=join(dir,'original'),duplicate=join(dir,'source');
