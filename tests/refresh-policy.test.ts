@@ -9,4 +9,7 @@ test('large local processing reserves scratch while preserving compact publicati
  assert.equal(publicationCapacity(2_450_000_000,100_000,1).allowed,false);
  assert.equal(publicationCapacity(1_507_530_431,1,30_001).allowed,false);
  assert.equal(publicationCapacity(1,1,1).cloudResourceChange,false);
+ assert.equal(publicationCapacity(2_400_000_000,200_000,1).allowed,false);
+ const replay=publicationCapacity(2_400_000_000,200_000,1,true);
+ assert.equal(replay.allowed,true);assert.equal(replay.reservedBytes,0);
 });

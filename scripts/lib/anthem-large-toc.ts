@@ -19,11 +19,11 @@ export function renewedAnthemTransport(sourceUrl:string,selected:string[]):strin
 }
 type Cache={tocUrl:string;etag:string|null;parentPath:string;download:{bytes:number;sha256:string};selectionSha256?:string;planScopeSha256?:string;receiptPath?:string};
 const cachePath=join(stateRoot,'anthem-large-toc.json');
-export async function discoverAnthemProjections(tocUrl:string,selectedPath:string,guard:()=>void){
+export async function discoverAnthemProjections(tocUrl:string,selectedPath:string,guard:()=>void,fetcher=fetch){
  const u=new URL(tocUrl);
  if(!/^antm-pt-prod-dataz-nogbd-nophi-us-east[12]\.s3(?:\.us-east-2)?\.amazonaws\.com$/.test(u.hostname)||!/^\/anthem\/\d{4}-\d{2}-01_anthem_index\.json\.gz$/.test(u.pathname)||u.protocol!=='https:')throw new Error('Unverified Anthem TOC locator');
  guard();
- const head=await fetch(tocUrl,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
+ const head=await fetcher(tocUrl,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
  if(!head.ok)throw new Error('Anthem TOC HEAD unavailable');
  const bytes=Number(head.headers.get('content-length')),etag=head.headers.get('etag');
  if(!Number.isSafeInteger(bytes)||bytes<=0||bytes>12_000_000_000)throw new Error('Anthem TOC exceeds local archive budget');
@@ -36,7 +36,7 @@ export async function discoverAnthemProjections(tocUrl:string,selectedPath:strin
   const directory=join(archiveRoot,'large-toc',sourceKey(tocUrl+'?etag='+encodeURIComponent(etag??Date.now().toString())));await ensureArchiveDirectory(directory);
   const parentPath=join(directory,'index.json.gz');
   await atomicJson(join(stateRoot,'large-toc-status.json'),{state:'downloading',startedAt:new Date().toISOString(),bytes});
-  const download=await downloadFile(tocUrl,parentPath,12_000_000_000,guard,fetch,3600000);
+  const download=await downloadFile(tocUrl,parentPath,12_000_000_000,guard,fetcher,3600000);
   cache={tocUrl,etag,parentPath,download};guard();await atomicJson(cachePath,cache);
  }
  const selected=JSON.parse(await readFile(selectedPath,'utf8')) as string[];

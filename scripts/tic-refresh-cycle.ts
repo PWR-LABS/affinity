@@ -2,11 +2,12 @@
 import { REFRESH_POLICY,sourceWorkspaceReserve,publicationCapacity } from './lib/refresh-policy';
 import { PrismaClient } from '@prisma/client';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join,dirname } from 'node:path';
+import { preparedSource,type PreparedSource } from './lib/prepared-source';
 import { hostname } from 'node:os';
-import { discoverAnthemSelection } from './lib/anthem-selection';
+import { createAnthemSelectionDiscoverer } from './lib/anthem-selection';
 import { discoverAnthemProjections, type ProjectedCandidate } from './lib/anthem-large-toc';
-import { discoverIssuer, sourceIdentity, type IssuerDiscovery } from './lib/issuer-discovery';
+import { createIssuerDiscoverer, sourceIdentity, type IssuerDiscovery } from './lib/issuer-discovery';
 import { conditionalSourceUnchanged, reclaimDuplicateDownload } from './lib/unchanged-source';
 import { preparePublication } from './tic-refresh';
 import { ticSourceCurrent } from '../src/lib/tic/freshness';
@@ -25,6 +26,9 @@ async function main(){
  const policy=REFRESH_POLICY.version;
  const cycleStarted=performance.now();
  let blocks:Record<string,{etag:string;reason:string;policy:string}>={};
+ const preparedPath=join(stateRoot,'prepared-sources.json');
+ let prepared:Record<string,PreparedSource>={};
+ try{prepared=JSON.parse(await readFile(preparedPath,'utf8'));}catch{}
  try{blocks=JSON.parse(await readFile(blocksPath,'utf8'));}catch{}
  let lastPublishedAt:string|undefined;
  let latestSources:Record<string,{sourceDate:string;publishedAt:string}>={};
@@ -33,6 +37,14 @@ async function main(){
   requireVolume(); await storageBudget();
   const guardVolume=volumeSessionGuard();
   const guard=()=>{if(performance.now()-cycleStarted>REFRESH_POLICY.cycleMs)throw new Deferred('cycle_time_budget');guardVolume();};
+  const cycleFetch:typeof fetch=async(input,init)=>{
+   guard();const remaining=Math.max(1,Math.floor(REFRESH_POLICY.cycleMs-(performance.now()-cycleStarted)));
+   const deadline=AbortSignal.timeout(remaining);
+   try{return await fetch(input,{...init,signal:init?.signal?AbortSignal.any([init.signal,deadline]):deadline});}
+   catch(e){guard();throw e;}
+  };
+  const discoverIssuer=createIssuerDiscoverer({fetch:cycleFetch});
+  const discoverAnthemSelection=createAnthemSelectionDiscoverer({fetch:cycleFetch});
   db=new PrismaClient({datasourceUrl:await credential(),log:[]});
   const runId=new Date().toISOString().replace(/[:.]/g,'-');
   await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{phase:'discovery'},results});
@@ -47,7 +59,7 @@ async function main(){
    await ensureArchiveDirectory(directory);
    let discovery:Omit<IssuerDiscovery,'candidates'>&{unresolvedCount?:number;candidates:Array<IssuerDiscovery['candidates'][number]&Partial<ProjectedCandidate>>};
    try{
-    if(issuer==='anthem'){const selected=await discoverAnthemSelection(directory,{guard});discovery=await discoverAnthemProjections(selected.tocUrl,selected.selectedPath,guard);}
+    if(issuer==='anthem'){const selected=await discoverAnthemSelection(directory,{guard});discovery=await discoverAnthemProjections(selected.tocUrl,selected.selectedPath,guard,cycleFetch);}
     else discovery=await discoverIssuer(issuer as 'mmoh'|'cigna',directory,{guard});
    }
    catch(e){results.push({issuer,state:'blocked',reason:safeReason(e)});continue;}
@@ -69,8 +81,8 @@ async function main(){
       const mappingsSame=planMappingIdentity(await tocPlans(tocPath,candidate.url))===planMappingIdentity(saved.plans);
       if(mappingsSame&&saved.sourceUrl===candidate.url)replayCandidate=saved;
       const meta=JSON.parse(await readFile(join(prior.receiptPath,'../download.json'),'utf8'));
-      const head=await fetch(transportUrl,{method:'HEAD',headers:{'Accept-Encoding':'identity'},redirect:'error',signal:AbortSignal.timeout(30000)}).catch(()=>undefined);
-      const unchanged=mappingsSame&&meta.etag&&((head?.ok&&head.headers.get('etag')===meta.etag)||await conditionalSourceUnchanged(transportUrl,meta.etag));
+      const head=await cycleFetch(transportUrl,{method:'HEAD',headers:{'Accept-Encoding':'identity'},redirect:'error',signal:AbortSignal.timeout(30000)}).catch(()=>undefined);
+      const unchanged=mappingsSame&&meta.etag&&((head?.ok&&head.headers.get('etag')===meta.etag)||await conditionalSourceUnchanged(transportUrl,meta.etag,cycleFetch));
       if(unchanged){
        const replay=await publishManaged(db,saved,prior.receiptPath,guard,archiveRoot);
        latestSources[issuer]={sourceDate:replay.sourceDate,publishedAt:replay.publishedAt};
@@ -84,32 +96,39 @@ async function main(){
     const key=sourceKey(candidate.url);
     let etag:string|null=null;
     try {
-      const head=await fetch(transportUrl,{method:'HEAD',headers:{'Accept-Encoding':'identity'},redirect:'error',signal:AbortSignal.timeout(30000)});
+      const head=await cycleFetch(transportUrl,{method:'HEAD',headers:{'Accept-Encoding':'identity'},redirect:'error',signal:AbortSignal.timeout(30000)});
       if(head.ok)etag=head.headers.get('etag');
       if(!replayCandidate&&etag&&blocks[key]?.etag===etag&&blocks[key]?.policy===policy){results.push({issuer,source:path,state:'blocked',reason:blocks[key].reason});continue;}
     }catch{/* A bounded GET can still succeed when HEAD is unavailable. */}
-    if(attempted>=maxFiles){results.push({issuer,source:path,state:'deferred',reason:'run_file_budget'});continue;}
-    await storageBudget(sourceWorkspaceReserve());
-    attempted++;
+    let cached:TicPublication|undefined;
+    try{cached=await preparedSource(prepared[key],{etag,policy,sourceUrl:candidate.url,tocPath,root:archiveRoot});}
+    catch(e){if(e instanceof Deferred)throw e;results.push({issuer,source:path,state:'blocked',reason:'prepared_source_requires_review'});continue;}
+    if(!cached){
+     if(attempted>=maxFiles){results.push({issuer,source:path,state:'deferred',reason:'run_file_budget'});continue;}
+     await storageBudget(sourceWorkspaceReserve());attempted++;
+    }
     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'download_validate_publish'},results});
-    const dir=join(directory,sourceKey(candidate.url));await ensureArchiveDirectory(dir);
+    const dir=cached?dirname(prepared[key].receiptPath):join(directory,sourceKey(candidate.url));await ensureArchiveDirectory(dir);
     try{
      const sourcePath=join(dir,'source.json.gz');
-     const download=await downloadFile(transportUrl,sourcePath,REFRESH_POLICY.sourceBytes,guard,fetch,REFRESH_POLICY.downloadMs);
-     guard();await atomicJson(join(dir,'download.json'),download);
+     const download=cached?JSON.parse(await readFile(join(dir,'download.json'),'utf8')):await downloadFile(transportUrl,sourcePath,REFRESH_POLICY.sourceBytes,guard,cycleFetch,REFRESH_POLICY.downloadMs);
+     guard();if(!cached)await atomicJson(join(dir,'download.json'),download);
      guard();
-     const reuse=replayCandidate?.sourceSha256===download.sha256;
-     const receipt=reuse ? replayCandidate! : await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard,disk:{scratchRoot:dir,onProgress:progress=>progressJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'ssd_extraction',progress},results})}});
+     const reuse=!cached&&replayCandidate?.sourceSha256===download.sha256;
+     const receipt=cached??(reuse ? replayCandidate! : await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard,disk:{scratchRoot:dir,onProgress:progress=>progressJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'ssd_extraction',progress},results})}}));
      guard();await validatePublication(receipt);
+     if(!reuse&&etag){prepared[key]={etag,policy,receiptPath:join(dir,'publication.json')};await atomicJson(preparedPath,prepared);}
      const sizes=await db.$queryRaw<Array<{bytes:bigint}>>`SELECT pg_database_size(current_database()) AS bytes`;
-     const capacity=publicationCapacity(Number(sizes[0].bytes),receipt.membershipCount,receipt.plans.length);
+     const capacity=publicationCapacity(Number(sizes[0].bytes),receipt.membershipCount,receipt.plans.length,Boolean(reuse));
      guard();await atomicJson(join(dir,'capacity.json'),{...capacity,observedAt:new Date().toISOString(),sourceSha256:receipt.sourceSha256});
      if(!capacity.allowed){results.push({issuer,source:path,state:'blocked',reason:'database_capacity_budget'});continue;}
      // A source reaching the publication path is complete and hash-verified; its transaction is atomic.
      const result=await publishManaged(db,receipt,reuse ? prior!.receiptPath! : join(dir,'publication.json'),()=>{guard();requireVolume();},archiveRoot);
      guard();await atomicJson(join(dir,'published.json'),result);
+     if(prepared[key]){delete prepared[key];await atomicJson(preparedPath,prepared);}
      if('archiveRetention' in result && 'state' in result.archiveRetention)results.push({issuer,source:path,state:'blocked',reason:'archive_retention_review_required'});
      const replayed='replayed' in result&&result.replayed;
+     if(reuse&&replayed)attempted--; // Full-GET proof reconciles the provisional new-content attempt.
      if(!replayed)lastPublishedAt=new Date().toISOString();
      latestSources[issuer]={sourceDate:receipt.sourceDate,publishedAt:result.publishedAt};
      results.push({issuer,source:path,state:replayed?'verified_unchanged':'published',sourceDate:receipt.sourceDate,memberships:result.memberships,plans:result.plans});
