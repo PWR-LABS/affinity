@@ -63,6 +63,10 @@ export type RunExtractOptions = {
   sourceUrl?: string;
   /** Optional hard cap for bounded refresh jobs. */
   maxPairs?: number;
+  /** Fail before network fetches or unresolved reference acceptance. */
+  strictReferences?: boolean;
+  guard?: () => void;
+  maxMs?: number;
   allowlistPath?: string;
   progress?: boolean;
 };
@@ -161,14 +165,14 @@ export async function runExtract(options: RunExtractOptions): Promise<ExtractSum
   let schema: "v1" | "v2" = "v2";
 
   try {
-    firstPass = await runFirstPass(options.input, state);
+    firstPass = await runFirstPass(options.input, state, options.strictReferences, started + (options.maxMs ?? Infinity), options.guard);
     if (firstPass.sawProviderReferences) {
       schema = "v1";
       state.resetOutputCounts();
-      await runV1SecondPass(options.input, firstPass.references, state);
+      await runV1SecondPass(options.input, firstPass.references, state, options.strictReferences, started + (options.maxMs ?? Infinity), options.guard);
     }
 
-    await writeSortedNdjson(options.out, options.sourceUrl ?? options.input, firstPass.metadata, schema, state.pairs);
+    await writeSortedNdjson(options.out, options.sourceUrl ?? options.input, firstPass.metadata, schema, state.pairs, options.guard);
   } finally {
     if (progress) clearInterval(progress);
   }
@@ -200,7 +204,7 @@ async function main(): Promise<void> {
   process.stderr.write(`${JSON.stringify(summary)}\n`);
 }
 
-async function runFirstPass(input: string, state: ExtractionState): Promise<FirstPassResult> {
+async function runFirstPass(input: string, state: ExtractionState, strict = false, deadline = Infinity, guard?: () => void): Promise<FirstPassResult> {
   const opened = await openDecodedInput(input);
   if (!opened.stream) throw new Error(`unable to open input: ${input}`);
 
@@ -214,7 +218,12 @@ async function runFirstPass(input: string, state: ExtractionState): Promise<Firs
   let remoteRefsFetched = 0;
   let remoteRefs404 = 0;
 
+  let tokens = 0;
   await parseJsonTokens(opened.stream, (token) => {
+    if (++tokens % 100000 === 0) {
+      if (Date.now() > deadline) throw new Error('extraction_time_limit');
+      guard?.();
+    }
     const hadCollector = Boolean(providerGroupCollector || providerReferenceCollector);
 
     if (providerGroupCollector) {
@@ -229,6 +238,7 @@ async function runFirstPass(input: string, state: ExtractionState): Promise<Firs
       providerReferenceCollector.push(token);
       if (providerReferenceCollector.done) {
         const reference = providerReferenceCollector.value as ProviderReference;
+        if (strict && (!normalizeText(reference.provider_group_id) || !Array.isArray(reference.provider_groups) || reference.location)) throw new Error('Unarchived or malformed provider reference');
         const promise = recordProviderReference(reference, references).then((status) => {
           if (status === "fetched") remoteRefsFetched += 1;
           if (status === "404") remoteRefs404 += 1;
@@ -283,13 +293,18 @@ async function runFirstPass(input: string, state: ExtractionState): Promise<Firs
   return { metadata, sawProviderReferences, references, remoteRefsFetched, remoteRefs404 };
 }
 
-async function runV1SecondPass(input: string, references: ReferenceTable, state: ExtractionState): Promise<void> {
+async function runV1SecondPass(input: string, references: ReferenceTable, state: ExtractionState, strict = false, deadline = Infinity, guard?: () => void): Promise<void> {
   const opened = await openDecodedInput(input);
   if (!opened.stream) throw new Error(`unable to open input: ${input}`);
 
   const tracker = new JsonPathTracker();
 
+  let tokens = 0;
   await parseJsonTokens(opened.stream, (token) => {
+    if (++tokens % 100000 === 0) {
+      if (Date.now() > deadline) throw new Error('extraction_time_limit');
+      guard?.();
+    }
     if (token.name === "startObject") {
       tracker.start("object");
       return;
@@ -315,6 +330,7 @@ async function runV1SecondPass(input: string, references: ReferenceTable, state:
       if (pathMatches(path, V1_IN_NETWORK_REFERENCE_PATH)) {
         const referenceId = normalizeText(scalarFromToken(token));
         const groups = references.get(referenceId);
+        if (strict && !groups) throw new Error('Unresolved provider reference');
         if (groups) {
           for (const group of groups) state.addProviderGroup(group);
         }
@@ -449,7 +465,9 @@ async function writeSortedNdjson(
   metadata: Metadata,
   schema: "v1" | "v2",
   pairs: Map<string, OutputPair>,
+  guard?: () => void,
 ): Promise<void> {
+  guard?.();
   await fs.mkdir(dirname(out), { recursive: true });
   const temp = join(dirname(out), `.${basename(out)}.${process.pid}.unsorted`);
   const writer = createWriteStream(temp, { encoding: "utf8" });
@@ -472,7 +490,9 @@ async function writeSortedNdjson(
     writer.on("error", reject);
   });
 
+  guard?.();
   await sortFile(temp, out);
+  guard?.();
   await fs.rm(temp, { force: true });
 }
 

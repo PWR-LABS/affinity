@@ -1,0 +1,115 @@
+/** Deterministic Mini runner. Codex schedules this command; it never provisions cloud compute. */
+import { PrismaClient } from '@prisma/client';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { hostname } from 'node:os';
+import { discoverIssuer, sourceIdentity } from './lib/issuer-discovery';
+import { preparePublication } from './tic-refresh';
+import { ticSourceCurrent } from '../src/lib/tic/freshness';
+import { validatePublication, tocPlans } from '../src/lib/tic/publication';
+import { publishManaged } from './lib/managed-publication';
+import { stateRoot, archiveRoot, atomicJson, credential, lockRun, Deferred, requireVolume, volumeSessionGuard, storageBudget, downloadFile, sourceKey, ensureArchiveDirectory } from './lib/refresh-runtime';
+type Item = {issuer:string; source?:string; state:string; reason?:string; memberships?:number; plans?:number};
+async function main(){
+ if(hostname()!=='nmai-mac-mini') throw new Error('Mini host required');
+ const unlock=await lockRun();
+ const results:Item[]=[];
+ const statusPath=join(stateRoot,'status.json');
+ let db:PrismaClient|undefined;
+ const blocksPath=join(stateRoot,'source-blocks.json');
+ const policy='150mb-200k-strict-v1';
+ let blocks:Record<string,{etag:string;reason:string;policy:string}>={};
+ try{blocks=JSON.parse(await readFile(blocksPath,'utf8'));}catch{}
+ let lastPublishedAt:string|undefined;
+ try {lastPublishedAt=JSON.parse(await readFile(statusPath,'utf8')).lastPublishedAt;} catch {}
+ try{
+  requireVolume(); await storageBudget();
+  const guard=volumeSessionGuard();
+  db=new PrismaClient({datasourceUrl:await credential(),log:[]});
+  const runId=new Date().toISOString().replace(/[:.]/g,'-');
+  const selected=process.argv.includes('--issuer') ? [process.argv[process.argv.indexOf('--issuer')+1]] : ['mmoh','cigna','anthem'];
+  if(selected.some(x=>!['mmoh','cigna','anthem'].includes(x)))throw new Error('Unknown issuer');
+  const maxFiles=Number(process.env.AFFINITY_REFRESH_MAX_FILES??1000);
+  let attempted=0;
+  for(const issuer of selected){
+   guard();
+   const directory=join(archiveRoot,'scheduled',issuer,runId);
+   await ensureArchiveDirectory(directory);
+   let discovery;
+   try{discovery=await discoverIssuer(issuer as 'mmoh'|'cigna'|'anthem',directory,{guard});}
+   catch(e){results.push({issuer,state:'blocked',reason:safeReason(e)});continue;}
+   guard();await storageBudget();
+   // The manifest remains authoritative about unresolved historical names and incomplete scope.
+   results.push({issuer,state:'discovered',reason:discovery.scope});
+   for(const candidate of discovery.candidates){
+    if(attempted>=maxFiles){results.push({issuer,state:'deferred',reason:'run_file_budget'});break;}
+    guard();await storageBudget(500_000_000);
+    const path=new URL(candidate.url).origin+new URL(candidate.url).pathname;
+    const priorRows=await db.$queryRaw<Array<{id:string;url:string;sourceLastUpdated:Date|null;receiptPath:string|null}>>`SELECT f.id,f.url,f."sourceLastUpdated",p."receiptPath" FROM "TicFile" f LEFT JOIN "TicRefreshPublication" p ON p."fileId"=f.id WHERE split_part(f.url,'?',1)=${path}`;
+    const prior=priorRows.filter(p=>sourceIdentity(p.url)===sourceIdentity(candidate.url));
+    if(prior.length){
+     try {
+      if(!ticSourceCurrent(prior[0].sourceLastUpdated?.toISOString(),new Date().toISOString()))throw new Error('existing_source_stale_requires_versioned_replacement');
+      if(prior[0].receiptPath){
+       const saved=await validatePublication(JSON.parse(await readFile(prior[0].receiptPath,'utf8')));
+       if(JSON.stringify(await tocPlans(discovery.tocPath,candidate.url))!==JSON.stringify(saved.plans))throw new Error('existing_source_plan_mapping_changed');
+       const meta=JSON.parse(await readFile(join(prior[0].receiptPath,'../download.json'),'utf8'));
+       const head=await fetch(candidate.url,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
+       if(!head.ok||!meta.etag||head.headers.get('etag')!==meta.etag)throw new Error('existing_source_requires_content_revalidation');
+       await publishManaged(db,saved,prior[0].receiptPath,guard,archiveRoot);
+      }
+      const memberships=await db.ticMembership.count({where:{fileId:prior[0].id}});
+      const plans=await db.ticPlanLink.count({where:{fileId:prior[0].id}});
+      if(!memberships||!plans)throw new Error('existing_source_incomplete');
+      results.push({issuer,source:path,state:prior[0].receiptPath?'verified_unchanged':'legacy_already_indexed',memberships,plans});
+     }catch(e){if(e instanceof Deferred)throw e;results.push({issuer,source:path,state:'blocked',reason:safeReason(e)});}
+     continue;
+    }
+    const key=sourceKey(candidate.url);
+    let etag:string|null=null;
+    try {
+      const head=await fetch(candidate.url,{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(30000)});
+      if(head.ok)etag=head.headers.get('etag');
+      if(etag&&blocks[key]?.etag===etag&&blocks[key]?.policy===policy){results.push({issuer,source:path,state:'blocked',reason:blocks[key].reason});continue;}
+    }catch{/* A bounded GET can still succeed when HEAD is unavailable. */}
+    attempted++;
+    const dir=join(directory,sourceKey(candidate.url));await ensureArchiveDirectory(dir);
+    try{
+     const sourcePath=join(dir,'source.json.gz');
+     const download=await downloadFile(candidate.url,sourcePath,150_000_000,guard);
+     guard();await atomicJson(join(dir,'download.json'),download);
+     guard();
+     const receipt=await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath:discovery.tocPath,tocUrl:discovery.tocUrl,directory:dir,guard});
+     guard();await validatePublication(receipt);
+     // A source reaching the publication path is complete and hash-verified; its transaction is atomic.
+     const result=await publishManaged(db,receipt,join(dir,'publication.json'),()=>{guard();requireVolume();},archiveRoot);
+     guard();await atomicJson(join(dir,'published.json'),result);
+     lastPublishedAt=new Date().toISOString();
+     results.push({issuer,source:path,state:'published',memberships:result.memberships,plans:result.plans});
+    }catch(e){
+     if(e instanceof Deferred)throw e;
+     const reason=safeReason(e);
+     results.push({issuer,source:path,state:'blocked',reason});
+     if(etag && /source_size_limit|Membership limit exceeded|Empty or incomplete extraction|Unarchived or malformed provider reference|Unresolved provider reference|requires ZIP adapter|Source is not JSON/.test(reason)){
+      blocks[key]={etag,reason,policy};await atomicJson(blocksPath,blocks);
+     }
+    }
+    await atomicJson(statusPath,{version:1,state:'running',lastPublishedAt,observedAt:new Date().toISOString(),results});
+   }
+  }
+  const state=results.some(x=>x.state==='blocked'||x.state==='deferred')?'partial':'complete_for_discovered_scope';
+  const receipt={version:1,state,lastPublishedAt,observedAt:new Date().toISOString(),results};
+  await atomicJson(statusPath,receipt);console.log(JSON.stringify(receipt));
+ }catch(e){
+  const receipt={version:1,lastPublishedAt,state:e instanceof Deferred?'deferred':'failed',reason:safeReason(e),observedAt:new Date().toISOString(),results};
+  await atomicJson(statusPath,receipt);console.log(JSON.stringify(receipt));
+  if(!(e instanceof Deferred))process.exitCode=1;
+ }finally{await db?.$disconnect();await unlock();}
+}
+function safeReason(e:unknown){
+ // Prisma and HTTP errors can include connection strings or signed request URLs.
+ const message=e instanceof Error?e.message:'unknown_failure';
+ if(message.includes('://') || message.includes('Invocation') || message.length>180)return 'operation_failed_check_protected_checkpoint';
+ return message;
+}
+main().catch(()=>{console.error('Refresh could not acquire local state; no publication attempted.');process.exitCode=1;});

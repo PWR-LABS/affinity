@@ -379,3 +379,5 @@ const defaultDiscoverer = createIssuerDiscoverer();
 export async function discoverIssuer(issuer: Issuer, archiveDir: string, options?: DiscoveryOptions, fourthOptions?: DiscoveryOptions): Promise<IssuerDiscovery> {
   return defaultDiscoverer(issuer, archiveDir, options, fourthOptions);
 }
+
+export function sourceIdentity(value: string) { return identity(new URL(value)); }
