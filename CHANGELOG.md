@@ -1,10 +1,16 @@
 # [affinity.] — build log / changelog
 
-## Employer evidence safety candidate (2026-11-04)
+## Bounded employer refresh (2026-11-04)
+
+- Published one current Medical Mutual SuperMed file dated November 1: 79,414 provider memberships and 14,949 deduplicated plan links. The live checker again has recent listings; absent providers remain unknown. No full-plan or nationwide completeness claim.
+- Added hashed archive/TOC/membership validation and an append-only transactional publisher. Fault injection verified rollback after partial insertion, and withdrawal of the new file preserved older data. Source files stay on local storage; production added about 21 MB with no paid resource change.
+- [Production readback and limits](docs/evaluation/2026-11-04-employer-refresh.md).
+
+## Employer evidence safety (2026-11-04)
 
 - Unmatched employer lookups now remain unknown because current imports do not certify complete plan coverage. Missing, stale, and undated evidence receive distinct explanations; only source listings dated within 60 days can produce a positive listing.
 - Readiness and plan search require recent provider and plan data joined through the same file. The interface identifies listings rather than promising network coverage, and clears results when the selected doctor or plan changes.
-- Added real database/API/browser checks with synthetic records, plus regression tests for freshness and reconciliation. See [candidate verification](docs/evaluation/2026-11-04-employer-evidence-safety.md). Production activation remains separate.
+- Added real database/API/browser checks with synthetic records, plus regression tests for freshness and reconciliation. See [candidate verification](docs/evaluation/2026-11-04-employer-evidence-safety.md). PR #8 was merged and its exact responding deployment verified before the data refresh.
 
 ## CMS guidance transport repair (2026-11-03)
 
