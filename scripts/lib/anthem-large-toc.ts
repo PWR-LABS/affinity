@@ -7,7 +7,16 @@ import { validateTocLineage } from '../../src/lib/tic/toc-lineage';
 import { sourceIdentity } from './issuer-discovery';
 import { ticSourceCurrent } from '../../src/lib/tic/freshness';
 import { stateRoot,archiveRoot,atomicJson,progressJson,sourceKey,downloadFile,storageBudget,ensureArchiveDirectory } from './refresh-runtime';
-export type ProjectedCandidate={url:string;stableKey:string;tocPath:string;tocProjection:NonNullable<TicPublication['tocProjection']>};
+export type ProjectedCandidate={url:string;transportUrl:string;stableKey:string;tocPath:string;tocProjection:NonNullable<TicPublication['tocProjection']>};
+/** Immutable parent evidence stays unchanged; only known signing fields may renew. */
+export function renewedAnthemTransport(sourceUrl:string,selected:string[]):string {
+ const identity=sourceIdentity(sourceUrl);
+ const candidate=selected.find(url=>sourceIdentity(url)===identity);
+ if(!candidate)throw new Error('Anthem renewed transport identity mismatch');
+ const url=new URL(candidate);
+ if(url.protocol!=='https:'||url.username||url.password||url.hash)throw new Error('Unsafe Anthem transport URL');
+ return candidate;
+}
 type Cache={tocUrl:string;etag:string|null;parentPath:string;download:{bytes:number;sha256:string};selectionSha256?:string;planScopeSha256?:string;receiptPath?:string};
 const cachePath=join(stateRoot,'anthem-large-toc.json');
 export async function discoverAnthemProjections(tocUrl:string,selectedPath:string,guard:()=>void){
@@ -52,7 +61,7 @@ export async function discoverAnthemProjections(tocUrl:string,selectedPath:strin
   if(dirname(tocPath)!==dirname(resolve(cache.receiptPath!)))throw new Error('Anthem projection path escape');
   await validateTocLineage(lineage,tocPath,p.sha256,p.sourceUrl);
   if(await sha256(tocPath)!==p.sha256)throw new Error('Anthem projection changed');
-  candidates.push({url:p.sourceUrl,stableKey:sourceKey(p.sourceUrl),tocPath,tocProjection:lineage});
+  candidates.push({url:p.sourceUrl,transportUrl:renewedAnthemTransport(p.sourceUrl,selected),stableKey:sourceKey(p.sourceUrl),tocPath,tocProjection:lineage});
  }
  await atomicJson(join(stateRoot,'large-toc-status.json'),{state:'validated',observedAt:new Date().toISOString(),projected:candidates.length,unresolved:receipt.unresolved.length,parentSha256:lineage.parentSha256});
  return {unresolvedCount:receipt.unresolved.length,tocUrl,tocPath:'',sourceDate:receipt.parent.sourceDate as string,candidates,scope:`Anthem four-EIN file selection and ${planScope.identities.length} existing employer identities; ${candidates.length} complete parent-verified file mappings; ${receipt.unresolved.length} unresolved. Whole-plan and national completeness unverified.`};

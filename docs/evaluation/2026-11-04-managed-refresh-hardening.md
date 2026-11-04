@@ -33,3 +33,13 @@ The real PHCS ZIP container is valid:28,050,761 compressed member bytes,393,302,
 The pinned installed Mini command completed a14-source Cigna replay without duplicate rows. The existing06:00 Eastern heartbeat was updated and read back to invoke only the installed command; obsolete missing-credential guidance was removed. An overlapping run returned expected deferred status without clobbering the active run. The wrapper holds an idle-sleep assertion and validates its pinned Node24 runtime. The final runtime revision will be recorded after the last integration commit.
 
 Full eligible Anthem publication is the remaining data run. Current compact-scope validation is complete; nationwide/whole-plan completeness is still unverified. No paid Render resource change was made.
+
+## Live failure hardening — 22:50 UTC
+
+PR11 is live at `cc710a2f2762f984a09c47c57f6143881cea35c1`; public health reports that exact commit and a healthy database. The first larger eligible Anthem source exhausted the worker's 1 GB heap while collecting references, before any publication. Its protected source archive was retained.
+
+Strict extraction now caps conservatively charged allocation units at 16 MiB per collected group/reference and 64 MiB across retained references. These are accounting budgets, not a claim about exact heap bytes. The exact archived failing source now rejects with `reference_memory_limit` in 309 ms at 104 MiB peak RSS, leaving production untouched. A small supervisor marks only its own worker's abandoned running checkpoint as failed after an abnormal exit. The scheduler caches deterministic memory and duplicate-reference failures by source ETag and policy version.
+
+Air independently reproduced a stale-PID-lock takeover race. The replacement holds a SQLite write reservation on an internal persistent inode throughout each run; OS cleanup releases it on process death. A real subprocess SIGKILL followed by two competing takeovers yields exactly one owner. Release is owner-checked and idempotent. Tests also prove an abnormal worker exit preserves published results and cannot overwrite a different worker's status.
+
+Air's second reproduced finding concerned expired signed download URLs in cached Anthem projections. Candidates now retain the immutable parent URL for lineage and use the current official inventory URL only for transport after signature-independent identity matching. Changed host, path or semantic query parameters fail closed. The regression passes. All 202 prior application tests and this additional transport regression pass; typecheck passes. No serving code changed in this local-runner patch, so its merge can skip a Render build.
