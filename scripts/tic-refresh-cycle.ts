@@ -34,6 +34,7 @@ async function main(){
   const selected=process.argv.includes('--issuer') ? [process.argv[process.argv.indexOf('--issuer')+1]] : ['mmoh','cigna','anthem'];
   if(selected.some(x=>!['mmoh','cigna','anthem'].includes(x)))throw new Error('Unknown issuer');
   const maxFiles=Number(process.env.AFFINITY_REFRESH_MAX_FILES??1000);
+  if(!Number.isSafeInteger(maxFiles)||maxFiles<1||maxFiles>1000)throw new Error('Invalid run file budget');
   let attempted=0;
   for(const issuer of selected){
    guard();
