@@ -16,7 +16,7 @@ export async function GET(req: Request) {
   if (q.length < 2) return NextResponse.json({ items: [] });
   try {
     const links = await prisma.ticPlanLink.findMany({
-      where: { planName: { contains: q, mode: "insensitive" }, file: { active: true, sourceLastUpdated: ticSourceWindow(new Date()), memberships: { some: {} } } },
+      where: { planName: { contains: q, mode: "insensitive" }, file: { active: true, sourceLastUpdated: ticSourceWindow(new Date()), OR: [{ memberships: { some: {} } }, { compactIndex: { is: { format: "npi-prefix-v1", npiCount: { gt: 0 } } } }] } },
       distinct: ["planIdType", "planId", "planName"],
       take: 12,
       select: {

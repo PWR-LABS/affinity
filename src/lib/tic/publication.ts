@@ -1,3 +1,6 @@
+import {compactReceiptSchema,NpiSetHash,validateCompactArchive,compactBuckets} from './compact-archive';
+import {compactReservation,COMPACT_LIMITS} from './compact-codec';
+import {readCompactIndex} from './compact-db';
 import { normalizedLedgerColumn } from './source-version';
 /** Bounded transactional publication; optional managed retention preserves verified rollback generations. */
 import { createHash } from 'node:crypto';
@@ -24,12 +27,13 @@ export const receiptSchema = z.object({
   sourceUrl: httpsUrl, tocUrl: httpsUrl,
   sourcePath: z.string(), sourceSha256: hash, tocPath: z.string(), tocSha256: hash,
   membershipPath: z.string(), membershipSha256: hash,
-  membershipCount: z.number().int().positive().max(200_000),
+  membershipCount: z.number().int().positive().max(COMPACT_LIMITS.pairs),
   sourceDate: z.string(), reportingEntity: z.string().min(1), schema: z.enum(['v1','v2']),
   tocProjection: lineageSchema.optional(),
   plans: z.array(plan).min(1).max(30_000), preparedAt: z.string(),
   sourceArchive:sourceArchiveSchema.optional(),
-});
+  serving:compactReceiptSchema.optional(),
+}).superRefine((r,ctx)=>{if(!r.serving&&r.membershipCount>200_000)ctx.addIssue({code:z.ZodIssueCode.custom,message:'Legacy membership limit exceeded'});});
 export type TicPublication = z.infer<typeof receiptSchema>;
 export async function sha256(path: string): Promise<string> {
   const h = createHash('sha256');
@@ -70,12 +74,13 @@ export async function validatePublication(input: unknown,archiveKeyPath?:string)
   await validateArchivedBytes(r,archiveKeyPath);
   if (r.tocProjection) await validateTocLineage(r.tocProjection,r.tocPath,r.tocSha256,r.sourceUrl);
   if (JSON.stringify(await tocPlans(r.tocPath, r.sourceUrl)) !== JSON.stringify(r.plans)) throw new Error('Plan mapping differs from archived TOC');
-  let count = 0;
+  let count = 0; const npiSet=r.serving?new NpiSetHash():undefined;
   for await (const row of rows(r.membershipPath)) {
     if (row.file_url !== r.sourceUrl || row.last_updated_on !== r.sourceDate || row.reporting_entity !== r.reportingEntity || row.schema !== r.schema) throw new Error('Mixed source metadata');
-    count++;
+    count++; npiSet?.add(row.npi);
   }
   if (count !== r.membershipCount) throw new Error('Membership count mismatch');
+  if(r.serving&&npiSet)await validateCompactArchive(r.serving,{membershipSha256:r.membershipSha256,membershipCount:count,npiCount:npiSet.count,npiSha256:npiSet.finish()});
   return r;
 }
 export type ManagedPublication = {
@@ -95,19 +100,27 @@ export async function publishPublication(db: PrismaClient, input: unknown, manag
       if (prior.length) {
         const existing = await tx.ticFile.findUniqueOrThrow({where:{id:prior[0].fileId}});
         if (!existing.active) throw new Error('Publication is inactive; review required before reactivation');
-        const memberships = await tx.ticMembership.count({where:{fileId:existing.id}});
+        const memberships = r.serving ? (await readCompactIndex(tx,existing.id,{...r,serving:r.serving}))?.sourceMembershipCount : await tx.ticMembership.count({where:{fileId:existing.id}});
         const plans = await tx.ticPlanLink.count({where:{fileId:existing.id}});
         if (memberships !== r.membershipCount || plans !== r.plans.length) throw new Error('Replay readback mismatch');
         return {fileId:existing.id,url:existing.url,sourceDate:r.sourceDate,memberships,plans,membershipSha256:r.membershipSha256,publishedAt:existing.fetchedAt.toISOString(),scope:r.scope,replayed:true};
       }
       const sizes = await tx.$queryRaw<Array<{bytes:bigint}>>`SELECT pg_database_size(current_database()) AS bytes`;
       // Reserve ample space on the existing 5 GB allocation, including staging/WAL/bloat.
-      if (Number(sizes[0].bytes) + r.membershipCount * 1500 + r.plans.length * 2000 > 2_500_000_000) throw new Error('database_capacity_budget');
+      if (Number(sizes[0].bytes) + (r.serving?compactReservation(r.serving.encodedBytes,r.serving.bucketCount,r.plans.length):r.membershipCount * 1500 + r.plans.length * 2000) > 2_500_000_000) throw new Error('database_capacity_budget');
     }
     if (!managed && await tx.ticFile.findFirst({ where: { url: r.sourceUrl }, select: { id: true } })) throw new Error('Source already exists; no replacement or silent replay permitted');
     const file = await tx.ticFile.create({ data: { url: r.sourceUrl, reportingEntity: r.reportingEntity, sourceLastUpdated: new Date(r.sourceDate), schemaMode: r.schema, fetchedAt: new Date(r.preparedAt) } });
+    let inserted=0;
+    if(r.serving){
+      const c=r.serving;
+      await tx.ticNpiIndex.create({data:{fileId:file.id,format:c.format,sourceMembershipCount:r.membershipCount,membershipSha256:r.membershipSha256,npiCount:c.npiCount,npiSha256:c.npiSha256,bucketCount:c.bucketCount,encodedBytes:c.encodedBytes,manifestSha256:c.manifestSha256}});
+      for await(const bucket of compactBuckets(c)){managed?.guard();await tx.ticNpiBucket.create({data:{fileId:file.id,prefix:bucket.prefix,count:bucket.count,rawSha256:bucket.rawSha256,payloadSha256:bucket.payloadSha256,payload:Uint8Array.from(bucket.payload)}});}
+      const verified=await readCompactIndex(tx,file.id,{...r,serving:c});
+      inserted=verified?.sourceMembershipCount??0;
+    }else{
     let batch: { fileId: string; npi: string; tinType: string; tinValue: string }[] = [];
-    let inserted = 0;
+
     const flush = async () => { managed?.guard(); if (batch.length) { inserted += (await tx.ticMembership.createMany({ data: batch })).count; batch = []; } };
     for await (const row of rows(r.membershipPath)) {
       if (row.file_url !== r.sourceUrl || row.last_updated_on !== r.sourceDate || row.reporting_entity !== r.reportingEntity || row.schema !== r.schema) throw new Error('Source changed during publication');
@@ -115,9 +128,10 @@ export async function publishPublication(db: PrismaClient, input: unknown, manag
       if (batch.length === 1000) await flush();
     }
     await flush();
+    }
     for (let i = 0; i < r.plans.length; i += 1000) await tx.ticPlanLink.createMany({ data: r.plans.slice(i, i + 1000).map(p => ({ ...p, fileId: file.id })) });
     if (inserted !== r.membershipCount || await sha256(r.membershipPath) !== r.membershipSha256) throw new Error('Publication changed or count mismatch');
-    const counts = { memberships: await tx.ticMembership.count({ where: { fileId: file.id } }), plans: await tx.ticPlanLink.count({ where: { fileId: file.id } }) };
+    const counts = { memberships: r.serving?inserted:await tx.ticMembership.count({ where: { fileId: file.id } }), plans: await tx.ticPlanLink.count({ where: { fileId: file.id } }) };
     if (counts.memberships !== r.membershipCount || counts.plans !== r.plans.length) throw new Error('Database readback mismatch');
     if (managed) {
       managed.guard();

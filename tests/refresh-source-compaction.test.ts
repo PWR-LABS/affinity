@@ -84,3 +84,14 @@ test('rejected-source cleanup never creates acceptance and refuses prepared, sha
  const changed=await rejected();await assert.rejects(reclaimRejectedSource({...options(changed),beforeRemoval:async()=>{await writeFile(changed.receipt.sourcePath,'changed');}}),/changed/);assert.ok(await stat(changed.receipt.sourcePath));
  const disconnected=await rejected();let online=true;await assert.rejects(reclaimRejectedSource({...options(disconnected),guard(){if(!online)throw new Error('offline');},beforeRemoval:async()=>{online=false;}}),/offline/);assert.ok(await stat(disconnected.receipt.sourcePath));
 });
+
+test('derived exact NPI serving preserves a sealed original receipt and rejects unrelated source changes',async t=>{
+ const f=await fixture(t);await compactSourceArchive(f.options);
+ const before=await readFile(f.options.receiptPath,'utf8');const original=await validatePublication(JSON.parse(before),f.keyPath);
+ const {deriveCompactPublication}=await import('../scripts/lib/compact-serving');
+ const derived=await deriveCompactPublication(original,f.options.receiptPath,()=>{},f.keyPath);
+ assert.equal(derived.receipt.serving?.npiCount,1);assert.equal(await readFile(f.options.receiptPath,'utf8'),before);
+ assert.deepEqual(derived.receipt.sourceArchive,original.sourceArchive);
+ assert.equal((await deriveCompactPublication(original,f.options.receiptPath,()=>{},f.keyPath)).receiptPath,derived.receiptPath);
+ await assert.rejects(validatePublication({...derived.receipt,membershipSha256:'0'.repeat(64)},f.keyPath));
+});

@@ -1,3 +1,4 @@
+import {compactServingEnabled,deriveCompactPublication} from './lib/compact-serving';
 /** Deterministic Mini runner. Codex schedules this command; it never provisions cloud compute. */
 import { verifySourceProofKey } from '../src/lib/tic/source-proof';
 import { REFRESH_POLICY,sourceWorkspaceReserve,publicationCapacity } from './lib/refresh-policy';
@@ -27,7 +28,7 @@ async function main(){
  const statusPath=join(stateRoot,'status.json');
  let db:PrismaClient|undefined;
  const blocksPath=join(stateRoot,'source-blocks.json');
- const policy=REFRESH_POLICY.version;
+ let policy:string=REFRESH_POLICY.version;
  const cycleStarted=performance.now();
  let blocks:Record<string,{etag:string;reason:string;policy:string}>={};
  const preparedPath=join(stateRoot,'prepared-sources.json');
@@ -53,9 +54,10 @@ async function main(){
   const discoverIssuer=createIssuerDiscoverer({fetch:cycleFetch});
   const discoverAnthemSelection=createAnthemSelectionDiscoverer({fetch:cycleFetch});
   db=new PrismaClient({datasourceUrl:await credential(),log:[]});
+  const compact=await compactServingEnabled(stateRoot,db,cycleFetch);if(compact)policy+='-npi-prefix-v1';
   const compactEligible=async(receiptPath:string)=>{
    const canonical=resolve(receiptPath),relative=canonical.slice(archiveRoot.length);
-   if(!canonical.startsWith(archiveRoot+'/')||!/^\/scheduled\/(mmoh|cigna|anthem)\/\d{4}-\d{2}-\d{2}T[\dZ-]+\/[a-f0-9]+\/publication\.json$/.test(relative))return;
+   if(!canonical.startsWith(archiveRoot+'/')||!/^\/scheduled\/(mmoh|cigna|anthem)\/\d{4}-\d{2}-\d{2}T[\dZ-]+\/[a-f0-9]+\/(?:compact-)?publication\.json$/.test(relative))return;
    let extraction;
    try{extraction=JSON.parse(await readFile(join(dirname(canonical),'extraction.json'),'utf8'));}
    catch(e){if((e as NodeJS.ErrnoException).code==='ENOENT')return;throw e;}
@@ -121,11 +123,11 @@ async function main(){
       if(!replayCandidate&&etag&&blocks[key]?.etag===etag&&blocks[key]?.policy===policy){results.push({issuer,source:path,state:'blocked',reason:blocks[key].reason});continue;}
     }catch{/* A bounded GET can still succeed when HEAD is unavailable. */}
     let cached:TicPublication|undefined;
-    try{cached=await preparedSource(prepared[key],{etag,policy,sourceUrl:candidate.url,tocPath,root:archiveRoot});}
+    try{cached=await preparedSource(prepared[key],{etag,policy:compact&&prepared[key]?.policy===REFRESH_POLICY.version?REFRESH_POLICY.version:policy,sourceUrl:candidate.url,tocPath,root:archiveRoot});}
     catch(e){if(e instanceof Deferred)throw e;results.push({issuer,source:path,state:'blocked',reason:'prepared_source_requires_review'});continue;}
     if(!cached){
      if(attempted>=maxFiles){results.push({issuer,source:path,state:'deferred',reason:'run_file_budget'});continue;}
-     await storageBudget(sourceWorkspaceReserve());attempted++;
+     await storageBudget(sourceWorkspaceReserve(undefined,compact));attempted++;
     }
     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'download_validate_publish'},results});
     const dir=cached?dirname(prepared[key].receiptPath):join(directory,sourceKey(candidate.url));await ensureArchiveDirectory(dir);
@@ -137,19 +139,23 @@ async function main(){
      if(!cached){archives[key]={sourceUrl:candidate.url,path:sourcePath,bytes:download.bytes,sha256:download.sha256,etag:download.etag,lastModified:download.lastModified};await atomicJson(archivesPath,archives);}
      guard();
      const reuse=!cached&&replayCandidate?.sourceSha256===download.sha256;
-     const receipt=cached??(reuse ? replayCandidate! : await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard,disk:{scratchRoot:dir,onProgress:progress=>progressJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'ssd_extraction',progress},results})}}));
+     let receipt=cached??(reuse ? replayCandidate! : await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard,compact,disk:{scratchRoot:dir,onProgress:progress=>progressJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'ssd_extraction',progress},results})}}));
+     let publicationPath=cached?prepared[key].receiptPath:reuse?prior!.receiptPath!:join(dir,'publication.json');
+     if(compact&&!receipt.serving&&!reuse){const derived=await deriveCompactPublication(receipt,publicationPath,guard);receipt=derived.receipt;publicationPath=derived.receiptPath;}
      guard();await validatePublication(receipt);
+     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'capacity_check'},results});
      const verifiedReplay=sameManagedContent(receipt,replayCandidate);
-     if(!reuse&&etag){prepared[key]={etag,policy,receiptPath:join(dir,'publication.json')};await atomicJson(preparedPath,prepared);}
+     if(!reuse&&etag){prepared[key]={etag,policy,receiptPath:publicationPath};await atomicJson(preparedPath,prepared);}
      const sizes=await db.$queryRaw<Array<{bytes:bigint}>>`SELECT pg_database_size(current_database()) AS bytes`;
-     const capacity=publicationCapacity(Number(sizes[0].bytes),receipt.membershipCount,receipt.plans.length,verifiedReplay);
+     const capacity=publicationCapacity(Number(sizes[0].bytes),receipt.membershipCount,receipt.plans.length,verifiedReplay,receipt.serving);
      guard();await atomicJson(join(dir,'capacity.json'),{...capacity,observedAt:new Date().toISOString(),sourceSha256:receipt.sourceSha256});
      if(!capacity.allowed){
-      if(!reuse)await compactEligible(join(dir,'publication.json'));
+      if(!reuse)await compactEligible(publicationPath);
       results.push({issuer,source:path,state:'blocked',reason:'database_capacity_budget'});continue;
      }
      // A source reaching the publication path is complete and hash-verified; its transaction is atomic.
-     const result=await publishManaged(db,receipt,reuse ? prior!.receiptPath! : join(dir,'publication.json'),()=>{guard();requireVolume();},archiveRoot);
+     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'atomic_publish'},results});
+     const result=await publishManaged(db,receipt,publicationPath,()=>{guard();requireVolume();},archiveRoot);
      guard();await atomicJson(join(dir,'published.json'),result);
      if(prepared[key]){delete prepared[key];await atomicJson(preparedPath,prepared);}
      if('archiveRetention' in result && 'state' in result.archiveRetention)results.push({issuer,source:path,state:'blocked',reason:'archive_retention_review_required'});
@@ -159,9 +165,10 @@ async function main(){
      latestSources[issuer]={sourceDate:receipt.sourceDate,publishedAt:result.publishedAt};
      results.push({issuer,source:path,state:replayed?'verified_unchanged':'published',sourceDate:receipt.sourceDate,memberships:result.memberships,plans:result.plans});
      if(reuse){archives[key]={...archives[key],path:receipt.sourcePath};await atomicJson(archivesPath,archives);await reclaimDuplicateDownload(sourcePath,receipt.sourcePath,download.sha256,guard,receipt);}
+     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'serving_readback'},results});
      try{await verifyServing(db,result.fileId);}catch{results.push({issuer,source:path,state:'blocked',reason:'published_but_public_readback_failed'});}
      if(!reuse){
-      try{await compactEligible(join(dir,'publication.json'));}
+      try{await compactEligible(publicationPath);}
       catch(e){if(e instanceof Deferred)throw e;results.push({issuer,source:path,state:'blocked',reason:'published_source_compaction_requires_review'});}
      }
     }catch(e){

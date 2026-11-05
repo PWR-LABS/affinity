@@ -12,7 +12,7 @@ export async function employerIndexReady(db = prisma, now = new Date()): Promise
     where: {
       active: true,
       sourceLastUpdated: ticSourceWindow(now),
-      memberships: { some: {} },
+      OR: [{ memberships: { some: {} } }, { compactIndex: { is: { format: "npi-prefix-v1", npiCount: { gt: 0 } } } }],
       planLinks: { some: {} },
     },
     select: { id: true },

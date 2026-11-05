@@ -1,3 +1,4 @@
+import {bucketContains,COMPACT_FORMAT} from './compact-codec';
 /**
  * TiC adapter — turns the thin network-membership index (S4) into doctrine-shaped CoverageAnswers,
  * so the commercial layer speaks the same provenance language as every other source.
@@ -100,6 +101,18 @@ export async function queryTicAnswer(args: {
     url: h.file.url,
     sourceLastUpdated: h.file.sourceLastUpdated?.toISOString(),
   }));
+
+  // Bound decompression per request. An unexamined/corrupt bucket cannot prove absence.
+  let decodedBudget=16_000_000;
+  if(/^\d{10}$/.test(args.npi))for(let offset=0;offset<fileIds.length&&decodedBudget>0;offset+=4){
+    const buckets=await db.ticNpiBucket.findMany({where:{fileId:{in:fileIds.slice(offset,offset+4)},prefix:args.npi.slice(0,4),index:{format:COMPACT_FORMAT}},take:4});
+    for(const bucket of buckets){
+      if(bucket.count*4>decodedBudget)continue;
+      decodedBudget-=bucket.count*4;
+      try{if(bucketContains(bucket,args.npi)){const link=links.find(l=>l.fileId===bucket.fileId);if(link)matchedFiles.push({url:link.file.url,sourceLastUpdated:link.file.sourceLastUpdated?.toISOString()});}}catch{/* Withhold corrupt evidence. */}
+    }
+    if(matchedFiles.some(f=>ticSourceCurrent(f.sourceLastUpdated,fetchedAt)))break;
+  }
 
   return buildTicAnswer({ npi: args.npi, planIndexed: true, matchedFiles, indexedFiles: links.map(l => ({ url: l.file.url, sourceLastUpdated: l.file.sourceLastUpdated?.toISOString() })), fetchedAt, subjectLabel: args.subjectLabel });
 }
