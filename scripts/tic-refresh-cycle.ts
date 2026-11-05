@@ -11,7 +11,7 @@ import { hostname } from 'node:os';
 import { createAnthemSelectionDiscoverer } from './lib/anthem-selection';
 import { discoverAnthemProjections, type ProjectedCandidate } from './lib/anthem-large-toc';
 import { createIssuerDiscoverer, sourceIdentity, type IssuerDiscovery } from './lib/issuer-discovery';
-import { conditionalSourceUnchanged, reclaimDuplicateDownload } from './lib/unchanged-source';
+import { conditionalSourceUnchanged, reclaimDuplicateDownload, sourceValidator } from './lib/unchanged-source';
 import { reclaimRejectedSource } from './lib/rejected-source-cleanup';
 import { compactManagedSource } from './lib/source-compaction';
 import { preparePublication } from './tic-refresh';
@@ -118,12 +118,10 @@ async function main(){
     const key=sourceKey(candidate.url);
     let etag:string|null=null;
     try {
-      const head=await cycleFetch(transportUrl,{method:'HEAD',headers:{'Accept-Encoding':'identity'},redirect:'error',signal:AbortSignal.timeout(30000)});
-      if(head.ok)etag=head.headers.get('etag');
       // Some issuer frontends use a different HEAD validator. A 304 from the
       // actual GET representation may reuse a known block/preparation safely.
       const known=compatibleSourceBlock(blocks[key],policy)?blocks[key].etag:compatiblePreparedPolicy(prepared[key]?.policy,compact)?prepared[key].etag:undefined;
-      if(known&&etag!==known&&await conditionalSourceUnchanged(transportUrl,known,cycleFetch))etag=known;
+      etag=await sourceValidator(transportUrl,known,cycleFetch);
       if(!replayCandidate&&etag&&blocks[key]?.etag===etag&&compatibleSourceBlock(blocks[key],policy)){results.push({issuer,source:path,state:'blocked',reason:blocks[key].reason});continue;}
     }catch{/* A bounded GET can still succeed when HEAD is unavailable. */}
     let cached:TicPublication|undefined;
