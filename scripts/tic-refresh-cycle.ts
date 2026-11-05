@@ -139,6 +139,7 @@ async function main(){
      const reuse=!cached&&replayCandidate?.sourceSha256===download.sha256;
      const receipt=cached??(reuse ? replayCandidate! : await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard,disk:{scratchRoot:dir,onProgress:progress=>progressJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'ssd_extraction',progress},results})}}));
      guard();await validatePublication(receipt);
+     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'capacity_check'},results});
      const verifiedReplay=sameManagedContent(receipt,replayCandidate);
      if(!reuse&&etag){prepared[key]={etag,policy,receiptPath:join(dir,'publication.json')};await atomicJson(preparedPath,prepared);}
      const sizes=await db.$queryRaw<Array<{bytes:bigint}>>`SELECT pg_database_size(current_database()) AS bytes`;
@@ -149,6 +150,7 @@ async function main(){
       results.push({issuer,source:path,state:'blocked',reason:'database_capacity_budget'});continue;
      }
      // A source reaching the publication path is complete and hash-verified; its transaction is atomic.
+     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'atomic_publish'},results});
      const result=await publishManaged(db,receipt,reuse ? prior!.receiptPath! : join(dir,'publication.json'),()=>{guard();requireVolume();},archiveRoot);
      guard();await atomicJson(join(dir,'published.json'),result);
      if(prepared[key]){delete prepared[key];await atomicJson(preparedPath,prepared);}
@@ -159,6 +161,7 @@ async function main(){
      latestSources[issuer]={sourceDate:receipt.sourceDate,publishedAt:result.publishedAt};
      results.push({issuer,source:path,state:replayed?'verified_unchanged':'published',sourceDate:receipt.sourceDate,memberships:result.memberships,plans:result.plans});
      if(reuse){archives[key]={...archives[key],path:receipt.sourcePath};await atomicJson(archivesPath,archives);await reclaimDuplicateDownload(sourcePath,receipt.sourcePath,download.sha256,guard,receipt);}
+     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'serving_readback'},results});
      try{await verifyServing(db,result.fileId);}catch{results.push({issuer,source:path,state:'blocked',reason:'published_but_public_readback_failed'});}
      if(!reuse){
       try{await compactEligible(join(dir,'publication.json'));}
