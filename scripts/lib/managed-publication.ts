@@ -5,7 +5,7 @@ import { sourceIdentity } from './issuer-discovery';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { PrismaClient } from '@prisma/client';
-import { receiptSchema, sha256, publishPublication, type TicPublication } from '../../src/lib/tic/publication';
+import { receiptSchema, validateArchivedBytes, publishPublication, type TicPublication } from '../../src/lib/tic/publication';
 export function logicalKey(url: string) {
   return normalizeLedgerKey(sourceIdentity(url));
 }
@@ -17,7 +17,7 @@ export function fingerprint(r: TicPublication) {
 export function sameManagedContent(candidate:TicPublication,active:TicPublication|undefined){
  return Boolean(active&&logicalKey(candidate.sourceUrl)===logicalKey(active.sourceUrl)&&fingerprint(candidate)===fingerprint(active));
 }
-export async function publishManaged(db: PrismaClient, r: TicPublication, receiptPath: string, guard:()=>void, root: string) {
+export async function publishManaged(db: PrismaClient, r: TicPublication, receiptPath: string, guard:()=>void, root: string,archiveKeyPath?:string) {
   const stableKey = logicalKey(r.sourceUrl), contentHash = fingerprint(r);
   let id = createHash('sha256').update(stableKey + '\n' + contentHash).digest('hex');
   const previous = await db.$queryRaw<Array<{id:string;fileId:string;contentHash:string;receiptPath:string;sourceDate:string}>>`SELECT * FROM "TicRefreshPublication" WHERE ${normalizedLedgerColumn}=${stableKey} AND withdrawn=false ORDER BY "sourceDate" DESC, "createdAt" DESC`;
@@ -31,11 +31,10 @@ export async function publishManaged(db: PrismaClient, r: TicPublication, receip
     const old = receiptSchema.parse(JSON.parse(await readFile(p.receiptPath,'utf8')));
     if (fingerprint(old) !== p.contentHash) throw new Error('Retention receipt mismatch');
     // A historical archive is expected to be stale. Validate bytes, not today's freshness.
-    for (const [path,hash] of [[old.sourcePath,old.sourceSha256],[old.tocPath,old.tocSha256],[old.membershipPath,old.membershipSha256]]) {
-      if (!resolve(path).startsWith(resolve(root) + '/') || await sha256(path) !== hash) throw new Error('Retention archive unavailable');
-    }
+    for (const path of [old.sourcePath,old.tocPath,old.membershipPath,old.sourceArchive?.proofPath].filter(Boolean) as string[])if(!resolve(path).startsWith(resolve(root)+'/'))throw new Error('Retention archive unavailable');
+    try{await validateArchivedBytes(old,archiveKeyPath);}catch{throw new Error('Retention archive unavailable');}
   }
-  const result=await publishPublication(db,r,{id,stableKey,contentHash,receiptPath,guard,retire});
+  const result=await publishPublication(db,r,{id,stableKey,contentHash,receiptPath,guard,retire},archiveKeyPath);
   if(!retire.length)return result;
   try {return {...result,archiveRetention:await reclaimRetiredArchives(db,retire,root,guard)};}
   catch {return {...result,archiveRetention:{state:'deferred',reason:'Retired archive cleanup requires review; database commit verified'}};}

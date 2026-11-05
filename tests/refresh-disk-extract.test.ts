@@ -166,6 +166,18 @@ test('changed source, duplicate keys and remote input fail closed', async t => {
   await clean(f.scratchRoot);
 });
 
+test('ignored price values remain syntax, size and duplicate-key validated without changing memberships',async t=>{
+ const body=v1([{provider_group_id:1,provider_groups:[group()]}]);
+ const text=JSON.stringify(body).replace('"provider_references":[1]','"negotiated_prices":[{"negotiated_rate":12.34,"ignored":[true,false,null,"text",{"nested":7}]}],"provider_references":[1]');
+ const f=await fixture(t,text),legacy=join(f.root,'legacy');
+ await runExtract({input:f.input,out:legacy,sourceUrl:SOURCE,progress:false});await runDiskExtract(f.options);
+ assert.equal(await readFile(f.out,'utf8'),await readFile(legacy,'utf8'));
+ await rejectsClean(t,text.replace('"negotiated_rate":12.34','"negotiated_rate":12.34,"negotiated_rate":9'),/Duplicate JSON object key/);
+ await rejectsClean(t,text.replace('"text"',JSON.stringify('x'.repeat(65_537))),/scalar_limit/);
+ await rejectsClean(t,text.replace('12.34','12.34e+'),/expected|number|parse/i);
+ await rejectsClean(t,text.replace('"provider_references":[1]','"provider_references":1'),/Malformed provider reference/);
+});
+
 // The progress hook is synchronous; this only mutates a local, test-owned source.
 function requireMutation(path: string) { appendFileSync(path, ' '); }
 

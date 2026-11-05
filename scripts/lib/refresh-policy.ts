@@ -1,13 +1,13 @@
 /** Local processing can grow without expanding the cloud serving allocation. */
 export const REFRESH_POLICY = Object.freeze({
-  version: '2gb-200k-disk-v4',
-  sourceBytes: 2_000_000_000,
+  version: '5gb-200k-disk-v5',
+  sourceBytes: 5_000_000_000,
   scratchBytes: 4_000_000_000,
-  decodedBytes: 64_000_000_000,
+  decodedBytes: 128_000_000_000,
   downloadMs: 30 * 60_000,
-  extractionMs: 30 * 60_000,
+  extractionMs: 2 * 60 * 60_000,
   cycleMs: 4 * 60 * 60_000,
-  newFilesPerCycle: 8,
+  newFilesPerCycle: 64,
   memberships: 200_000,
   plans: 30_000,
   databaseBytes: 2_500_000_000,

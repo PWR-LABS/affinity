@@ -9,6 +9,7 @@ import { z } from 'zod';
 import type { PrismaClient } from '@prisma/client';
 import { lineageSchema, validateTocLineage } from './toc-lineage';
 import { ticSourceCurrent } from './freshness';
+import {sourceArchiveSchema,verifySourceProof} from './source-proof';
 
 export const httpsUrl = z.string().url().refine(s => new URL(s).protocol === 'https:');
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
@@ -27,6 +28,7 @@ export const receiptSchema = z.object({
   sourceDate: z.string(), reportingEntity: z.string().min(1), schema: z.enum(['v1','v2']),
   tocProjection: lineageSchema.optional(),
   plans: z.array(plan).min(1).max(30_000), preparedAt: z.string(),
+  sourceArchive:sourceArchiveSchema.optional(),
 });
 export type TicPublication = z.infer<typeof receiptSchema>;
 export async function sha256(path: string): Promise<string> {
@@ -56,12 +58,16 @@ export async function* rows(path: string) {
     yield member.parse(JSON.parse(line));
   } } finally { lines.close(); }
 }
-export async function validatePublication(input: unknown): Promise<TicPublication> {
+/** Owner-controlled key path is injectable for isolated tests, never read from source data. */
+export async function validateArchivedBytes(r:TicPublication,archiveKeyPath?:string){
+  if(r.sourceArchive)await verifySourceProof(r,r.sourceArchive,archiveKeyPath);
+  else if(await sha256(r.sourcePath)!==r.sourceSha256)throw new Error('Publication hash mismatch');
+  for(const [path,expected] of [[r.tocPath,r.tocSha256],[r.membershipPath,r.membershipSha256]])if(await sha256(path)!==expected)throw new Error('Publication hash mismatch');
+}
+export async function validatePublication(input: unknown,archiveKeyPath?:string): Promise<TicPublication> {
   const r = receiptSchema.parse(input);
   if (!ticSourceCurrent(r.sourceDate, new Date().toISOString())) throw new Error('Source is stale, undated or future-dated');
-  for (const [path, expected] of [[r.sourcePath, r.sourceSha256], [r.tocPath, r.tocSha256], [r.membershipPath, r.membershipSha256]]) {
-    if (await sha256(path) !== expected) throw new Error('Publication hash mismatch');
-  }
+  await validateArchivedBytes(r,archiveKeyPath);
   if (r.tocProjection) await validateTocLineage(r.tocProjection,r.tocPath,r.tocSha256,r.sourceUrl);
   if (JSON.stringify(await tocPlans(r.tocPath, r.sourceUrl)) !== JSON.stringify(r.plans)) throw new Error('Plan mapping differs from archived TOC');
   let count = 0;
@@ -77,8 +83,8 @@ export type ManagedPublication = {
   guard: () => void;
   retire: Array<{ id: string; fileId: string; contentHash: string }>;
 };
-export async function publishPublication(db: PrismaClient, input: unknown, managed?: ManagedPublication) {
-  const r = await validatePublication(input);
+export async function publishPublication(db: PrismaClient, input: unknown, managed?: ManagedPublication,archiveKeyPath?:string) {
+  const r = await validatePublication(input,archiveKeyPath);
   managed?.guard();
   return db.$transaction(async tx => {
     // Serialize publishers, not readers. The managed content ledger prevents duplicate generations.

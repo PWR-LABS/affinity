@@ -19,7 +19,7 @@ export async function reclaimRetiredArchives(db:PrismaClient, retired:Array<{id:
   if(!receiptPath.startsWith(resolve(root)+'/')||await realpath(receiptPath)!==receiptPath)throw new Error('Unsafe retired archive');
   const r=receiptSchema.parse(JSON.parse(await readFile(receiptPath,'utf8')));
   const entries=[];
-  for(const [path,hash] of [[r.sourcePath,r.sourceSha256],[r.membershipPath,r.membershipSha256]]){
+  for(const [path,hash] of [...(r.sourceArchive?[]:[[r.sourcePath,r.sourceSha256]]),[r.membershipPath,r.membershipSha256]]){
    const target=resolve(path);
    if(protectedPaths.has(target)||target===resolve(r.tocPath))continue;
    if(dirname(target)!==dirname(receiptPath)||await realpath(target)!==target||!(await lstat(target)).isFile()||await sha256(target)!==hash)throw new Error('Unsafe or changed retired bytes');

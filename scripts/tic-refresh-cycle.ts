@@ -1,14 +1,18 @@
 /** Deterministic Mini runner. Codex schedules this command; it never provisions cloud compute. */
+import { verifySourceProofKey } from '../src/lib/tic/source-proof';
 import { REFRESH_POLICY,sourceWorkspaceReserve,publicationCapacity } from './lib/refresh-policy';
 import { PrismaClient } from '@prisma/client';
 import { readFile } from 'node:fs/promises';
-import { join,dirname } from 'node:path';
+import { join,dirname,resolve }  from 'node:path';
 import { preparedSource,type PreparedSource } from './lib/prepared-source';
+import { reuseSourceArchive,type SourceArchive } from './lib/source-archive';
 import { hostname } from 'node:os';
 import { createAnthemSelectionDiscoverer } from './lib/anthem-selection';
 import { discoverAnthemProjections, type ProjectedCandidate } from './lib/anthem-large-toc';
 import { createIssuerDiscoverer, sourceIdentity, type IssuerDiscovery } from './lib/issuer-discovery';
 import { conditionalSourceUnchanged, reclaimDuplicateDownload } from './lib/unchanged-source';
+import { reclaimRejectedSource } from './lib/rejected-source-cleanup';
+import { compactManagedSource } from './lib/source-compaction';
 import { preparePublication } from './tic-refresh';
 import { ticSourceCurrent } from '../src/lib/tic/freshness';
 import { validatePublication, tocPlans, type TicPublication } from '../src/lib/tic/publication';
@@ -27,6 +31,9 @@ async function main(){
  const cycleStarted=performance.now();
  let blocks:Record<string,{etag:string;reason:string;policy:string}>={};
  const preparedPath=join(stateRoot,'prepared-sources.json');
+ const archivesPath=join(stateRoot,'source-archives.json');
+ let archives:Record<string,SourceArchive>={};
+ try{archives=JSON.parse(await readFile(archivesPath,'utf8'));}catch{}
  let prepared:Record<string,PreparedSource>={};
  try{prepared=JSON.parse(await readFile(preparedPath,'utf8'));}catch{}
  try{blocks=JSON.parse(await readFile(blocksPath,'utf8'));}catch{}
@@ -34,7 +41,7 @@ async function main(){
  let latestSources:Record<string,{sourceDate:string;publishedAt:string}>={};
  try {const previous=JSON.parse(await readFile(statusPath,'utf8'));lastPublishedAt=previous.lastPublishedAt;latestSources=previous.latestSources??{};} catch {}
  try{
-  requireVolume(); await storageBudget();
+  requireVolume(); await storageBudget();await verifySourceProofKey();
   const guardVolume=volumeSessionGuard();
   const guard=()=>{if(performance.now()-cycleStarted>REFRESH_POLICY.cycleMs)throw new Deferred('cycle_time_budget');guardVolume();};
   const cycleFetch:typeof fetch=async(input,init)=>{
@@ -46,6 +53,13 @@ async function main(){
   const discoverIssuer=createIssuerDiscoverer({fetch:cycleFetch});
   const discoverAnthemSelection=createAnthemSelectionDiscoverer({fetch:cycleFetch});
   db=new PrismaClient({datasourceUrl:await credential(),log:[]});
+  const compactEligible=async(receiptPath:string)=>{
+   const canonical=resolve(receiptPath),relative=canonical.slice(archiveRoot.length);
+   if(!canonical.startsWith(archiveRoot+'/')||!/^\/scheduled\/(mmoh|cigna|anthem)\/\d{4}-\d{2}-\d{2}T[\dZ-]+\/[a-f0-9]+\/publication\.json$/.test(relative))return;
+   const extraction=JSON.parse(await readFile(join(dirname(canonical),'extraction.json'),'utf8'));
+   if(!extraction.validation)return; // Historical raw cannot be retroactively sealed.
+   await compactManagedSource(db!,canonical,dirname(dirname(canonical)),guard,Object.values(prepared).map(p=>p.receiptPath));
+  };
   const runId=new Date().toISOString().replace(/[:.]/g,'-');
   await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{phase:'discovery'},results});
   const selected=process.argv.includes('--issuer') ? [process.argv[process.argv.indexOf('--issuer')+1]] : ['mmoh','cigna','anthem'];
@@ -64,6 +78,9 @@ async function main(){
    }
    catch(e){results.push({issuer,state:'blocked',reason:safeReason(e)});continue;}
    guard();await storageBudget();
+   // Process existing archived candidates first; unchanged sources are still
+   // checked even after the new-attempt allowance is exhausted.
+   discovery.candidates.sort((a,b)=>(archives[sourceKey(a.url)]?.bytes??Infinity)-(archives[sourceKey(b.url)]?.bytes??Infinity)||a.url.localeCompare(b.url));
    // The manifest remains authoritative about unresolved historical names and incomplete scope.
    results.push({issuer,state:'discovered',reason:discovery.scope});
    if((issuer==='cigna'&&discovery.candidates.length<16)||discovery.unresolvedCount)results.push({issuer,state:'blocked',reason:'unresolved_source_selection; see discovery scope'});
@@ -87,6 +104,7 @@ async function main(){
        const replay=await publishManaged(db,saved,prior.receiptPath,guard,archiveRoot);
        latestSources[issuer]={sourceDate:replay.sourceDate,publishedAt:replay.publishedAt};
        results.push({issuer,source:path,state:'verified_unchanged',memberships:replay.memberships,plans:replay.plans});
+       await compactEligible(prior.receiptPath);
        continue;
       }
       // A changed ETag or mapping requires complete download, validation and a new
@@ -111,8 +129,10 @@ async function main(){
     const dir=cached?dirname(prepared[key].receiptPath):join(directory,sourceKey(candidate.url));await ensureArchiveDirectory(dir);
     try{
      const sourcePath=join(dir,'source.json.gz');
-     const download=cached?JSON.parse(await readFile(join(dir,'download.json'),'utf8')):await downloadFile(transportUrl,sourcePath,REFRESH_POLICY.sourceBytes,guard,cycleFetch,REFRESH_POLICY.downloadMs);
+     const archived=cached?undefined:await reuseSourceArchive(archives[key],{sourceUrl:candidate.url,etag,destination:sourcePath,root:archiveRoot,maxBytes:REFRESH_POLICY.sourceBytes,guard});
+     const download=cached?JSON.parse(await readFile(join(dir,'download.json'),'utf8')):archived??await downloadFile(transportUrl,sourcePath,REFRESH_POLICY.sourceBytes,guard,cycleFetch,REFRESH_POLICY.downloadMs);
      guard();if(!cached)await atomicJson(join(dir,'download.json'),download);
+     if(!cached){archives[key]={sourceUrl:candidate.url,path:sourcePath,bytes:download.bytes,sha256:download.sha256,etag:download.etag,lastModified:download.lastModified};await atomicJson(archivesPath,archives);}
      guard();
      const reuse=!cached&&replayCandidate?.sourceSha256===download.sha256;
      const receipt=cached??(reuse ? replayCandidate! : await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard,disk:{scratchRoot:dir,onProgress:progress=>progressJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'ssd_extraction',progress},results})}}));
@@ -122,7 +142,10 @@ async function main(){
      const sizes=await db.$queryRaw<Array<{bytes:bigint}>>`SELECT pg_database_size(current_database()) AS bytes`;
      const capacity=publicationCapacity(Number(sizes[0].bytes),receipt.membershipCount,receipt.plans.length,verifiedReplay);
      guard();await atomicJson(join(dir,'capacity.json'),{...capacity,observedAt:new Date().toISOString(),sourceSha256:receipt.sourceSha256});
-     if(!capacity.allowed){results.push({issuer,source:path,state:'blocked',reason:'database_capacity_budget'});continue;}
+     if(!capacity.allowed){
+      if(!reuse)await compactEligible(join(dir,'publication.json'));
+      results.push({issuer,source:path,state:'blocked',reason:'database_capacity_budget'});continue;
+     }
      // A source reaching the publication path is complete and hash-verified; its transaction is atomic.
      const result=await publishManaged(db,receipt,reuse ? prior!.receiptPath! : join(dir,'publication.json'),()=>{guard();requireVolume();},archiveRoot);
      guard();await atomicJson(join(dir,'published.json'),result);
@@ -133,8 +156,12 @@ async function main(){
      if(!replayed)lastPublishedAt=new Date().toISOString();
      latestSources[issuer]={sourceDate:receipt.sourceDate,publishedAt:result.publishedAt};
      results.push({issuer,source:path,state:replayed?'verified_unchanged':'published',sourceDate:receipt.sourceDate,memberships:result.memberships,plans:result.plans});
-     if(reuse)await reclaimDuplicateDownload(sourcePath,receipt.sourcePath,download.sha256,guard);
+     if(reuse){archives[key]={...archives[key],path:receipt.sourcePath};await atomicJson(archivesPath,archives);await reclaimDuplicateDownload(sourcePath,receipt.sourcePath,download.sha256,guard,receipt);}
      try{await verifyServing(db,result.fileId);}catch{results.push({issuer,source:path,state:'blocked',reason:'published_but_public_readback_failed'});}
+     if(!reuse){
+      try{await compactEligible(join(dir,'publication.json'));}
+      catch(e){if(e instanceof Deferred)throw e;results.push({issuer,source:path,state:'blocked',reason:'published_source_compaction_requires_review'});}
+     }
     }catch(e){
      if(e&&typeof e==='object'&&'cleanupPending' in e&&e.cleanupPending)await atomicJson(join(stateRoot,'cleanup-pending-'+runId+'-'+key+'.json'),{source:path,scratchPath:'scratchPath' in e?e.scratchPath:undefined,observedAt:new Date().toISOString(),reason:'owned extraction scratch could not be safely reclaimed; verify original SSD before cleanup'});
      if(e instanceof Deferred)throw e;
@@ -142,6 +169,12 @@ async function main(){
      results.push({issuer,source:path,state:'blocked',reason});
      if(etag && /source_size_limit|Membership limit exceeded|Empty or incomplete extraction|Unarchived or malformed provider reference|Unresolved provider reference|Duplicate provider reference|reference_memory_limit|requires ZIP adapter|Source is not JSON|extraction_time_limit|scratch_limit|decoded_limit|scalar_limit|depth_limit|object_key_limit|Source is stale/.test(reason)){
       blocks[key]={etag,reason,policy};await atomicJson(blocksPath,blocks);
+      if(!cached){
+       try{
+        const retained=await db.$queryRaw<Array<{receiptPath:string}>>`SELECT "receiptPath" FROM "TicRefreshPublication"`;
+        await reclaimRejectedSource({directory:dir,ownedRunRoot:directory,reason,guard,retainedReceiptPaths:[...retained.map(r=>r.receiptPath),...Object.values(prepared).map(p=>p.receiptPath)]});
+       }catch{results.push({issuer,source:path,state:'blocked',reason:'rejected_source_cleanup_requires_review'});}
+      }
      }
     }
     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),results});

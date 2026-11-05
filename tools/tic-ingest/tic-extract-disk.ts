@@ -4,7 +4,9 @@
  * writing or cleaning through a replaced scratch root. Inaccessible cleanup is
  * explicit on an error (cleanupPending/scratchPath) or successful summary.disk.
  */
-import { constants, lstatSync, realpathSync, type BigIntStats } from 'node:fs';
+import { constants, lstatSync, realpathSync, readFileSync,type BigIntStats } from 'node:fs';
+import {createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
 import { open, lstat, realpath, mkdtemp, rm, rename, type FileHandle } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { createRequire } from 'node:module';
@@ -17,6 +19,7 @@ import { openZipJson, type ZipJsonReadable } from './lib/zip-json';
 import type { ExtractSummary } from './tic-extract';
 
 const require = createRequire(import.meta.url);
+const extractorRevision=createHash('sha256').update(readFileSync(fileURLToPath(import.meta.url))).update(readFileSync(fileURLToPath(new URL('./lib/zip-json.ts',import.meta.url)))).update(process.version).digest('hex');
 const { parser } = require('stream-json');
 const SCALAR_BYTES = 65_536, DEPTH = 64, KEY_BYTES = 65_536;
 export interface DiskExtractProgress {
@@ -31,18 +34,22 @@ export interface DiskExtractOptions {
 export type DiskExtractSummary = ExtractSummary & { disk: {
   decodedBytes: number; peakScratchBytes: number; groups: number; references: number;
   cleanupPending?: boolean; scratchPath?: string;
-} };
+}; validation:{policy:'tic-membership-v1-strict';extractorRevision:string;jsonEof:true;archiveIntegrity:true;referenceClosure:true;sourceStable:true;limits:{maxPairs:number;maxMs:number;maxScratchBytes:number;maxDecodedBytes:number}} };
 type Token = { name: string; value?: unknown };
 type Frame = {
   kind: 'object' | 'array'; path: string[]; key?: string; keys?: Set<string>; keyBytes: number;
   ref?: number; group?: number; identifier?: string; hasGroups?: boolean;
   tinType?: string; tinValue?: string; hasNpis?: boolean; inline?: boolean;
+  scalarRelevant: boolean;
 };
 const equal = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
 const referencePath = ['provider_references', '*'];
 const inlineGroupPath = ['in_network', '*', 'negotiated_rates', '*', 'provider_groups', '*'];
 const referenceGroupPath = [...referencePath, 'provider_groups', '*'];
 const usePath = ['in_network', '*', 'negotiated_rates', '*', 'provider_references', '*'];
+const useContainerPath = usePath.slice(0, -1);
+const ratePath = usePath.slice(0, -2);
+const inlineGroupContainerPath = inlineGroupPath.slice(0, -1);
 function bounded(value: number | undefined, fallback: number, name: string) {
   const n = value ?? fallback;
   if (!Number.isSafeInteger(n) || n <= 0 || n > fallback) throw new Error('Invalid ' + name + ' cap');
@@ -58,9 +65,9 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
   const source = new URL(options.sourceUrl);
   if (source.protocol !== 'https:' || source.username || source.password || Buffer.byteLength(options.sourceUrl) > SCALAR_BYTES) throw new Error('Invalid source URL');
   const maxPairs = bounded(options.maxPairs, 200_000, 'membership');
-  const maxMs = bounded(options.maxMs, 1_800_000, 'time');
+  const maxMs = bounded(options.maxMs, 7_200_000, 'time');
   const maxScratch = bounded(options.maxScratchBytes, 4_000_000_000, 'scratch');
-  const maxDecoded = bounded(options.maxDecodedBytes, 64_000_000_000, 'decoded');
+  const maxDecoded = bounded(options.maxDecodedBytes, 128_000_000_000, 'decoded');
   if (maxScratch < 65_536) throw new Error('scratch_limit: insufficient SQLite space');
   const started = performance.now(), root = resolve(options.scratchRoot), input = resolve(options.input), out = resolve(options.out);
   options.guard?.();
@@ -139,6 +146,7 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
     const frames: Frame[] = [];
     let activeRef: Frame | undefined, activeGroup: Frame | undefined;
     let rootClosed = false, sawReferences = false, scalar = '', scalarBytes = 0, scalarKind = '';
+    let captureScalar = true;
     let inlineZero = 0, inlineTin = 0;
     const metadata = { reportingEntity: '', lastUpdatedOn: '', version: '' };
     const classify = (npi: string, tinType: string, tinValue: string) => {
@@ -188,16 +196,24 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
         if (equal(path, ['version'])) metadata.version = raw;
       }
     };
+    // Prices/codes still pass the tokenizer, UTF-8/scalar/depth/key checks and EOF
+    // validation. They need no copied path or retained scalar for memberships.
+    const scalarRelevant = () => Boolean(activeRef || activeGroup || frames.at(-1)?.scalarRelevant);
+    const emitScalar = (raw:string,kind:string) => {
+      if (scalarRelevant()) onScalar(nextPath(),raw,kind);
+      else { const parent=frames.at(-1); if(parent?.kind==='object')parent.key=undefined; }
+    };
     const onToken = (token: Token) => {
       if (++operations % 4096 === 0) checkpoint();
       const name = token.name;
       if (name === 'startKey' || name === 'startString' || name === 'startNumber') {
-        scalar = ''; scalarBytes = 0; scalarKind = name.slice(5).toLowerCase(); return;
+        scalar = ''; scalarBytes = 0; scalarKind = name.slice(5).toLowerCase();
+        captureScalar = name === 'startKey' || scalarRelevant(); return;
       }
       if (name === 'stringChunk' || name === 'numberChunk') {
         const text = String(token.value); scalarBytes += Buffer.byteLength(text);
         if (scalarBytes > SCALAR_BYTES) throw new Error('scalar_limit');
-        scalar += text; return;
+        if(captureScalar)scalar += text; return;
       }
       if (name === 'endKey') {
         const frame = frames.at(-1)!;
@@ -206,9 +222,9 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
         if (frame.keys!.has(scalar)) throw new Error('Duplicate JSON object key');
         frame.keys!.add(scalar); frame.key = scalar; return;
       }
-      if (name === 'endString' || name === 'endNumber') { onScalar(nextPath(), scalar, scalarKind); return; }
+      if (name === 'endString' || name === 'endNumber') { emitScalar(scalar, scalarKind); return; }
       if (name === 'trueValue' || name === 'falseValue' || name === 'nullValue') {
-        const kind = name.slice(0, -5); onScalar(nextPath(), kind === 'null' ? '' : kind, kind); return;
+        const kind = name.slice(0, -5); emitScalar(kind === 'null' ? '' : kind, kind); return;
       }
       if (name === 'startObject' || name === 'startArray') {
         const path = nextPath(), kind = name === 'startObject' ? 'object' : 'array';
@@ -220,7 +236,8 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
         }
         if (equal(path, usePath) || (activeGroup && equal(path, [...activeGroup.path, 'npi', '*']))) throw new Error('Reference IDs and NPIs must be scalar');
         if (equal(path, usePath.slice(0, -1)) && kind !== 'array') throw new Error('Malformed provider reference uses');
-        const frame: Frame = { kind, path, keyBytes: 0, keys: kind === 'object' ? new Set() : undefined };
+        const frame: Frame = { kind, path, keyBytes: 0, keys: kind === 'object' ? new Set() : undefined,
+          scalarRelevant: !path.length || equal(path,['provider_references']) || equal(path,useContainerPath) || equal(path,ratePath) || equal(path,inlineGroupContainerPath) };
         if (equal(path, referencePath)) {
           if (kind !== 'object') throw new Error('Malformed provider reference');
           frame.ref = Number(addRef.run().lastInsertRowid); activeRef = frame; disk.references++;
@@ -339,7 +356,8 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
     await handle.close(); handle = undefined;
     check(); await rename(outputPath, out); committed = true;
     return { files: 1, npis_emitted: npiCount, pairs_emitted: pairs, zero_npi_dropped: zeroDropped, tin_in_npi_dropped: tinDropped,
-      remote_refs_fetched: 0, remote_refs_404: 0, schema, seconds: Number(((performance.now() - started) / 1000).toFixed(3)), peak_rss_mb: Math.round(process.resourceUsage().maxRSS / 1024), disk };
+      remote_refs_fetched: 0, remote_refs_404: 0, schema, seconds: Number(((performance.now() - started) / 1000).toFixed(3)), peak_rss_mb: Math.round(process.resourceUsage().maxRSS / 1024), disk,
+      validation:{policy:'tic-membership-v1-strict',extractorRevision,jsonEof:true,archiveIntegrity:true,referenceClosure:true,sourceStable:true,limits:{maxPairs,maxMs,maxScratchBytes:maxScratch,maxDecodedBytes:maxDecoded}} };
   } catch (error) {
     // ZIP integrity adapters wrap guard exceptions. Preserve the caller's exact
     // deferral error so the scheduler can still distinguish storage loss.

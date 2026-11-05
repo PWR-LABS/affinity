@@ -26,7 +26,6 @@ export async function preparePublication(args: { sourcePath: string; sourceUrl: 
   const summary = args.disk ? await runDiskExtract({input:sourcePath,out:membershipPath,sourceUrl:args.sourceUrl,scratchRoot:args.disk.scratchRoot,guard:args.guard,maxPairs:REFRESH_POLICY.memberships,maxMs:REFRESH_POLICY.extractionMs,maxScratchBytes:REFRESH_POLICY.scratchBytes,maxDecodedBytes:REFRESH_POLICY.decodedBytes,onProgress:args.disk.onProgress}) : await runExtract({ input: sourcePath, sourceUrl: args.sourceUrl, out: membershipPath, progress: false, maxPairs: 200_000, strictReferences: true, maxMs: 600_000, guard: args.guard });
   if ('disk' in summary && (summary.disk as {cleanupPending?:boolean;scratchPath?:string}).cleanupPending) throw Object.assign(new Error('scratch_cleanup_pending'),summary.disk);
   args.guard?.();
-  await writeFile(resolve(args.directory,'extraction.json'),JSON.stringify(summary,null,2)+'\n',{mode:0o600});
   if (summary.remote_refs_404 || summary.remote_refs_fetched) throw new Error('Remote references require a separately archived, verified refresh');
   let first: z.infer<typeof member> | undefined;
   let count = 0;
@@ -40,6 +39,7 @@ export async function preparePublication(args: { sourcePath: string; sourceUrl: 
     membershipSha256: await sha256(membershipPath), membershipCount: count, sourceDate: first.last_updated_on, reportingEntity: first.reporting_entity, schema: first.schema, plans, preparedAt: new Date().toISOString() });
   await validatePublication(receipt);
   args.guard?.();
+  await writeFile(resolve(args.directory,'extraction.json'),JSON.stringify({...summary,sourceSha256,sourceBytes:(await stat(sourcePath)).size,membershipSha256:receipt.membershipSha256,tocSha256},null,2)+'\n',{mode:0o600});
   await writeFile(resolve(args.directory, 'publication.json'), JSON.stringify(receipt, null, 2) + '\n');
   return receipt;
 }
