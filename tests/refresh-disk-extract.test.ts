@@ -231,3 +231,21 @@ test('larger complete local extractions retain explicit limits and preserve the 
  const {REFRESH_POLICY}=await import('../scripts/lib/refresh-policy');assert.equal(REFRESH_POLICY.memberships,200000);assert.equal(REFRESH_POLICY.scratchBytes,4000000000);
  await clean(f.scratchRoot);
 });
+
+test('interned reference groups preserve first-use ordering and exact duplicate drop counts',async t=>{
+ const a=group([1234567890,0,0,123456789,1234567890]);
+ const reordered=group([123456789,1234567890,0,1234567890,0]);
+ const b=group([1234567890,0],'npi');
+ const body=v1([{provider_group_id:1,provider_groups:[a,a,b,reordered]},{provider_group_id:2,provider_groups:[b,a,b]},{provider_group_id:3,provider_groups:[a]}],[2,1,2]);
+ const f=await fixture(t,JSON.stringify(body));const old=await runExtract({input:f.input,out:join(f.root,'legacy'),sourceUrl:SOURCE,progress:false});const result=await runDiskExtract(f.options);
+ assert.equal(await readFile(f.out,'utf8'),await readFile(join(f.root,'legacy'),'utf8'));
+ for(const key of ['pairs_emitted','npis_emitted','zero_npi_dropped','tin_in_npi_dropped'] as const)assert.equal(result[key],old[key]);
+ assert.equal(JSON.parse((await readFile(f.out,'utf8')).trim()).tin_type,'npi');await clean(f.scratchRoot);
+});
+test('repeated reference catalogs remain complete within a bounded scratch budget',async t=>{
+ const refs=Array.from({length:500},(_,i)=>({provider_group_id:i,provider_groups:Array.from({length:200},()=>group([1234567890,0,123456789]))}));
+ const f=await fixture(t,JSON.stringify(v1(refs,refs.map(r=>r.provider_group_id))));
+ const result=await runDiskExtract({...f.options,maxScratchBytes:524288});
+ assert.equal(result.disk.groups,100000);assert.equal(result.disk.references,500);assert.equal(result.pairs_emitted,1);
+ assert.equal(result.zero_npi_dropped,100000);assert.equal(result.tin_in_npi_dropped,100000);assert.ok(result.disk.peakScratchBytes<=524288);await clean(f.scratchRoot);
+});

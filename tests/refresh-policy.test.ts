@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {REFRESH_POLICY,sourceWorkspaceReserve,publicationCapacity} from '../scripts/lib/refresh-policy';
+import {REFRESH_POLICY,sourceWorkspaceReserve,publicationCapacity,compatiblePreparedPolicy,compatibleSourceBlock} from '../scripts/lib/refresh-policy';
 test('large local processing reserves scratch while preserving compact publication limits',()=>{
  assert.equal(sourceWorkspaceReserve(),9_500_000_000);
  assert.throws(()=>sourceWorkspaceReserve(REFRESH_POLICY.sourceBytes+1),/source_size_limit/);
@@ -12,4 +12,15 @@ test('large local processing reserves scratch while preserving compact publicati
  assert.equal(publicationCapacity(2_400_000_000,200_000,1).allowed,false);
  const replay=publicationCapacity(2_400_000_000,200_000,1,true);
  assert.equal(replay.allowed,true);assert.equal(replay.reservedBytes,0);
+});
+test('scratch representation upgrades reuse complete evidence and retry only changed-policy failures',()=>{
+ const current=REFRESH_POLICY.version+'-npi-prefix-v1',old='5gb-200k-disk-v5-npi-prefix-v1';
+ assert.equal(compatiblePreparedPolicy(old,true),old);
+ assert.equal(compatiblePreparedPolicy('5gb-200k-disk-v5',true),'5gb-200k-disk-v5');
+ assert.equal(compatiblePreparedPolicy(old,false),undefined);
+ assert.equal(compatiblePreparedPolicy('150mb-200k-strict-zip-memory-v3',true),undefined);
+ assert.equal(compatibleSourceBlock({policy:old,reason:'scratch_limit'},current),false);
+ assert.equal(compatibleSourceBlock({policy:old,reason:'Source is stale, undated or future-dated'},current),true);
+ assert.equal(compatibleSourceBlock({policy:current,reason:'scratch_limit'},current),true);
+ assert.equal(compatibleSourceBlock({policy:old,reason:'Source is stale, undated or future-dated'},REFRESH_POLICY.version),false);
 });

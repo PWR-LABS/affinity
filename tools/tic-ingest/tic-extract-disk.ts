@@ -40,7 +40,7 @@ export type DiskExtractSummary = ExtractSummary & { disk: {
 type Token = { name: string; value?: unknown };
 type Frame = {
   kind: 'object' | 'array'; path: string[]; key?: string; keys?: Set<string>; keyBytes: number;
-  ref?: number; group?: number; identifier?: string; hasGroups?: boolean;
+  ref?: number; group?: number; groupOrder?: number; identifier?: string; hasGroups?: boolean;
   tinType?: string; tinValue?: string; hasNpis?: boolean; inline?: boolean;
   scalarRelevant: boolean;
 };
@@ -111,7 +111,9 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
     db.exec(`
       CREATE TABLE refs(id INTEGER PRIMARY KEY, identifier TEXT UNIQUE);
       CREATE TABLE groups(id INTEGER PRIMARY KEY, ref INTEGER, tin_type TEXT NOT NULL DEFAULT '', tin_value TEXT NOT NULL DEFAULT '', has_npis INTEGER NOT NULL DEFAULT 0);
-      CREATE INDEX groups_ref ON groups(ref,id);
+      CREATE TABLE group_catalog(hash TEXT PRIMARY KEY,group_id INTEGER NOT NULL) WITHOUT ROWID;
+      CREATE TABLE ref_groups(ref INTEGER NOT NULL,group_id INTEGER NOT NULL,seq INTEGER NOT NULL,occurrences INTEGER NOT NULL DEFAULT 1,PRIMARY KEY(ref,group_id)) WITHOUT ROWID;
+      CREATE INDEX ref_groups_order ON ref_groups(ref,seq);
       CREATE TABLE npis(g INTEGER NOT NULL, raw TEXT NOT NULL, seq INTEGER NOT NULL, occurrences INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(g,raw)) WITHOUT ROWID;
       CREATE INDEX npis_order ON npis(g,seq);
       CREATE TABLE uses(identifier TEXT PRIMARY KEY,seq INTEGER NOT NULL UNIQUE) WITHOUT ROWID;
@@ -130,6 +132,10 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
     const groupNpis = db.prepare('SELECT raw,occurrences FROM npis WHERE g=? ORDER BY seq');
     const inlinePair = db.prepare('INSERT OR IGNORE INTO inline_pairs VALUES(?,?,?)');
     const removeNpis = db.prepare('DELETE FROM npis WHERE g=?'), removeGroup = db.prepare('DELETE FROM groups WHERE id=?');
+    const groupHashRows = db.prepare('SELECT raw,occurrences FROM npis WHERE g=? ORDER BY raw COLLATE BINARY');
+    const canonicalGroup = db.prepare('SELECT group_id FROM group_catalog WHERE hash=?');
+    const addCanonicalGroup = db.prepare('INSERT INTO group_catalog VALUES(?,?)');
+    const addGroupUse = db.prepare('INSERT INTO ref_groups(ref,group_id,seq) VALUES(?,?,?) ON CONFLICT(ref,group_id) DO UPDATE SET occurrences=occurrences+1');
     const pages = db.prepare('PRAGMA page_count');
     let dbBytes = 0, outputBytes = 0, pairs = 0, npiCount = 0, sequence = 0, operations = 0, lastProgress = 0;
     let phase: DiskExtractProgress['phase'] = 'parse';
@@ -169,6 +175,23 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
         }
       }
       removeNpis.run(frame.group!); removeGroup.run(frame.group!);
+    };
+    // Identical provider groups recur across references in large issuer files.
+    // Retain one exact content-addressed group, with ordered per-reference links
+    // and multiplicity for the dropped-NPI counters. No source tokens are skipped.
+    const internReferenceGroup = (frame:Frame) => {
+      const tinType=frame.tinType??'',tinValue=frame.tinValue??'',hasNpis=frame.hasNpis?1:0;
+      finishGroup.run(tinType,tinValue,hasNpis,frame.group!);
+      const hash=createHash('sha256').update(JSON.stringify([tinType,tinValue,hasNpis])+'\n');
+      for(const row of groupHashRows.iterate(frame.group!)){
+        if(++operations%4096===0)checkpoint();
+        hash.update(JSON.stringify([row.raw,row.occurrences])+'\n');
+      }
+      const key=hash.digest('hex'),existing=canonicalGroup.get(key);
+      const id=existing?Number(existing.group_id):frame.group!;
+      if(existing){removeNpis.run(frame.group!);removeGroup.run(frame.group!);}
+      else addCanonicalGroup.run(key,id);
+      addGroupUse.run(activeRef!.ref!,id,frame.groupOrder!);
     };
     const nextPath = () => {
       const parent = frames.at(-1);
@@ -252,6 +275,7 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
         if (equal(path, inlineGroupPath) || equal(path, referenceGroupPath)) {
           if (kind !== 'object') throw new Error('Malformed provider group');
           frame.group = Number(addGroup.run(equal(path, referenceGroupPath) ? activeRef!.ref! : null).lastInsertRowid);
+          frame.groupOrder=++sequence;
           frame.inline = equal(path, inlineGroupPath);
           activeGroup = frame; disk.groups++;
         }
@@ -262,7 +286,7 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
         const frame = frames.pop()!;
         if (frame === activeGroup) {
           if (frame.inline) compactInline(frame);
-          else finishGroup.run(frame.tinType ?? '', frame.tinValue ?? '', frame.hasNpis ? 1 : 0, frame.group!);
+          else internReferenceGroup(frame);
           activeGroup = undefined;
         }
         if (frame === activeRef) {
@@ -302,7 +326,7 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
     checkpoint(); phase = 'resolve';
     const schema = sawReferences ? 'v1' : 'v2';
     const findRef = db.prepare('SELECT id FROM refs WHERE identifier=?');
-    const orderedGroups = db.prepare('SELECT * FROM groups WHERE ref IS ? ORDER BY id');
+    const orderedGroups = db.prepare('SELECT g.*,r.occurrences AS group_occurrences FROM ref_groups r JOIN groups g ON g.id=r.group_id WHERE r.ref=? ORDER BY r.seq');
     const insertPair = db.prepare('INSERT OR IGNORE INTO pairs VALUES(?,?,?)');
     const insertNpi = db.prepare('INSERT OR IGNORE INTO emitted_npis VALUES(?)');
     let zeroDropped = 0, tinDropped = 0;
@@ -318,7 +342,7 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
         if (!group.has_npis || !group.tin_type || !group.tin_value) continue;
         for (const row of groupNpis.iterate(group.id)) {
           if (++operations % 4096 === 0) { checkpoint(); await yieldLoop(); }
-          const npi = String(row.raw), count = Number(row.occurrences), tinType = String(group.tin_type), tinValue = String(group.tin_value);
+          const npi = String(row.raw), count = Number(row.occurrences)*Number(group.group_occurrences), tinType = String(group.tin_type), tinValue = String(group.tin_value);
           const kind = classify(npi, tinType, tinValue);
           if (kind === 'zero') zeroDropped += count;
           else if (kind === 'tin') tinDropped += count;
