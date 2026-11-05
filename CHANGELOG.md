@@ -1,5 +1,18 @@
 # [affinity.] — build log / changelog
 
+## SSD-backed issuer processing (2026-11-04)
+
+- Moved scheduled provider-reference extraction to bounded SQLite scratch on Mini's verified SSD, with streamed archives up to 2 GB. Render's existing plan, 5 GB allocation and disabled autoscaling remain unchanged; compact publication still has its existing per-source and database limits.
+- Published a formerly memory-blocked Anthem source after exact comparison with the strict baseline: 46,356 memberships and 11,486 plan links, with public positive/unknown readback. Actual database growth was 13.3 MB. There are now 71 managed sources; preserved legacy records are separate from this refreshed scope.
+- Hardened monthly retention, unchanged replay accounting, reusable capacity-deferred preparations, lost-acknowledgment recovery and cycle deadlines. All 221 application tests and 11 local PostgreSQL recovery checks pass. The installed Mini entrypoint verified 14 Cigna files unchanged, without duplicate publication.
+- [Measured source outcomes, remaining limits and installation evidence](docs/evaluation/2026-11-04-ssd-large-source-processing.md).
+
+## Managed Mini refresh hardening (2026-11-04)
+
+- Completed official issuer discovery, restricted unattended publishing, atomic content activation, bounded retention, rollback, optional-SSD recovery, crash handling and idempotent replay. Daily processing runs on Mini at 06:00 Eastern.
+- Verified 70 current managed files: 46 Medical Mutual, 14 Cigna and 10 Anthem; all dated November 1. Full replay verified all 70 unchanged with zero duplicate generations. Explicit larger-source and discovery gaps remain.
+- Kept Render resources unchanged; local-only hardening merges skipped redundant web builds. [Acceptance and source limits](docs/evaluation/2026-11-04-managed-refresh-hardening.md).
+
 ## Bounded employer refresh (2026-11-04)
 
 - Published one current Medical Mutual SuperMed file dated November 1: 79,414 provider memberships and 14,949 deduplicated plan links. The live checker again has recent listings; absent providers remain unknown. No full-plan or nationwide completeness claim.

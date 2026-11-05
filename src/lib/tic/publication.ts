@@ -1,3 +1,4 @@
+import { normalizedLedgerColumn } from './source-version';
 /** Bounded transactional publication; optional managed retention preserves verified rollback generations. */
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
@@ -116,13 +117,13 @@ export async function publishPublication(db: PrismaClient, input: unknown, manag
       managed.guard();
       // Activate only this content version; retain prior bytes for rollback without
       // letting a superseded provider listing continue to answer current lookups.
-      await tx.$executeRaw`UPDATE "TicFile" SET active=false WHERE id<>${file.id} AND (url=${r.sourceUrl} OR id IN (SELECT "fileId" FROM "TicRefreshPublication" WHERE regexp_replace("stableKey",'reporting_month=[0-9]{4}-[0-9]{2}','reporting_month={month}','g')=${managed.stableKey}))`;
+      await tx.$executeRaw`UPDATE "TicFile" SET active=false WHERE id<>${file.id} AND (url=${r.sourceUrl} OR id IN (SELECT "fileId" FROM "TicRefreshPublication" WHERE ${normalizedLedgerColumn}=${managed.stableKey}))`;
       await tx.$executeRaw`INSERT INTO "TicRefreshPublication" (id,"stableKey","fileId","sourceDate","contentHash","receiptPath") VALUES (${managed.id},${managed.stableKey},${file.id},${r.sourceDate},${managed.contentHash},${managed.receiptPath})`;
       // Delete only generations this publisher owns and has independently archive-verified.
       for (const old of managed.retire) {
-        const owned = await tx.$queryRaw<Array<{fileId:string}>>`SELECT "fileId" FROM "TicRefreshPublication" WHERE id=${old.id} AND "fileId"=${old.fileId} AND regexp_replace("stableKey",'reporting_month=[0-9]{4}-[0-9]{2}','reporting_month={month}','g')=${managed.stableKey} AND "contentHash"=${old.contentHash} AND "sourceDate" <= ${r.sourceDate} AND withdrawn=false`;
+        const owned = await tx.$queryRaw<Array<{fileId:string}>>`SELECT "fileId" FROM "TicRefreshPublication" WHERE id=${old.id} AND "fileId"=${old.fileId} AND ${normalizedLedgerColumn}=${managed.stableKey} AND "contentHash"=${old.contentHash} AND "sourceDate" <= ${r.sourceDate} AND withdrawn=false`;
         if (owned.length !== 1) throw new Error('Retention ownership changed');
-        const survivors = await tx.$queryRaw<Array<{count:bigint}>>`SELECT count(*) AS count FROM "TicRefreshPublication" WHERE regexp_replace("stableKey",'reporting_month=[0-9]{4}-[0-9]{2}','reporting_month={month}','g')=${managed.stableKey} AND withdrawn=false AND "createdAt" > (SELECT "createdAt" FROM "TicRefreshPublication" WHERE id=${old.id})`;
+        const survivors = await tx.$queryRaw<Array<{count:bigint}>>`SELECT count(*) AS count FROM "TicRefreshPublication" WHERE ${normalizedLedgerColumn}=${managed.stableKey} AND withdrawn=false AND "createdAt" > (SELECT "createdAt" FROM "TicRefreshPublication" WHERE id=${old.id})`;
         if (Number(survivors[0].count) < 2) throw new Error('Retention requires current and rollback generations');
         await tx.ticFile.delete({where:{id:old.fileId}});
       }

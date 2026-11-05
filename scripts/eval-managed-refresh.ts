@@ -74,6 +74,34 @@ async function main(){
  await db.$executeRaw`UPDATE "TicRefreshPublication" SET id='legacy-month-identity',"stableKey"=replace("stableKey",'reporting_month={month}','reporting_month=2026-11')`;
  const oldIdentityReplay=await publish(2);assert.equal(oldIdentityReplay.fileId,first.fileId);assert.equal(await db.ticFile.count(),1);
  passed.push('first-run monthly source ledger reconciles without duplicate publication after key normalization');
+ await db.ticFile.deleteMany();
+ const anthem:TicPublication[]=[];
+ for(let i=0;i<3;i++){
+  const dir=join(root,`anthem-${i}`);await (await import('node:fs/promises')).mkdir(dir);
+  const sourceUrl=`https://example.com/2026-${String(9+i).padStart(2,'0')}_425_61B0_in-network-rates_2_of_10.json.gz`;
+  const sourceDate=new Date(Date.now()-(3-i)*86400000).toISOString().slice(0,10);
+  const sourcePath=join(dir,'source.json'),tocPath=join(dir,'toc.json'),membershipPath=join(dir,'members.jsonl');
+  await writeFile(sourcePath,JSON.stringify({sourceDate,revision:i}));
+  await writeFile(tocPath,JSON.stringify({reporting_structure:[{in_network_files:[{location:sourceUrl}],reporting_plans:[{plan_name:'Synthetic',plan_id:'111111111',plan_id_type:'ein',plan_market_type:'group'}]}]}));
+  await writeFile(membershipPath,JSON.stringify({npi:String(1000000000+i),tin_type:'ein',tin_value:'111111111',file_url:sourceUrl,reporting_entity:'Test',last_updated_on:sourceDate,schema:'v1'})+'\n');
+  const receipt:TicPublication={...c,sourceUrl,sourceDate,sourcePath,tocPath,membershipPath,membershipCount:1,sourceSha256:await sha256(sourcePath),tocSha256:await sha256(tocPath),membershipSha256:await sha256(membershipPath)};
+  anthem.push(receipt);await writeFile(join(dir,'publication.json'),JSON.stringify(receipt));
+ }
+ const publishAnthem=(i:number)=>publishManaged(db,anthem[i],join(root,`anthem-${i}`,'publication.json'),()=>{},root);
+ const original=await publishAnthem(0);
+ await db.$executeRaw`UPDATE "TicRefreshPublication" SET "stableKey"=replace("stableKey",'/{month}_','/2026-09_') WHERE "fileId"=${original.fileId}`;
+ assert.equal((await publishAnthem(0)).fileId,original.fileId);
+ const middle=await publishAnthem(1);
+ assert.equal(await db.ticFile.count({where:{active:true}}),1);
+ assert.equal((await db.ticFile.findUniqueOrThrow({where:{id:original.fileId}})).active,false);
+ const newest=await publishAnthem(2);
+ assert.equal(await db.ticFile.count(),2);
+ assert.equal(await db.ticFile.findUnique({where:{id:original.fileId}}),null);
+ await assert.rejects(stat(anthem[0].sourcePath),{code:'ENOENT'});
+ assert.ok(await stat(anthem[0].tocPath));
+ assert.equal((await withdrawManaged(db,newest.fileId,()=>{})).active,middle.fileId);
+ assert.equal(await db.ticFile.count({where:{active:true}}),1);
+ passed.push('Anthem monthly rollover reconciles old keys, activates one version, retains two, reclaims verified oldest bytes and restores rollback');
  console.log(JSON.stringify({checkedAt:new Date().toISOString(),passed},null,2));
  }finally{await db.ticFile.deleteMany();await db.$disconnect();await rm(root,{recursive:true,force:true});}
 }
