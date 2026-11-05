@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { readFile } from 'node:fs/promises';
 import { join,dirname } from 'node:path';
 import { preparedSource,type PreparedSource } from './lib/prepared-source';
+import { reuseSourceArchive,type SourceArchive } from './lib/source-archive';
 import { hostname } from 'node:os';
 import { createAnthemSelectionDiscoverer } from './lib/anthem-selection';
 import { discoverAnthemProjections, type ProjectedCandidate } from './lib/anthem-large-toc';
@@ -27,6 +28,9 @@ async function main(){
  const cycleStarted=performance.now();
  let blocks:Record<string,{etag:string;reason:string;policy:string}>={};
  const preparedPath=join(stateRoot,'prepared-sources.json');
+ const archivesPath=join(stateRoot,'source-archives.json');
+ let archives:Record<string,SourceArchive>={};
+ try{archives=JSON.parse(await readFile(archivesPath,'utf8'));}catch{}
  let prepared:Record<string,PreparedSource>={};
  try{prepared=JSON.parse(await readFile(preparedPath,'utf8'));}catch{}
  try{blocks=JSON.parse(await readFile(blocksPath,'utf8'));}catch{}
@@ -64,6 +68,9 @@ async function main(){
    }
    catch(e){results.push({issuer,state:'blocked',reason:safeReason(e)});continue;}
    guard();await storageBudget();
+   // Process existing archived candidates first; unchanged sources are still
+   // checked even after the new-attempt allowance is exhausted.
+   discovery.candidates.sort((a,b)=>(archives[sourceKey(a.url)]?.bytes??Infinity)-(archives[sourceKey(b.url)]?.bytes??Infinity)||a.url.localeCompare(b.url));
    // The manifest remains authoritative about unresolved historical names and incomplete scope.
    results.push({issuer,state:'discovered',reason:discovery.scope});
    if((issuer==='cigna'&&discovery.candidates.length<16)||discovery.unresolvedCount)results.push({issuer,state:'blocked',reason:'unresolved_source_selection; see discovery scope'});
@@ -111,8 +118,10 @@ async function main(){
     const dir=cached?dirname(prepared[key].receiptPath):join(directory,sourceKey(candidate.url));await ensureArchiveDirectory(dir);
     try{
      const sourcePath=join(dir,'source.json.gz');
-     const download=cached?JSON.parse(await readFile(join(dir,'download.json'),'utf8')):await downloadFile(transportUrl,sourcePath,REFRESH_POLICY.sourceBytes,guard,cycleFetch,REFRESH_POLICY.downloadMs);
+     const archived=cached?undefined:await reuseSourceArchive(archives[key],{sourceUrl:candidate.url,etag,destination:sourcePath,root:archiveRoot,maxBytes:REFRESH_POLICY.sourceBytes,guard});
+     const download=cached?JSON.parse(await readFile(join(dir,'download.json'),'utf8')):archived??await downloadFile(transportUrl,sourcePath,REFRESH_POLICY.sourceBytes,guard,cycleFetch,REFRESH_POLICY.downloadMs);
      guard();if(!cached)await atomicJson(join(dir,'download.json'),download);
+     if(!cached){archives[key]={sourceUrl:candidate.url,path:sourcePath,bytes:download.bytes,sha256:download.sha256,etag:download.etag,lastModified:download.lastModified};await atomicJson(archivesPath,archives);}
      guard();
      const reuse=!cached&&replayCandidate?.sourceSha256===download.sha256;
      const receipt=cached??(reuse ? replayCandidate! : await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard,disk:{scratchRoot:dir,onProgress:progress=>progressJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'ssd_extraction',progress},results})}}));
@@ -133,7 +142,7 @@ async function main(){
      if(!replayed)lastPublishedAt=new Date().toISOString();
      latestSources[issuer]={sourceDate:receipt.sourceDate,publishedAt:result.publishedAt};
      results.push({issuer,source:path,state:replayed?'verified_unchanged':'published',sourceDate:receipt.sourceDate,memberships:result.memberships,plans:result.plans});
-     if(reuse)await reclaimDuplicateDownload(sourcePath,receipt.sourcePath,download.sha256,guard);
+     if(reuse){archives[key]={...archives[key],path:receipt.sourcePath};await atomicJson(archivesPath,archives);await reclaimDuplicateDownload(sourcePath,receipt.sourcePath,download.sha256,guard);}
      try{await verifyServing(db,result.fileId);}catch{results.push({issuer,source:path,state:'blocked',reason:'published_but_public_readback_failed'});}
     }catch(e){
      if(e&&typeof e==='object'&&'cleanupPending' in e&&e.cleanupPending)await atomicJson(join(stateRoot,'cleanup-pending-'+runId+'-'+key+'.json'),{source:path,scratchPath:'scratchPath' in e?e.scratchPath:undefined,observedAt:new Date().toISOString(),reason:'owned extraction scratch could not be safely reclaimed; verify original SSD before cleanup'});
