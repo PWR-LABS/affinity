@@ -107,6 +107,7 @@ async function main(){
     const prior=priorRows.find(p=>p.active&&sourceIdentity(p.url)===sourceIdentity(candidate.url));
     let replayCandidate:TicPublication|undefined;
     if(prior?.receiptPath && ticSourceCurrent(prior.sourceLastUpdated?.toISOString(), new Date().toISOString())){
+     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'verify_existing_evidence'},results});
      try {
       const saved=await validatePublication(JSON.parse(await readFile(prior.receiptPath,'utf8')));
       const mappingsSame=planMappingIdentity(await tocPlans(tocPath,candidate.url))===planMappingIdentity(saved.plans);
