@@ -1,3 +1,4 @@
+import {fileLinksForPlan} from './shared-plans';
 import {bucketContains,COMPACT_FORMAT} from './compact-codec';
 /**
  * TiC adapter — turns the thin network-membership index (S4) into doctrine-shaped CoverageAnswers,
@@ -84,10 +85,7 @@ export async function queryTicAnswer(args: {
   const db = args.db ?? prisma;
   const fetchedAt = new Date().toISOString();
 
-  const links = await db.ticPlanLink.findMany({
-    where: { planIdType: args.planIdType, planId: args.planId, file: { active: true } },
-    select: { fileId: true, file: { select: { url: true, sourceLastUpdated: true } } },
-  });
+  const links = await fileLinksForPlan(db,args.planIdType,args.planId);
   const fileIds = [...new Set(links.map((l) => l.fileId))];
   if (fileIds.length === 0) {
     return buildTicAnswer({ npi: args.npi, planIndexed: false, matchedFiles: [], fetchedAt, subjectLabel: args.subjectLabel });

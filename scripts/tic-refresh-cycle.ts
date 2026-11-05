@@ -1,4 +1,5 @@
-import {compactServingEnabled,deriveCompactPublication} from './lib/compact-serving';
+import {planReservationCount} from '../src/lib/tic/shared-plans';
+import {compactServingEnabled,deriveCompactPublication,sharedPlansEnabled} from './lib/compact-serving';
 /** Deterministic Mini runner. Codex schedules this command; it never provisions cloud compute. */
 import { verifySourceProofKey } from '../src/lib/tic/source-proof';
 import {recoverDownloadStages} from './lib/download-staging';
@@ -57,6 +58,7 @@ async function main(){
   const discoverIssuer=createIssuerDiscoverer({fetch:cycleFetch});
   const discoverAnthemSelection=createAnthemSelectionDiscoverer({fetch:cycleFetch});
   db=new PrismaClient({datasourceUrl:await credential(),log:[]});
+  const sharedPlans=await sharedPlansEnabled(stateRoot,db,cycleFetch);
   const compact=await compactServingEnabled(stateRoot,db,cycleFetch);if(compact)policy+='-npi-prefix-v1';
   const compactEligible=async(receiptPath:string)=>{
    const canonical=resolve(receiptPath),relative=canonical.slice(archiveRoot.length);
@@ -108,7 +110,7 @@ async function main(){
       const head=await cycleFetch(transportUrl,{method:'HEAD',headers:{'Accept-Encoding':'identity'},redirect:'error',signal:AbortSignal.timeout(30000)}).catch(()=>undefined);
       const unchanged=mappingsSame&&meta.etag&&((head?.ok&&head.headers.get('etag')===meta.etag)||await conditionalSourceUnchanged(transportUrl,meta.etag,cycleFetch));
       if(unchanged){
-       const replay=await publishManaged(db,saved,prior.receiptPath,guard,archiveRoot);
+       const replay=await publishManaged(db,saved,prior.receiptPath,guard,archiveRoot,undefined,sharedPlans);
        latestSources[issuer]={sourceDate:replay.sourceDate,publishedAt:replay.publishedAt};
        results.push({issuer,source:path,state:'verified_unchanged',memberships:replay.memberships,plans:replay.plans});
        await compactEligible(prior.receiptPath);
@@ -152,7 +154,7 @@ async function main(){
      const verifiedReplay=sameManagedContent(receipt,replayCandidate);
      if(!reuse&&etag){prepared[key]={etag,policy,receiptPath:publicationPath};await atomicJson(preparedPath,prepared);}
      const sizes=await db.$queryRaw<Array<{bytes:bigint}>>`SELECT pg_database_size(current_database()) AS bytes`;
-     const capacity=publicationCapacity(Number(sizes[0].bytes),receipt.membershipCount,receipt.plans.length,verifiedReplay,receipt.serving);
+     const capacity=publicationCapacity(Number(sizes[0].bytes),receipt.membershipCount,receipt.plans.length,verifiedReplay,receipt.serving,await planReservationCount(db,receipt.plans,sharedPlans));
      guard();await atomicJson(join(dir,'capacity.json'),{...capacity,observedAt:new Date().toISOString(),sourceSha256:receipt.sourceSha256});
      if(!capacity.allowed){
       if(!reuse)await compactEligible(publicationPath);
@@ -160,7 +162,7 @@ async function main(){
      }
      // A source reaching the publication path is complete and hash-verified; its transaction is atomic.
      await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'atomic_publish'},results});
-     const result=await publishManaged(db,receipt,publicationPath,()=>{guard();requireVolume();},archiveRoot);
+     const result=await publishManaged(db,receipt,publicationPath,()=>{guard();requireVolume();},archiveRoot,undefined,sharedPlans);
      guard();await atomicJson(join(dir,'published.json'),result);
      if(prepared[key]){delete prepared[key];await atomicJson(preparedPath,prepared);}
      if('archiveRetention' in result && 'state' in result.archiveRetention)results.push({issuer,source:path,state:'blocked',reason:'archive_retention_review_required'});

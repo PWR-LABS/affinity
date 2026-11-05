@@ -12,6 +12,11 @@ test('large local processing reserves scratch while preserving compact publicati
  assert.equal(publicationCapacity(2_400_000_000,200_000,1).allowed,false);
  const replay=publicationCapacity(2_400_000_000,200_000,1,true);
  assert.equal(replay.allowed,true);assert.equal(replay.reservedBytes,0);
+ assert.throws(()=>publicationCapacity(1,1,1,false,undefined,0),/reservation/);
+ assert.throws(()=>publicationCapacity(1,1,1,false,undefined,2),/reservation/);
+ const shared=publicationCapacity(2_480_000_000,1,11486,false,undefined,1);
+ assert.equal(shared.allowed,true);assert.equal(shared.plans,11486);assert.equal(shared.reservedPlans,1);
+ assert.equal(publicationCapacity(2_480_000_000,1,11486).allowed,false);
 });
 test('scratch representation upgrades reuse complete evidence and retry only changed-policy failures',()=>{
  const current=REFRESH_POLICY.version+'-npi-prefix-v1',old='5gb-200k-disk-v5-npi-prefix-v1';

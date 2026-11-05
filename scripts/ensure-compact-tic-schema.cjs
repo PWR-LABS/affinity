@@ -33,7 +33,26 @@ async function ensure(db){
    "payloadSha256" text NOT NULL CHECK("payloadSha256" ~ '^[a-f0-9]{64}$'),
    payload bytea NOT NULL CHECK(octet_length(payload) BETWEEN 1 AND 4100000),
    PRIMARY KEY("fileId",prefix))`);
-  await tx.$executeRawUnsafe(`DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='affinity_refresh') THEN GRANT SELECT,INSERT,DELETE ON "TicNpiIndex","TicNpiBucket" TO affinity_refresh; END IF; END $$`);
+  await tx.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "TicPlanSet" (
+ id text PRIMARY KEY CHECK(id ~ '^[a-f0-9]{64}$'),
+ count integer NOT NULL CHECK(count BETWEEN 1 AND 30000)
+)`);
+  await tx.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "TicPlanSetEntry" (
+ "setId" text NOT NULL REFERENCES "TicPlanSet"(id) ON DELETE CASCADE ON UPDATE CASCADE,
+ ordinal integer NOT NULL CHECK(ordinal BETWEEN 0 AND 29999),
+ "planName" text NOT NULL,
+ "planIdType" text NOT NULL CHECK("planIdType" IN ('ein','hios')),
+ "planId" text NOT NULL CHECK(length("planId") > 0),
+ "planMarketType" text NOT NULL,
+ PRIMARY KEY("setId",ordinal)
+)`);
+  await tx.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TicPlanSetEntry_planIdType_planId_idx" ON "TicPlanSetEntry"("planIdType","planId")`);
+  await tx.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "TicFilePlanSet" (
+ "fileId" text PRIMARY KEY REFERENCES "TicFile"(id) ON DELETE CASCADE ON UPDATE CASCADE,
+ "setId" text NOT NULL REFERENCES "TicPlanSet"(id) ON DELETE RESTRICT ON UPDATE CASCADE
+)`);
+  await tx.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "TicFilePlanSet_setId_idx" ON "TicFilePlanSet"("setId")`);
+  await tx.$executeRawUnsafe(`DO $$ BEGIN IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname='affinity_refresh') THEN GRANT SELECT,INSERT,DELETE ON "TicNpiIndex","TicNpiBucket","TicPlanSet","TicPlanSetEntry","TicFilePlanSet" TO affinity_refresh; END IF; END $$`);
  },{timeout:240000,maxWait:10000});
 }
 module.exports={allowed,ensure};
