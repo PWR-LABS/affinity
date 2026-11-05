@@ -13,7 +13,7 @@ export function planSet(plans:PlanRecord[]){
  const ordered=plans.map(plan=>{if(!['ein','hios'].includes(plan.planIdType)||!plan.planId||Object.values(plan).some(v=>typeof v!=='string'))throw new Error('Invalid plan metadata');return {plan,bytes:encoded(plan)};}).sort((a,b)=>Buffer.compare(a.bytes,b.bytes));
  const hash=createHash('sha256').update(domain);
  for(let i=0;i<ordered.length;i++){if(i&&ordered[i].bytes.equals(ordered[i-1].bytes))throw new Error('Duplicate plan metadata');hash.update(createHash('sha256').update(ordered[i].bytes).digest());}
- return {id:hash.digest('hex'),count:ordered.length,plans:ordered.map(x=>x.plan)};
+ return {id:hash.digest('hex'),count:ordered.length,metadataBytes:ordered.reduce((n,x)=>n+x.bytes.length,0),plans:ordered.map(x=>x.plan)};
 }
 /** Hash actual stored fields inside Postgres; no repeated metadata egress. */
 export async function verifyPlanSet(db:Db,id:string,expectedCount?:number){
@@ -29,7 +29,7 @@ export async function verifyPlanSet(db:Db,id:string,expectedCount?:number){
  const row=rows[0];if(!row||Number(row.count)!==set.count||row.first!==0||row.last!==set.count-1||row.digest!==id||(expectedCount!==undefined&&set.count!==expectedCount))throw new Error('Shared plan-set readback mismatch');return true;
 }
 export async function planReservationCount(db:Db,plans:PlanRecord[],shared:boolean){
- if(!shared)return plans.length;const set=planSet(plans);return await verifyPlanSet(db,set.id,set.count)?1:plans.length;
+ if(!shared)return plans.length;const set=planSet(plans);return await verifyPlanSet(db,set.id,set.count)?1:Math.max(plans.length,Math.ceil(set.metadataBytes*3/2000));
 }
 export async function storeSharedPlans(db:Db,fileId:string,plans:PlanRecord[],guard:()=>void){
  const set=planSet(plans);

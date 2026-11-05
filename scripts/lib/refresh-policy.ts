@@ -35,7 +35,7 @@ export function sourceWorkspaceReserve(sourceBytes:number = REFRESH_POLICY.sourc
 /** Same deliberately conservative reservation as the transactional publication gate. */
 export function publicationCapacity(databaseBytes:number,memberships:number,plans:number,verifiedReplay=false,serving?:CompactReceipt,reservedPlans=plans){
   if (![databaseBytes,memberships,plans,reservedPlans].every(v=>Number.isSafeInteger(v)&&v>=0))throw new Error('Invalid capacity measurement');
-  if(reservedPlans>plans||(plans>0&&reservedPlans<1))throw new Error('Invalid plan reservation');
+  if(plans>0&&reservedPlans<1)throw new Error('Invalid plan reservation');
   const reservedBytes=verifiedReplay?0:serving?compactReservation(serving.encodedBytes,serving.bucketCount,reservedPlans):memberships*1500+reservedPlans*2000;
   return {databaseBytes,memberships,plans,reservedPlans,reservedBytes,projectedBytes:databaseBytes+reservedBytes,
     verifiedReplay,allowed:memberships>0&&memberships<=(serving?COMPACT_LIMITS.pairs:REFRESH_POLICY.memberships)&&plans>0&&plans<=REFRESH_POLICY.plans&&(verifiedReplay||databaseBytes+reservedBytes<=REFRESH_POLICY.databaseBytes),
