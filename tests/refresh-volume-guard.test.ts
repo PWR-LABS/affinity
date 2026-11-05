@@ -10,6 +10,8 @@ test('absent or detached SSD defers without publication', () => {
 test('same mount name with wrong disk and correct disk at wrong path both defer', () => {
   assert.equal(assessVolume({ ...good, VolumeUUID: 'other' }, 200e9).reason, 'ssd_identity_mismatch');
   assert.equal(assessVolume({ ...good, MountPoint: '/Volumes/dev 1' }, 200e9).state, 'deferred');
+  assert.equal(assessVolume({ ...good, VolumeUUID: 'other' }, 0).reason, 'ssd_identity_mismatch');
+  assert.equal(assessVolume({ ...good, WritableVolume: false }, 0).reason, 'ssd_read_only');
 });
 test('low or unknown capacity defers, restored valid SSD becomes ready', () => {
   for (const bytes of [149e9, NaN, Infinity]) assert.equal(assessVolume(good, bytes).state, 'deferred');

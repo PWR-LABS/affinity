@@ -6,10 +6,12 @@ import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { sourceIdentity } from './issuer-discovery';
+import {downloadOwnedFile,type DownloadJournal} from './download-staging';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { inspectVolume } = require('./refresh-volume-guard.cjs');
+const { inspectVolume,EXPECTED_UUID } = require('./refresh-volume-guard.cjs');
 export const stateRoot = join(homedir(), 'Library/Application Support/affinity/refresh');
 export const archiveRoot = '/Volumes/dev/affinity-data';
+export const downloadJournal:DownloadJournal={directory:join(stateRoot,'download-staging'),archiveRoot,volumeUUID:EXPECTED_UUID};
 export class Deferred extends Error {}
 export function requireVolume() {
   const state = inspectVolume();
@@ -25,6 +27,14 @@ export function volumeSessionGuard() {
       if (statSync(archiveRoot).dev !== device || realpathSync(archiveRoot) !== archiveRoot) throw new Error();
     } catch(e) { if(e instanceof Deferred)throw e; throw new Deferred('ssd_disconnected'); }
   };
+}
+/** Deletion-only recovery may reclaim owned partials below the free-space floor.
+ * inspectVolume checks UUID, exact mount and writability before that floor. No
+ * download or publication receives this guard; normal admission runs afterward. */
+export function volumeCleanupSessionGuard(){
+ const state=inspectVolume();if(state.state!=='ready'&&state.reason!=='ssd_free_space_floor')throw new Deferred(state.reason);
+ const device=statSync(archiveRoot).dev;
+ return ()=>{try{if(statSync(archiveRoot).dev!==device||realpathSync(archiveRoot)!==archiveRoot)throw new Error();}catch{throw new Deferred('ssd_disconnected');}};
 }
 export function progressJson(path:string,value:unknown){
  const temp=path+'.'+process.pid+'.tmp';writeFileSync(temp,JSON.stringify(value)+'\n',{mode:0o600});renameSync(temp,path);
@@ -87,35 +97,7 @@ export function sourceKey(url: string) {
   return createHash('sha256').update(sourceIdentity(url)).digest('hex');
 }
 export async function downloadFile(url: string, path: string, maxBytes: number, guard: () => void = requireVolume, fetcher = fetch, timeoutMs = 120000) {
-  const u = new URL(url);
-  if (u.protocol !== 'https:' || u.username || u.password) throw new Error('HTTPS source required');
-  guard();
-  const response = await fetcher(url, { signal: AbortSignal.timeout(timeoutMs), redirect: 'error', headers: { 'Accept-Encoding': 'identity' } });
-  if (!response.ok || !response.body) throw new Error(`Source HTTP ${response.status}`);
-  if (Number(response.headers.get('content-length')) > maxBytes) { await response.body.cancel(); throw new Error('source_size_limit'); }
-  const partial = path + '.partial';
-  guard();
-  const f = await open(partial, 'w', 0o600);
-  let bytes = 0;
-  const hash = createHash('sha256');
-  try {
-    const reader = response.body.getReader();
-    try { while (true) {
-      const next = await reader.read(); if (next.done) break;
-      const chunk = next.value;
-      guard();
-      bytes += chunk.length;
-      if (bytes > maxBytes) throw new Error('source_size_limit');
-      await f.writeFile(chunk); hash.update(chunk);
-    } } finally { await reader.cancel(); reader.releaseLock(); }
-    if (!bytes) throw new Error('empty_source');
-    const expected = Number(response.headers.get('content-length'));
-    if (expected && !response.headers.get('content-encoding') && bytes !== expected) throw new Error('source_length_mismatch');
-    await f.sync();
-  } finally { await f.close(); }
-  guard();
-  await rename(partial, path);
-  return { bytes, sha256: hash.digest('hex'), etag: response.headers.get('etag'), lastModified: response.headers.get('last-modified') };
+ return downloadOwnedFile({url,path,maxBytes,guard,fetcher,timeoutMs,...(resolve(path).startsWith(archiveRoot+'/')?{journal:downloadJournal}:{})});
 }
 export async function ensureArchiveDirectory(path: string) {
   requireVolume();
