@@ -53,7 +53,7 @@ export async function compressNormalizedEvidence(options:Options){
  if(!receiptPath.startsWith(root+'/')||await realpath(receiptPath)!==receiptPath)throw Error('Compression receipt outside archive');
  const receipt=await validatePublication(JSON.parse(await readFile(receiptPath,'utf8')),options.keyPath);
  const path=resolve(receipt.membershipPath),directory=dirname(path);
- if(!path.startsWith(root+'/')||directory!==dirname(receiptPath)||!/^[a-f0-9]{64}\.ndjson$/.test(basename(path)))throw Error('Compression membership outside owned source directory');
+ if(!path.startsWith(root+'/')||directory!==dirname(receiptPath)||!/^(?:[a-f0-9]{64}|members)\.ndjson$/.test(basename(path)))throw Error('Compression membership outside owned source directory');
  if(active.has(path))throw Error('Normalized compression already active');active.add(path);
  let stage:string|undefined;
  try{

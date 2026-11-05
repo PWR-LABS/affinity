@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {mkdtemp,realpath,mkdir,writeFile,readFile,rm,lstat,readdir,symlink} from 'node:fs/promises';
+import {mkdtemp,realpath,mkdir,writeFile,readFile,rm,lstat,readdir,symlink,rename} from 'node:fs/promises';
 import {tmpdir} from 'node:os';import {join,basename} from 'node:path';import {gzipSync} from 'node:zlib';
 import {spawn} from 'node:child_process';import {once} from 'node:events';
 import {preparePublication} from '../scripts/tic-refresh';
@@ -35,6 +35,13 @@ test('changed candidate bytes are rejected without replacing the source',mac,asy
   const before=await lstat(f.receipt.membershipPath);
   await assert.rejects(compressNormalizedEvidence({...f.options,copy:async(source,dir)=>{await writeFile(join(dir,basename(source)),'bad copy');}}),/candidate bytes differ/);
   assert.equal((await lstat(f.receipt.membershipPath)).ino,before.ino);await validatePublication(f.receipt,f.options.keyPath);assert.deepEqual(await f.stages(),[]);
+ }finally{await rm(f.root,{recursive:true,force:true});}
+});
+test('the retained manual members.ndjson filename has identical verification and compression guarantees',mac,async()=>{
+ const f=await fixture(false);try{
+  const path=join(f.directory,'members.ndjson');await rename(f.receipt.membershipPath,path);f.receipt.membershipPath=path;await writeFile(f.receiptPath,JSON.stringify(f.receipt));
+  const before=await readFile(f.receiptPath,'utf8');assert.equal((await compressNormalizedEvidence(f.options)).state,'compressed');
+  assert.equal(await readFile(f.receiptPath,'utf8'),before);await validatePublication(f.receipt,f.options.keyPath);assert.equal(await sha256(f.receipt.sourcePath),f.receipt.sourceSha256);
  }finally{await rm(f.root,{recursive:true,force:true});}
 });
 test('storage loss before replacement preserves original bytes and recovers only the owned stage',mac,async()=>{
