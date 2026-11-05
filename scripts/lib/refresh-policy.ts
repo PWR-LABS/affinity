@@ -2,7 +2,7 @@ import {COMPACT_LIMITS,compactReservation} from '../../src/lib/tic/compact-codec
 import type {CompactReceipt} from '../../src/lib/tic/compact-archive';
 /** Local processing can grow without expanding the cloud serving allocation. */
 export const REFRESH_POLICY = Object.freeze({
-  version: '5gb-ref-intern-v6',
+  version: '5gb-ref-buffer-v7',
   sourceBytes: 5_000_000_000,
   scratchBytes: 4_000_000_000,
   decodedBytes: 128_000_000_000,
@@ -19,7 +19,7 @@ export const REFRESH_POLICY = Object.freeze({
  * A source's embedded stale date remains stale under either extractor.
  */
 export function compatiblePreparedPolicy(previous:string|undefined,compact:boolean):string|undefined {
-  const bases=[REFRESH_POLICY.version,'5gb-200k-disk-v5'];
+  const bases=[REFRESH_POLICY.version,'5gb-ref-intern-v6','5gb-200k-disk-v5'];
   return previous&&bases.some(base=>previous===base||(compact&&previous===base+'-npi-prefix-v1'))?previous:undefined;
 }
 export function compatibleSourceBlock(block:{policy:string;reason:string}|undefined,policy:string){
