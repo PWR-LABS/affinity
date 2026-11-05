@@ -15,13 +15,20 @@ test('SSD extraction yields a complete publishable receipt equivalent to the exi
   await writeFile(tocPath,JSON.stringify({reporting_structure:[{in_network_files:[{location:sourceUrl}],reporting_plans:[{plan_id_type:'EIN',plan_id:'111111111',plan_name:'Fixture plan',plan_market_type:'group'}]}]}));
   const common={sourcePath,sourceUrl,tocPath,tocUrl:'https://example.com/toc'};
   const memory=await preparePublication({...common,directory:join(root,'memory')});
-  const disk=await preparePublication({...common,directory:join(root,'disk'),disk:{scratchRoot:join(root,'disk')}});
+  const disk=await preparePublication({...common,directory:join(root,'disk'),disk:{scratchRoot:join(root,'disk'),maxScratchBytes:10_000_000}});
   await validatePublication(disk);
   assert.equal(disk.membershipCount,1);assert.equal(disk.sourceSha256,memory.sourceSha256);
   assert.deepEqual(JSON.parse((await readFile(disk.membershipPath,'utf8')).trim()),JSON.parse((await readFile(memory.membershipPath,'utf8')).trim()));
   assert.deepEqual(disk.plans,memory.plans);
+  await assert.rejects(preparePublication({...common,directory:join(root,'too-small'),disk:{scratchRoot:join(root,'too-small'),maxScratchBytes:1}}),/scratch/);
+  await assert.rejects(stat(join(root,'too-small','publication.json')),{code:'ENOENT'});
   await writeFile(sourcePath,JSON.stringify(data).slice(0,-1));
   await assert.rejects(preparePublication({...common,directory:join(root,'broken'),disk:{scratchRoot:join(root,'broken')}}));
   await assert.rejects(stat(join(root,'broken','publication.json')),{code:'ENOENT'});
  }finally{await rm(root,{recursive:true,force:true});}
+});
+test('a local scratch override cannot raise either production mode limit or bypass integer bounds',async()=>{
+ for(const compact of [false,true])for(const maxScratchBytes of [0,-1,1.5,NaN,Infinity,Number.MAX_SAFE_INTEGER,compact?8_000_000_001:4_000_000_001]){
+  await assert.rejects(preparePublication({sourcePath:'/missing/source',sourceUrl:'https://example.com/source',tocPath:'/missing/toc',tocUrl:'https://example.com/toc',directory:'/missing/output',compact,disk:{scratchRoot:'/missing/scratch',maxScratchBytes}}),/Invalid lower scratch limit/);
+ }
 });

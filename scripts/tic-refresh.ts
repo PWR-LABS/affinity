@@ -10,8 +10,10 @@ import { z } from 'zod';
 import { REFRESH_POLICY } from './lib/refresh-policy';
 import { runDiskExtract } from '../tools/tic-ingest/tic-extract-disk';
 import { runExtract } from '../tools/tic-ingest/tic-extract';
-export async function preparePublication(args: { sourcePath: string; sourceUrl: string; tocPath: string; tocUrl: string; directory: string; tocProjection?: TicPublication['tocProjection']; guard?: () => void; compact?:boolean; disk?: { scratchRoot:string; onProgress?:(progress:unknown)=>void } }): Promise<TicPublication> {
+export async function preparePublication(args: { sourcePath: string; sourceUrl: string; tocPath: string; tocUrl: string; directory: string; tocProjection?: TicPublication['tocProjection']; guard?: () => void; compact?:boolean; disk?: { scratchRoot:string; maxScratchBytes?:number; onProgress?:(progress:unknown)=>void } }): Promise<TicPublication> {
   httpsUrl.parse(args.sourceUrl); httpsUrl.parse(args.tocUrl);
+  const scratchLimit=args.compact?8_000_000_000:REFRESH_POLICY.scratchBytes;
+  if(args.disk?.maxScratchBytes!==undefined&&(!Number.isSafeInteger(args.disk.maxScratchBytes)||args.disk.maxScratchBytes<1||args.disk.maxScratchBytes>scratchLimit))throw new Error('Invalid lower scratch limit');
   const sourcePath = resolve(args.sourcePath), tocPath = resolve(args.tocPath);
   if ((await stat(sourcePath)).size > (args.disk ? REFRESH_POLICY.sourceBytes : 150_000_000)) throw new Error('source_size_limit');
   const source = await open(sourcePath, 'r');
@@ -25,7 +27,7 @@ export async function preparePublication(args: { sourcePath: string; sourceUrl: 
   args.guard?.();
   await mkdir(args.directory, { recursive: true });
   const membershipPath = resolve(args.directory, `${sourceSha256}.ndjson`);
-  const summary = args.disk ? await runDiskExtract({input:sourcePath,out:membershipPath,sourceUrl:args.sourceUrl,scratchRoot:args.disk.scratchRoot,guard:args.guard,maxPairs:args.compact?COMPACT_LIMITS.pairs:REFRESH_POLICY.memberships,maxMs:REFRESH_POLICY.extractionMs,maxScratchBytes:args.compact?8_000_000_000:REFRESH_POLICY.scratchBytes,maxDecodedBytes:REFRESH_POLICY.decodedBytes,onProgress:args.disk.onProgress}) : await runExtract({ input: sourcePath, sourceUrl: args.sourceUrl, out: membershipPath, progress: false, maxPairs: 200_000, strictReferences: true, maxMs: 600_000, guard: args.guard });
+  const summary = args.disk ? await runDiskExtract({input:sourcePath,out:membershipPath,sourceUrl:args.sourceUrl,scratchRoot:args.disk.scratchRoot,guard:args.guard,maxPairs:args.compact?COMPACT_LIMITS.pairs:REFRESH_POLICY.memberships,maxMs:REFRESH_POLICY.extractionMs,maxScratchBytes:args.disk.maxScratchBytes??scratchLimit,maxDecodedBytes:REFRESH_POLICY.decodedBytes,onProgress:args.disk.onProgress}) : await runExtract({ input: sourcePath, sourceUrl: args.sourceUrl, out: membershipPath, progress: false, maxPairs: 200_000, strictReferences: true, maxMs: 600_000, guard: args.guard });
   if ('disk' in summary && (summary.disk as {cleanupPending?:boolean;scratchPath?:string}).cleanupPending) throw Object.assign(new Error('scratch_cleanup_pending'),summary.disk);
   args.guard?.();
   if (summary.remote_refs_404 || summary.remote_refs_fetched) throw new Error('Remote references require a separately archived, verified refresh');
