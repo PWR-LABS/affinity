@@ -56,7 +56,9 @@ async function main(){
   const compactEligible=async(receiptPath:string)=>{
    const canonical=resolve(receiptPath),relative=canonical.slice(archiveRoot.length);
    if(!canonical.startsWith(archiveRoot+'/')||!/^\/scheduled\/(mmoh|cigna|anthem)\/\d{4}-\d{2}-\d{2}T[\dZ-]+\/[a-f0-9]+\/publication\.json$/.test(relative))return;
-   const extraction=JSON.parse(await readFile(join(dirname(canonical),'extraction.json'),'utf8'));
+   let extraction;
+   try{extraction=JSON.parse(await readFile(join(dirname(canonical),'extraction.json'),'utf8'));}
+   catch(e){if((e as NodeJS.ErrnoException).code==='ENOENT')return;throw e;}
    if(!extraction.validation)return; // Historical raw cannot be retroactively sealed.
    await compactManagedSource(db!,canonical,dirname(dirname(canonical)),guard,Object.values(prepared).map(p=>p.receiptPath));
   };
