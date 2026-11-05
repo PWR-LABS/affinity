@@ -1,4 +1,5 @@
 import {planReservationCount} from '../src/lib/tic/shared-plans';
+import {compressNormalizedEvidence} from './lib/normalized-compression';
 import {prepareIdenticalPublication,availableIdenticalReceipt} from './lib/identical-source';
 import {compactServingEnabled,deriveCompactPublication,sharedPlansEnabled} from './lib/compact-serving';
 /** Deterministic Mini runner. Codex schedules this command; it never provisions cloud compute. */
@@ -73,6 +74,8 @@ async function main(){
    if(!extraction.validation)return; // Historical raw cannot be retroactively sealed.
    const result=await compactManagedSource(db!,canonical,dirname(dirname(canonical)),guard,Object.values(prepared).map(p=>p.receiptPath));
    if(result.receipt.sourceArchive){content[result.receipt.sourceSha256]=canonical;await atomicJson(contentPath,content);}
+   try{await compressNormalizedEvidence({receiptPath:canonical,root:archiveRoot,guard,cleanupGuard,reserve:storageBudget});}
+   catch(e){if(e instanceof Deferred)throw e;throw Error('normalized_evidence_compression_requires_review');}
   };
   const runId=new Date().toISOString().replace(/[:.]/g,'-');
   await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{phase:'discovery'},results});
@@ -188,7 +191,7 @@ async function main(){
      try{await verifyServing(db,result.fileId);}catch{results.push({issuer,source:path,state:'blocked',reason:'published_but_public_readback_failed'});}
      if(!reuse){
       try{await compactEligible(publicationPath);}
-      catch(e){if(e instanceof Deferred)throw e;results.push({issuer,source:path,state:'blocked',reason:'published_source_compaction_requires_review'});}
+      catch(e){if(e instanceof Deferred)throw e;results.push({issuer,source:path,state:'blocked',reason:e instanceof Error&&e.message==='normalized_evidence_compression_requires_review'?e.message:'published_source_compaction_requires_review'});}
      }
     }catch(e){
      if(e&&typeof e==='object'&&'cleanupPending' in e&&e.cleanupPending)await atomicJson(join(stateRoot,'cleanup-pending-'+runId+'-'+key+'.json'),{source:path,scratchPath:'scratchPath' in e?e.scratchPath:undefined,observedAt:new Date().toISOString(),reason:'owned extraction scratch could not be safely reclaimed; verify original SSD before cleanup'});
