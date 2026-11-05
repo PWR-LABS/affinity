@@ -13,6 +13,10 @@ export function planMappingIdentity(plans:TicPublication['plans']){return JSON.s
 export function fingerprint(r: TicPublication) {
   return createHash('sha256').update(JSON.stringify([r.sourceSha256,r.sourceDate,r.reportingEntity,r.schema,r.plans.map(p=>[p.planName,p.planIdType,p.planId,p.planMarketType]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)))])).digest('hex');
 }
+/** Callers must separately validate both receipts and establish that the prior is active. */
+export function sameManagedContent(candidate:TicPublication,active:TicPublication|undefined){
+ return Boolean(active&&logicalKey(candidate.sourceUrl)===logicalKey(active.sourceUrl)&&fingerprint(candidate)===fingerprint(active));
+}
 export async function publishManaged(db: PrismaClient, r: TicPublication, receiptPath: string, guard:()=>void, root: string) {
   const stableKey = logicalKey(r.sourceUrl), contentHash = fingerprint(r);
   let id = createHash('sha256').update(stableKey + '\n' + contentHash).digest('hex');

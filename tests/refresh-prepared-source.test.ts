@@ -5,6 +5,8 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {preparePublication} from '../scripts/tic-refresh';
 import {preparedSource} from '../scripts/lib/prepared-source';
+import {sameManagedContent} from '../scripts/lib/managed-publication';
+import {publicationCapacity} from '../scripts/lib/refresh-policy';
 test('capacity-deferred complete receipts can resume without ingestion, but changed source or mappings cannot',async()=>{
  const root=await realpath(await mkdtemp(join(tmpdir(),'affinity-prepared-')));
  try{
@@ -16,6 +18,16 @@ test('capacity-deferred complete receipts can resume without ingestion, but chan
   const entry={etag:'etag-1',policy:'v1',receiptPath:join(dir,'publication.json')};
   const args={etag:'etag-1',policy:'v1',sourceUrl,tocPath,root};
   assert.deepEqual(await preparedSource(entry,args),receipt);
+  // A crash after DB commit can leave this prepared cache alongside its validated
+  // active receipt, even when HEAD/conditional validators force the fallback path.
+  const cached=await preparedSource(entry,args);
+  const activeReceipt=receipt;
+  assert.equal(sameManagedContent(cached!,activeReceipt),true);
+  const size=2_499_999_999;
+  assert.equal(publicationCapacity(size,cached!.membershipCount,cached!.plans.length,sameManagedContent(cached!,activeReceipt)).allowed,true);
+  assert.equal(publicationCapacity(size,cached!.membershipCount,cached!.plans.length).allowed,false);
+  assert.equal(sameManagedContent(cached!,undefined),false);
+  assert.equal(sameManagedContent({...cached!,sourceSha256:'a'.repeat(64)},activeReceipt),false);
   assert.equal(await preparedSource(entry,{...args,etag:null}),undefined);
   assert.equal(await preparedSource(entry,{...args,etag:'etag-2'}),undefined);
   assert.equal(await preparedSource(entry,{...args,policy:'v2'}),undefined);

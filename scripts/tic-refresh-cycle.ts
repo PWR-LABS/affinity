@@ -13,7 +13,7 @@ import { preparePublication } from './tic-refresh';
 import { ticSourceCurrent } from '../src/lib/tic/freshness';
 import { validatePublication, tocPlans, type TicPublication } from '../src/lib/tic/publication';
 import { verifyServing } from './lib/refresh-serving-check';
-import { publishManaged,planMappingIdentity } from './lib/managed-publication';
+import { publishManaged,planMappingIdentity,sameManagedContent } from './lib/managed-publication';
 import { stateRoot, archiveRoot, atomicJson, progressJson, credential, lockRun, Deferred, requireVolume, volumeSessionGuard, storageBudget, downloadFile, sourceKey, ensureArchiveDirectory } from './lib/refresh-runtime';
 type Item = {issuer:string; source?:string; state:string; reason?:string; memberships?:number; plans?:number; sourceDate?:string};
 async function main(){
@@ -117,9 +117,10 @@ async function main(){
      const reuse=!cached&&replayCandidate?.sourceSha256===download.sha256;
      const receipt=cached??(reuse ? replayCandidate! : await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard,disk:{scratchRoot:dir,onProgress:progress=>progressJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'ssd_extraction',progress},results})}}));
      guard();await validatePublication(receipt);
+     const verifiedReplay=sameManagedContent(receipt,replayCandidate);
      if(!reuse&&etag){prepared[key]={etag,policy,receiptPath:join(dir,'publication.json')};await atomicJson(preparedPath,prepared);}
      const sizes=await db.$queryRaw<Array<{bytes:bigint}>>`SELECT pg_database_size(current_database()) AS bytes`;
-     const capacity=publicationCapacity(Number(sizes[0].bytes),receipt.membershipCount,receipt.plans.length,Boolean(reuse));
+     const capacity=publicationCapacity(Number(sizes[0].bytes),receipt.membershipCount,receipt.plans.length,verifiedReplay);
      guard();await atomicJson(join(dir,'capacity.json'),{...capacity,observedAt:new Date().toISOString(),sourceSha256:receipt.sourceSha256});
      if(!capacity.allowed){results.push({issuer,source:path,state:'blocked',reason:'database_capacity_budget'});continue;}
      // A source reaching the publication path is complete and hash-verified; its transaction is atomic.
