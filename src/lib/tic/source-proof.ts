@@ -10,6 +10,7 @@ export const extractionAcceptanceSchema=z.object({
  sourceSha256:hash,sourceBytes:z.number().int().positive(),membershipSha256:hash,tocSha256:hash,
  files:z.literal(1),pairs_emitted:z.number().int().positive(),schema:z.enum(['v1','v2']),
  remote_refs_fetched:z.literal(0),remote_refs_404:z.literal(0),
+ derivation:z.object({method:z.literal('identical-source-rebind-v1'),originalReceiptSha256:hash,originalProofSha256:hash,originalMembershipSha256:hash,transformRevision:hash,outputLimitBytes:z.number().int().positive().max(8000000000)}).optional(),
  validation:z.object({policy:z.literal('tic-membership-v1-strict'),extractorRevision:hash,jsonEof:z.literal(true),archiveIntegrity:z.literal(true),referenceClosure:z.literal(true),sourceStable:z.literal(true),limits:z.object({maxPairs:z.number().int().positive().max(5000000),maxMs:z.number().int().positive().max(7200000),maxScratchBytes:z.number().int().positive().max(8000000000),maxDecodedBytes:z.number().int().positive().max(128000000000)})})
 });
 const bodySchema=z.object({version:z.literal(1),purpose:z.literal('affinity-complete-source-v1'),keyId:hash,receiptSha256:hash,verifiedAt:z.string().datetime(),acceptance:z.literal('local-extraction-only; not publication or plan completeness'),rawLifecycle:z.literal('sealed-pending-delete'),extraction:extractionAcceptanceSchema});
@@ -51,4 +52,5 @@ export async function verifySourceProof(receipt:object,archive:z.infer<typeof so
  const proof=proofSchema.parse(JSON.parse(bytes.toString())),secret=await key(keyPath);
  const expected=createHmac('sha256',secret).update(JSON.stringify(proof.body)).digest();
  if(proof.body.keyId!==digest(secret)||!timingSafeEqual(expected,Buffer.from(proof.signature,'hex'))||proof.body.receiptSha256!==publicationDigest(receipt))throw new Error('Source proof authentication mismatch');
+ return proof.body.extraction;
 }

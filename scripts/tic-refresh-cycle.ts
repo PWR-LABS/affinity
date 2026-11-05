@@ -1,4 +1,5 @@
 import {planReservationCount} from '../src/lib/tic/shared-plans';
+import {prepareIdenticalPublication,availableIdenticalReceipt} from './lib/identical-source';
 import {compactServingEnabled,deriveCompactPublication,sharedPlansEnabled} from './lib/compact-serving';
 /** Deterministic Mini runner. Codex schedules this command; it never provisions cloud compute. */
 import { verifySourceProofKey } from '../src/lib/tic/source-proof';
@@ -35,6 +36,9 @@ async function main(){
  let blocks:Record<string,{etag:string;reason:string;policy:string}>={};
  const preparedPath=join(stateRoot,'prepared-sources.json');
  const archivesPath=join(stateRoot,'source-archives.json');
+ const contentPath=join(stateRoot,'validated-content.json');
+ let content:Record<string,string>={};
+ try{content=JSON.parse(await readFile(contentPath,'utf8'));}catch{}
  let archives:Record<string,SourceArchive>={};
  try{archives=JSON.parse(await readFile(archivesPath,'utf8'));}catch{}
  let prepared:Record<string,PreparedSource>={};
@@ -67,7 +71,8 @@ async function main(){
    try{extraction=JSON.parse(await readFile(join(dirname(canonical),'extraction.json'),'utf8'));}
    catch(e){if((e as NodeJS.ErrnoException).code==='ENOENT')return;throw e;}
    if(!extraction.validation)return; // Historical raw cannot be retroactively sealed.
-   await compactManagedSource(db!,canonical,dirname(dirname(canonical)),guard,Object.values(prepared).map(p=>p.receiptPath));
+   const result=await compactManagedSource(db!,canonical,dirname(dirname(canonical)),guard,Object.values(prepared).map(p=>p.receiptPath));
+   if(result.receipt.sourceArchive){content[result.receipt.sourceSha256]=canonical;await atomicJson(contentPath,content);}
   };
   const runId=new Date().toISOString().replace(/[:.]/g,'-');
   await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{phase:'discovery'},results});
@@ -146,7 +151,13 @@ async function main(){
      if(!cached){archives[key]={sourceUrl:candidate.url,path:sourcePath,bytes:download.bytes,sha256:download.sha256,etag:download.etag,lastModified:download.lastModified};await atomicJson(archivesPath,archives);}
      guard();
      const reuse=!cached&&replayCandidate?.sourceSha256===download.sha256;
-     let receipt=cached??(reuse ? replayCandidate! : await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard,compact,disk:{scratchRoot:dir,onProgress:progress=>progressJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'ssd_extraction',progress},results})}}));
+     let identicalPath=compact&&!cached&&!reuse?content[download.sha256]:undefined;
+     if(identicalPath){
+      identicalPath=await availableIdenticalReceipt(identicalPath,archiveRoot);
+      if(!identicalPath){delete content[download.sha256];await atomicJson(contentPath,content);}
+     }
+     if(identicalPath)await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'identical_source_validation'},results});
+     let receipt=cached??(reuse ? replayCandidate! : identicalPath?await prepareIdenticalPublication({priorReceiptPath:identicalPath,sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard}):await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard,compact,disk:{scratchRoot:dir,onProgress:progress=>progressJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'ssd_extraction',progress},results})}}));
      let publicationPath=cached?prepared[key].receiptPath:reuse?prior!.receiptPath!:join(dir,'publication.json');
      if(compact&&!receipt.serving&&!reuse){const derived=await deriveCompactPublication(receipt,publicationPath,guard);receipt=derived.receipt;publicationPath=derived.receiptPath;}
      guard();await validatePublication(receipt);
