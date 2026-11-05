@@ -120,6 +120,10 @@ async function main(){
     try {
       const head=await cycleFetch(transportUrl,{method:'HEAD',headers:{'Accept-Encoding':'identity'},redirect:'error',signal:AbortSignal.timeout(30000)});
       if(head.ok)etag=head.headers.get('etag');
+      // Some issuer frontends use a different HEAD validator. A 304 from the
+      // actual GET representation may reuse a known block/preparation safely.
+      const known=blocks[key]?.policy===policy?blocks[key].etag:prepared[key]&&[policy,REFRESH_POLICY.version].includes(prepared[key].policy)?prepared[key].etag:undefined;
+      if(known&&etag!==known&&await conditionalSourceUnchanged(transportUrl,known,cycleFetch))etag=known;
       if(!replayCandidate&&etag&&blocks[key]?.etag===etag&&blocks[key]?.policy===policy){results.push({issuer,source:path,state:'blocked',reason:blocks[key].reason});continue;}
     }catch{/* A bounded GET can still succeed when HEAD is unavailable. */}
     let cached:TicPublication|undefined;
