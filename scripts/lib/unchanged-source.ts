@@ -11,6 +11,15 @@ export async function conditionalSourceUnchanged(url:string,etag:string,fetcher=
  } catch { return false; } // A failed metadata request never bypasses the bounded full GET.
 }
 
+/** A HEAD transport error must still allow the actual GET representation to
+ * prove an existing validator unchanged, without another multi-GB download. */
+export async function sourceValidator(url:string,known:string|undefined,fetcher=fetch):Promise<string|null>{
+ const head=await fetcher(url,{method:'HEAD',headers:{'Accept-Encoding':'identity'},redirect:'error',signal:AbortSignal.timeout(30000)}).catch(()=>undefined);
+ const etag=head?.ok?head.headers.get('etag'):null;
+ if(known&&etag!==known&&await conditionalSourceUnchanged(url,known,fetcher))return known;
+ return etag;
+}
+
 /** Remove only this run's duplicate download after its existing publication readback. */
 export async function reclaimDuplicateDownload(path:string,retained:string,expected:string,guard:()=>void,retainedPublication?:TicPublication,archiveKeyPath?:string){
  guard();
