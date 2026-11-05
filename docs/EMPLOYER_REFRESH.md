@@ -111,3 +111,14 @@ Deletion-only recovery may reclaim recorded partials below the free-space floor 
 A completed-download journal can recover a lost caller receipt only when a freshly checked ETag and length match and the entire owned file still hashes correctly. This is transport recovery, not JSON/reference/coverage acceptance. Anthem parent TOC directories bind source identity and ETag separately; signing query renewal does not change identity, while an actual ETag change creates a new immutable archive directory. Prior parent TOCs and projections remain available for replay and rollback.
 
 `tests/refresh-download-staging.test.ts` covers reconnection into a new run directory, durable-prefix corruption, inode/directory replacement, active writers, lost completion receipts and preservation of unrelated files. Unjournaled historical partials require separate ownership review and are never swept automatically.
+
+
+## Shared exact plan mappings
+
+`shared-plan-set-v1` keeps each distinct complete plan mapping once and associates every source file with its exact set. Every plan name, identifier type, identifier and market field remains intact. Reuse requires a content hash over binary-ordered, length-prefixed UTF-8 fields; different metadata cannot share an identity. The database independently hashes the actual stored fields before publication and on replay, returning only the digest and counts to Mini.
+
+This is a separate protected opt-in (`shared-plans.json`) installed only after `/api/health` advertises the compatible reader. Existing per-file plan rows and all prior source archives remain unchanged. Search and provider queries combine both representations and retain active-generation and source-freshness rules. The shared mapping conveys no additional plan or network completeness. Reader rollback must preserve support for all published representations or explicitly withdraw incompatible generations first.
+
+Three additive tables are initialized by the same guarded web startup, with SELECT/INSERT/DELETE grants for the restricted publisher. No new cloud service, job, disk, tier or replica is needed. New mapping sets reserve their full plan estimate; a hash-verified existing set reserves only its new file association. The 2.5 GB application gate is checked again inside the atomic publication transaction. Reuse never bypasses the gate or source validation.
+
+Current and rollback file associations protect their shared sets. Retiring an archive-verified owned generation may delete only its now-unreferenced mapping set; unrelated sets and legacy plan rows are not swept. Disconnects roll back both a new set and its file association. `scripts/eval-shared-tic-plans.ts` exercises the real disposable loopback database, including changed-content rejection despite equal counts, mixed legacy/shared queries, exact metadata, retention and withdrawal.

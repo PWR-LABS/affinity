@@ -1,3 +1,4 @@
+import {SHARED_PLAN_FORMAT} from '../../src/lib/tic/shared-plans';
 import {lstat,realpath,readFile} from 'node:fs/promises';
 import {join,dirname} from 'node:path';
 import type {PrismaClient} from '@prisma/client';
@@ -26,4 +27,16 @@ export async function deriveCompactPublication(input:TicPublication,path:string,
  if(existing){const receipt=await validatePublication(existing,archiveKeyPath);const {serving, ...base}=receipt;void serving;if(JSON.stringify(base)!==JSON.stringify(original))throw new Error('Derived receipt identity changed');return {receipt,receiptPath};}
  const serving=await buildCompactArchive(dirname(path),original.membershipSha256,rows(original.membershipPath),guard);
  const receipt=await validatePublication({...original,serving},archiveKeyPath);guard();await durableJson(receiptPath,receipt);return {receipt,receiptPath};
+}
+
+/** Separate opt-in; an older web reader must never receive shared plan links. */
+export async function sharedPlansEnabled(stateRoot:string,db:PrismaClient,fetcher=fetch){
+ const path=join(stateRoot,'shared-plans.json');let s;
+ try{s=await lstat(path);}catch(e){if((e as NodeJS.ErrnoException).code==='ENOENT')return false;throw e;}
+ if(!s.isFile()||(s.mode&0o077)||s.uid!==process.getuid?.()||await realpath(path)!==path)throw new Error('Unsafe shared plan configuration');
+ const config=JSON.parse(await readFile(path,'utf8'));if(config.format!==SHARED_PLAN_FORMAT||config.enabled!==true)throw new Error('Invalid shared plan configuration');
+ const response=await fetcher('https://affinity.pwr-labs.ai/api/health',{signal:AbortSignal.timeout(30000),redirect:'error'});
+ if(!response.ok)throw new Error('Shared plan reader unavailable');const health=await response.json();
+ if(health.status!=='ok'||!health.ticPlanServingFormats?.includes(SHARED_PLAN_FORMAT))throw new Error('Shared plan reader unavailable');
+ await db.ticPlanSet.findFirst({select:{id:true}});await db.ticPlanSetEntry.findFirst({select:{setId:true}});await db.ticFilePlanSet.findFirst({select:{fileId:true}});return true;
 }

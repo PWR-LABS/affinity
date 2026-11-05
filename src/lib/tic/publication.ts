@@ -1,3 +1,4 @@
+import {filePlanCount,planReservationCount,storeSharedPlans} from './shared-plans';
 import {compactReceiptSchema,NpiSetHash,validateCompactArchive,compactBuckets} from './compact-archive';
 import {compactReservation,COMPACT_LIMITS} from './compact-codec';
 import {readCompactIndex} from './compact-db';
@@ -85,7 +86,7 @@ export async function validatePublication(input: unknown,archiveKeyPath?:string)
 }
 export type ManagedPublication = {
   id: string; stableKey: string; contentHash: string; receiptPath: string;
-  guard: () => void;
+  guard: () => void; sharedPlans?:boolean;
   retire: Array<{ id: string; fileId: string; contentHash: string }>;
 };
 export async function publishPublication(db: PrismaClient, input: unknown, managed?: ManagedPublication,archiveKeyPath?:string) {
@@ -101,13 +102,14 @@ export async function publishPublication(db: PrismaClient, input: unknown, manag
         const existing = await tx.ticFile.findUniqueOrThrow({where:{id:prior[0].fileId}});
         if (!existing.active) throw new Error('Publication is inactive; review required before reactivation');
         const memberships = r.serving ? (await readCompactIndex(tx,existing.id,{...r,serving:r.serving}))?.sourceMembershipCount : await tx.ticMembership.count({where:{fileId:existing.id}});
-        const plans = await tx.ticPlanLink.count({where:{fileId:existing.id}});
+        const plans = await filePlanCount(tx,existing.id,r.plans);
         if (memberships !== r.membershipCount || plans !== r.plans.length) throw new Error('Replay readback mismatch');
         return {fileId:existing.id,url:existing.url,sourceDate:r.sourceDate,memberships,plans,membershipSha256:r.membershipSha256,publishedAt:existing.fetchedAt.toISOString(),scope:r.scope,replayed:true};
       }
       const sizes = await tx.$queryRaw<Array<{bytes:bigint}>>`SELECT pg_database_size(current_database()) AS bytes`;
+      const reservedPlans=await planReservationCount(tx,r.plans,Boolean(managed.sharedPlans));
       // Reserve ample space on the existing 5 GB allocation, including staging/WAL/bloat.
-      if (Number(sizes[0].bytes) + (r.serving?compactReservation(r.serving.encodedBytes,r.serving.bucketCount,r.plans.length):r.membershipCount * 1500 + r.plans.length * 2000) > 2_500_000_000) throw new Error('database_capacity_budget');
+      if (Number(sizes[0].bytes) + (r.serving?compactReservation(r.serving.encodedBytes,r.serving.bucketCount,reservedPlans):r.membershipCount * 1500 + reservedPlans * 2000) > 2_500_000_000) throw new Error('database_capacity_budget');
     }
     if (!managed && await tx.ticFile.findFirst({ where: { url: r.sourceUrl }, select: { id: true } })) throw new Error('Source already exists; no replacement or silent replay permitted');
     const file = await tx.ticFile.create({ data: { url: r.sourceUrl, reportingEntity: r.reportingEntity, sourceLastUpdated: new Date(r.sourceDate), schemaMode: r.schema, fetchedAt: new Date(r.preparedAt) } });
@@ -129,9 +131,10 @@ export async function publishPublication(db: PrismaClient, input: unknown, manag
     }
     await flush();
     }
-    for (let i = 0; i < r.plans.length; i += 1000) await tx.ticPlanLink.createMany({ data: r.plans.slice(i, i + 1000).map(p => ({ ...p, fileId: file.id })) });
+    if(managed?.sharedPlans)await storeSharedPlans(tx,file.id,r.plans,managed.guard);
+    else for (let i = 0; i < r.plans.length; i += 1000) await tx.ticPlanLink.createMany({ data: r.plans.slice(i, i + 1000).map(p => ({ ...p, fileId: file.id })) });
     if (inserted !== r.membershipCount || await sha256(r.membershipPath) !== r.membershipSha256) throw new Error('Publication changed or count mismatch');
-    const counts = { memberships: r.serving?inserted:await tx.ticMembership.count({ where: { fileId: file.id } }), plans: await tx.ticPlanLink.count({ where: { fileId: file.id } }) };
+    const counts = { memberships: r.serving?inserted:await tx.ticMembership.count({ where: { fileId: file.id } }), plans: await filePlanCount(tx,file.id,r.plans) };
     if (counts.memberships !== r.membershipCount || counts.plans !== r.plans.length) throw new Error('Database readback mismatch');
     if (managed) {
       managed.guard();
@@ -145,7 +148,10 @@ export async function publishPublication(db: PrismaClient, input: unknown, manag
         if (owned.length !== 1) throw new Error('Retention ownership changed');
         const survivors = await tx.$queryRaw<Array<{count:bigint}>>`SELECT count(*) AS count FROM "TicRefreshPublication" WHERE ${normalizedLedgerColumn}=${managed.stableKey} AND withdrawn=false AND "createdAt" > (SELECT "createdAt" FROM "TicRefreshPublication" WHERE id=${old.id})`;
         if (Number(survivors[0].count) < 2) throw new Error('Retention requires current and rollback generations');
+        const oldSet=await tx.ticFilePlanSet.findUnique({where:{fileId:old.fileId}});
         await tx.ticFile.delete({where:{id:old.fileId}});
+        // Only the just-retired association can nominate an orphan for removal.
+        if(oldSet)await tx.ticPlanSet.deleteMany({where:{id:oldSet.setId,files:{none:{}}}});
       }
       managed.guard();
     }

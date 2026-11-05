@@ -248,6 +248,7 @@ model TicFile {
   memberships       TicMembership[]
   compactIndex      TicNpiIndex?
   planLinks         TicPlanLink[]
+  sharedPlans       TicFilePlanSet?
   refreshPublication TicRefreshPublication?
 
   @@index([reportingEntity])
@@ -307,6 +308,36 @@ model TicPlanLink {
 
   @@index([planIdType, planId])
   @@index([fileId])
+}
+
+/// Immutable exact TOC mapping reused by files with identical plan metadata.
+model TicPlanSet {
+  id      String @id
+  count   Int
+  entries TicPlanSetEntry[]
+  files   TicFilePlanSet[]
+}
+
+model TicPlanSetEntry {
+  setId          String
+  set            TicPlanSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+  ordinal        Int
+  planName       String
+  planIdType     String
+  planId         String
+  planMarketType String
+
+  @@id([setId, ordinal])
+  @@index([planIdType, planId])
+}
+
+model TicFilePlanSet {
+  fileId String @id
+  file   TicFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  setId  String
+  set    TicPlanSet @relation(fields: [setId], references: [id], onDelete: Restrict)
+
+  @@index([setId])
 }
 
 /// Employer-name → EIN lookup rows from public DOL Form 5500 filings (SPEC-4 output).

@@ -25,6 +25,7 @@ export async function GET(req: Request) {
   if (process.env.DATABASE_URL) {
     try {
       await prisma.$queryRaw`SELECT 1 FROM "TicNpiIndex" LIMIT 1`;
+      await prisma.$queryRaw`SELECT 1 FROM "TicFilePlanSet" f JOIN "TicPlanSet" s ON s.id=f."setId" JOIN "TicPlanSetEntry" e ON e."setId"=s.id LIMIT 1`;
       checks.database = "ok";
     } catch {
       checks.database = "error";
@@ -61,6 +62,7 @@ export async function GET(req: Request) {
       release: releaseIdentity(process.env.RENDER_GIT_COMMIT, process.env.RENDER_GIT_BRANCH),
       checks,
       ticServingFormats: ["npi-prefix-v1"],
+      ticPlanServingFormats: ["shared-plan-set-v1"],
       sourceFreshness: marketplaceCatalogFreshness(),
       nodeEnv: process.env.NODE_ENV ?? "unknown",
     },

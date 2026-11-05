@@ -1,3 +1,4 @@
+import {filePlanCount} from '../../src/lib/tic/shared-plans';
 import {readCompactIndex} from '../../src/lib/tic/compact-db';
 import { normalizeLedgerKey, normalizedLedgerColumn } from '../../src/lib/tic/source-version';
 import { reclaimRetiredArchives } from './archive-retention';
@@ -20,7 +21,7 @@ export function fingerprint(r: TicPublication) {
 export function sameManagedContent(candidate:TicPublication,active:TicPublication|undefined){
  return Boolean(active&&logicalKey(candidate.sourceUrl)===logicalKey(active.sourceUrl)&&fingerprint(candidate)===fingerprint(active));
 }
-export async function publishManaged(db: PrismaClient, r: TicPublication, receiptPath: string, guard:()=>void, root: string,archiveKeyPath?:string) {
+export async function publishManaged(db: PrismaClient, r: TicPublication, receiptPath: string, guard:()=>void, root: string,archiveKeyPath?:string,sharedPlans=false) {
   const stableKey = logicalKey(r.sourceUrl), contentHash = fingerprint(r);
   let id = createHash('sha256').update(stableKey + '\n' + contentHash).digest('hex');
   const previous = await db.$queryRaw<Array<{id:string;fileId:string;contentHash:string;receiptPath:string;sourceDate:string}>>`SELECT * FROM "TicRefreshPublication" WHERE ${normalizedLedgerColumn}=${stableKey} AND withdrawn=false ORDER BY "sourceDate" DESC, "createdAt" DESC`;
@@ -37,7 +38,7 @@ export async function publishManaged(db: PrismaClient, r: TicPublication, receip
     for (const path of [old.sourcePath,old.tocPath,old.membershipPath,old.sourceArchive?.proofPath].filter(Boolean) as string[])if(!resolve(path).startsWith(resolve(root)+'/'))throw new Error('Retention archive unavailable');
     try{await validateArchivedBytes(old,archiveKeyPath);}catch{throw new Error('Retention archive unavailable');}
   }
-  const result=await publishPublication(db,r,{id,stableKey,contentHash,receiptPath,guard,retire},archiveKeyPath);
+  const result=await publishPublication(db,r,{id,stableKey,contentHash,receiptPath,guard,retire,sharedPlans},archiveKeyPath);
   if(!retire.length)return result;
   try {return {...result,archiveRetention:await reclaimRetiredArchives(db,retire,root,guard)};}
   catch {return {...result,archiveRetention:{state:'deferred',reason:'Retired archive cleanup requires review; database commit verified'}};}
@@ -51,7 +52,7 @@ export async function withdrawManaged(db: PrismaClient, fileId: string, guard:()
   if(current.length!==1)throw new Error('Withdrawal target is not active managed data');
   const prior=await tx.$queryRaw<Array<{fileId:string}>>`SELECT "fileId" FROM "TicRefreshPublication" WHERE ${normalizedLedgerColumn}=${normalizeLedgerKey(current[0].stableKey)} AND "fileId"<>${fileId} AND withdrawn=false ORDER BY "sourceDate" DESC,"createdAt" DESC LIMIT 1`;
   if(prior.length!==1)throw new Error('No retained rollback generation');
-  if(!(await tx.ticMembership.count({where:{fileId:prior[0].fileId}})||await readCompactIndex(tx,prior[0].fileId))||!await tx.ticPlanLink.count({where:{fileId:prior[0].fileId}}))throw new Error('Rollback generation incomplete');
+  if(!(await tx.ticMembership.count({where:{fileId:prior[0].fileId}})||await readCompactIndex(tx,prior[0].fileId))||!await filePlanCount(tx,prior[0].fileId))throw new Error('Rollback generation incomplete');
   await tx.$executeRaw`UPDATE "TicRefreshPublication" SET withdrawn=true WHERE "fileId"=${fileId}`;
   await tx.ticFile.update({where:{id:fileId},data:{active:false}});
   await tx.ticFile.update({where:{id:prior[0].fileId},data:{active:true}});

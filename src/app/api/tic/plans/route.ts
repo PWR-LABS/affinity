@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { ticSourceWindow } from "@/lib/tic/freshness";
+import { searchTicPlans } from "@/lib/tic/shared-plans";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -15,28 +15,7 @@ export async function GET(req: Request) {
   const q = new URL(req.url).searchParams.get("q")?.trim() ?? "";
   if (q.length < 2) return NextResponse.json({ items: [] });
   try {
-    const links = await prisma.ticPlanLink.findMany({
-      where: { planName: { contains: q, mode: "insensitive" }, file: { active: true, sourceLastUpdated: ticSourceWindow(new Date()), OR: [{ memberships: { some: {} } }, { compactIndex: { is: { format: "npi-prefix-v1", npiCount: { gt: 0 } } } }] } },
-      distinct: ["planIdType", "planId", "planName"],
-      take: 12,
-      select: {
-        planName: true,
-        planIdType: true,
-        planId: true,
-        planMarketType: true,
-        file: { select: { reportingEntity: true } },
-      },
-      orderBy: { planName: "asc" },
-    });
-    return NextResponse.json({
-      items: links.map((l) => ({
-        planIdType: l.planIdType,
-        planId: l.planId,
-        planName: l.planName,
-        marketType: l.planMarketType,
-        issuer: l.file.reportingEntity,
-      })),
-    });
+    return NextResponse.json({items: await searchTicPlans(prisma,q)});
   } catch {
     return NextResponse.json(
       { items: [], error: "The commercial plan index isn't available in this environment yet." },
