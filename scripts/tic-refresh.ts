@@ -1,3 +1,5 @@
+import {buildCompactArchive} from '../src/lib/tic/compact-archive';
+import {COMPACT_LIMITS} from '../src/lib/tic/compact-codec';
 /** Prepare first; publish only with an explicit database host guard. Never prints credentials. */
 import { readFile, writeFile, mkdir, stat, open } from 'node:fs/promises';
 import { PrismaClient } from '@prisma/client';
@@ -8,7 +10,7 @@ import { z } from 'zod';
 import { REFRESH_POLICY } from './lib/refresh-policy';
 import { runDiskExtract } from '../tools/tic-ingest/tic-extract-disk';
 import { runExtract } from '../tools/tic-ingest/tic-extract';
-export async function preparePublication(args: { sourcePath: string; sourceUrl: string; tocPath: string; tocUrl: string; directory: string; tocProjection?: TicPublication['tocProjection']; guard?: () => void; disk?: { scratchRoot:string; onProgress?:(progress:unknown)=>void } }): Promise<TicPublication> {
+export async function preparePublication(args: { sourcePath: string; sourceUrl: string; tocPath: string; tocUrl: string; directory: string; tocProjection?: TicPublication['tocProjection']; guard?: () => void; compact?:boolean; disk?: { scratchRoot:string; onProgress?:(progress:unknown)=>void } }): Promise<TicPublication> {
   httpsUrl.parse(args.sourceUrl); httpsUrl.parse(args.tocUrl);
   const sourcePath = resolve(args.sourcePath), tocPath = resolve(args.tocPath);
   if ((await stat(sourcePath)).size > (args.disk ? REFRESH_POLICY.sourceBytes : 150_000_000)) throw new Error('source_size_limit');
@@ -23,7 +25,7 @@ export async function preparePublication(args: { sourcePath: string; sourceUrl: 
   args.guard?.();
   await mkdir(args.directory, { recursive: true });
   const membershipPath = resolve(args.directory, `${sourceSha256}.ndjson`);
-  const summary = args.disk ? await runDiskExtract({input:sourcePath,out:membershipPath,sourceUrl:args.sourceUrl,scratchRoot:args.disk.scratchRoot,guard:args.guard,maxPairs:REFRESH_POLICY.memberships,maxMs:REFRESH_POLICY.extractionMs,maxScratchBytes:REFRESH_POLICY.scratchBytes,maxDecodedBytes:REFRESH_POLICY.decodedBytes,onProgress:args.disk.onProgress}) : await runExtract({ input: sourcePath, sourceUrl: args.sourceUrl, out: membershipPath, progress: false, maxPairs: 200_000, strictReferences: true, maxMs: 600_000, guard: args.guard });
+  const summary = args.disk ? await runDiskExtract({input:sourcePath,out:membershipPath,sourceUrl:args.sourceUrl,scratchRoot:args.disk.scratchRoot,guard:args.guard,maxPairs:args.compact?COMPACT_LIMITS.pairs:REFRESH_POLICY.memberships,maxMs:REFRESH_POLICY.extractionMs,maxScratchBytes:args.compact?8_000_000_000:REFRESH_POLICY.scratchBytes,maxDecodedBytes:REFRESH_POLICY.decodedBytes,onProgress:args.disk.onProgress}) : await runExtract({ input: sourcePath, sourceUrl: args.sourceUrl, out: membershipPath, progress: false, maxPairs: 200_000, strictReferences: true, maxMs: 600_000, guard: args.guard });
   if ('disk' in summary && (summary.disk as {cleanupPending?:boolean;scratchPath?:string}).cleanupPending) throw Object.assign(new Error('scratch_cleanup_pending'),summary.disk);
   args.guard?.();
   if (summary.remote_refs_404 || summary.remote_refs_fetched) throw new Error('Remote references require a separately archived, verified refresh');
@@ -32,11 +34,13 @@ export async function preparePublication(args: { sourcePath: string; sourceUrl: 
   for await (const row of rows(membershipPath)) {
     first ??= row;
     if (row.file_url !== args.sourceUrl || row.last_updated_on !== first.last_updated_on || row.reporting_entity !== first.reporting_entity || row.schema !== first.schema) throw new Error('Mixed source metadata');
-    if (++count > 200_000) throw new Error('Membership limit exceeded');
+    if (++count > (args.compact?COMPACT_LIMITS.pairs:200_000)) throw new Error('Membership limit exceeded');
   }
   if (!first || count !== summary.pairs_emitted) throw new Error('Empty or incomplete extraction');
+  const membershipSha256=await sha256(membershipPath);
+  const serving=args.compact?await buildCompactArchive(args.directory,membershipSha256,rows(membershipPath),args.guard):undefined;
   const receipt = receiptSchema.parse({ ...args, version: 1, scope: 'selected-file-only; plan completeness unverified', sourcePath, sourceSha256, tocPath, tocSha256, membershipPath,
-    membershipSha256: await sha256(membershipPath), membershipCount: count, sourceDate: first.last_updated_on, reportingEntity: first.reporting_entity, schema: first.schema, plans, preparedAt: new Date().toISOString() });
+    membershipSha256,...(serving?{serving}:{}), membershipCount: count, sourceDate: first.last_updated_on, reportingEntity: first.reporting_entity, schema: first.schema, plans, preparedAt: new Date().toISOString() });
   await validatePublication(receipt);
   args.guard?.();
   await writeFile(resolve(args.directory,'extraction.json'),JSON.stringify({...summary,sourceSha256,sourceBytes:(await stat(sourcePath)).size,membershipSha256:receipt.membershipSha256,tocSha256},null,2)+'\n',{mode:0o600});

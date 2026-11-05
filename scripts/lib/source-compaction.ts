@@ -1,3 +1,4 @@
+import {compactManifest} from '../../src/lib/tic/compact-archive';
 import {readFile,lstat,realpath,unlink} from 'node:fs/promises';
 import {lstatSync,realpathSync,type BigIntStats} from 'node:fs';
 import {dirname,join,resolve} from 'node:path';
@@ -30,8 +31,9 @@ export async function compactSourceArchive(options:Options){
   if(resolve(other.sourcePath)===source)return {state:'retained_shared_raw',receipt,rawLogicalBytesRemoved:0};
  }
  guard();
+ const servingPaths=receipt.serving?[receipt.serving.manifestPath,...(await compactManifest(receipt.serving)).buckets.map(b=>join(dirname(receipt.serving!.manifestPath),b.prefix+'.deflate'))]:[];
  // Retained evidence must reach durable storage before a raw file can disappear.
- for(const retained of [receipt.membershipPath,receipt.tocPath,path,join(dir,'extraction.json'),...(receipt.tocProjection?[receipt.tocProjection.parentPath,receipt.tocProjection.receiptPath]:[])]){guard();const f=await (await import('node:fs/promises')).open(retained,'r');try{await f.sync();}finally{await f.close();}}
+ for(const retained of [...servingPaths,receipt.membershipPath,receipt.tocPath,path,join(dir,'extraction.json'),...(receipt.tocProjection?[receipt.tocProjection.parentPath,receipt.tocProjection.receiptPath]:[])]){guard();const f=await (await import('node:fs/promises')).open(retained,'r');try{await f.sync();}finally{await f.close();}}
  await syncDirectory(dirname(receipt.membershipPath));await syncDirectory(dirname(receipt.tocPath));
  const compacted:TicPublication=receipt.sourceArchive?receipt:{...receipt,sourceArchive:await sealSourceProof(receipt,extraction,join(dir,'source-compaction.json'),options.keyPath)};
  await options.fault?.('proof_durable');guard();await durableJson(path,compacted);await options.fault?.('receipt_durable');

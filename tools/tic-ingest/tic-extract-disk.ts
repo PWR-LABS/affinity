@@ -28,6 +28,8 @@ export interface DiskExtractProgress {
 }
 export interface DiskExtractOptions {
   input: string; out: string; sourceUrl: string; scratchRoot: string; guard?: () => void;
+  // Explicit compact-serving extraction may count up to 5M pairs/8GB scratch.
+  // Legacy publication retains 200k/4GB limits; larger receipts require a validated compact serving set.
   maxPairs?: number; maxMs?: number; maxScratchBytes?: number; maxDecodedBytes?: number;
   onProgress?: (progress: DiskExtractProgress) => void;
 }
@@ -50,9 +52,9 @@ const usePath = ['in_network', '*', 'negotiated_rates', '*', 'provider_reference
 const useContainerPath = usePath.slice(0, -1);
 const ratePath = usePath.slice(0, -2);
 const inlineGroupContainerPath = inlineGroupPath.slice(0, -1);
-function bounded(value: number | undefined, fallback: number, name: string) {
+function bounded(value: number | undefined, fallback: number, name: string, ceiling = fallback) {
   const n = value ?? fallback;
-  if (!Number.isSafeInteger(n) || n <= 0 || n > fallback) throw new Error('Invalid ' + name + ' cap');
+  if (!Number.isSafeInteger(n) || n <= 0 || n > ceiling) throw new Error('Invalid ' + name + ' cap');
   return n;
 }
 function sameFile(a: BigIntStats, b: BigIntStats) {
@@ -64,9 +66,9 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
   if (/^[a-z][a-z0-9+.-]*:/i.test(options.input)) throw new Error('Disk extraction accepts local archived files only');
   const source = new URL(options.sourceUrl);
   if (source.protocol !== 'https:' || source.username || source.password || Buffer.byteLength(options.sourceUrl) > SCALAR_BYTES) throw new Error('Invalid source URL');
-  const maxPairs = bounded(options.maxPairs, 200_000, 'membership');
+  const maxPairs = bounded(options.maxPairs, 200_000, 'membership', 5_000_000);
   const maxMs = bounded(options.maxMs, 7_200_000, 'time');
-  const maxScratch = bounded(options.maxScratchBytes, 4_000_000_000, 'scratch');
+  const maxScratch = bounded(options.maxScratchBytes, 4_000_000_000, 'scratch', 8_000_000_000);
   const maxDecoded = bounded(options.maxDecodedBytes, 128_000_000_000, 'decoded');
   if (maxScratch < 65_536) throw new Error('scratch_limit: insufficient SQLite space');
   const started = performance.now(), root = resolve(options.scratchRoot), input = resolve(options.input), out = resolve(options.out);

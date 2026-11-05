@@ -246,6 +246,7 @@ model TicFile {
   /// When our pipeline pulled + extracted the file.
   fetchedAt         DateTime
   memberships       TicMembership[]
+  compactIndex      TicNpiIndex?
   planLinks         TicPlanLink[]
   refreshPublication TicRefreshPublication?
 
@@ -264,6 +265,33 @@ model TicMembership {
 
   @@unique([fileId, npi, tinValue])
   @@index([npi])
+}
+
+/// Lossless NPI lookup projection; complete NPI/TIN evidence stays in the verified SSD archive.
+model TicNpiIndex {
+  fileId                String @id
+  file                  TicFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  format                String
+  sourceMembershipCount Int
+  membershipSha256      String
+  npiCount              Int
+  npiSha256             String
+  bucketCount           Int
+  encodedBytes          Int
+  manifestSha256        String
+  buckets               TicNpiBucket[]
+}
+
+model TicNpiBucket {
+  fileId        String
+  index         TicNpiIndex @relation(fields: [fileId], references: [fileId], onDelete: Cascade)
+  prefix        String
+  count         Int
+  rawSha256     String
+  payloadSha256 String
+  payload       Bytes
+
+  @@id([fileId, prefix])
 }
 
 /// File ↔ reporting plan (from the issuer's table of contents): which plans this file reports for.

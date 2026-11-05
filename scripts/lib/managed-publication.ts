@@ -1,3 +1,4 @@
+import {readCompactIndex} from '../../src/lib/tic/compact-db';
 import { normalizeLedgerKey, normalizedLedgerColumn } from '../../src/lib/tic/source-version';
 import { reclaimRetiredArchives } from './archive-retention';
 import { createHash } from 'node:crypto';
@@ -11,7 +12,9 @@ export function logicalKey(url: string) {
 }
 export function planMappingIdentity(plans:TicPublication['plans']){return JSON.stringify(plans.map(p=>[p.planName,p.planIdType,p.planId,p.planMarketType]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b))));}
 export function fingerprint(r: TicPublication) {
-  return createHash('sha256').update(JSON.stringify([r.sourceSha256,r.sourceDate,r.reportingEntity,r.schema,r.plans.map(p=>[p.planName,p.planIdType,p.planId,p.planMarketType]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)))])).digest('hex');
+  const identity:unknown[]=[r.sourceSha256,r.sourceDate,r.reportingEntity,r.schema,r.plans.map(p=>[p.planName,p.planIdType,p.planId,p.planMarketType]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)))];
+  if(r.serving)identity.push(r.serving.format,r.serving.manifestSha256);
+  return createHash('sha256').update(JSON.stringify(identity)).digest('hex');
 }
 /** Callers must separately validate both receipts and establish that the prior is active. */
 export function sameManagedContent(candidate:TicPublication,active:TicPublication|undefined){
@@ -48,7 +51,7 @@ export async function withdrawManaged(db: PrismaClient, fileId: string, guard:()
   if(current.length!==1)throw new Error('Withdrawal target is not active managed data');
   const prior=await tx.$queryRaw<Array<{fileId:string}>>`SELECT "fileId" FROM "TicRefreshPublication" WHERE ${normalizedLedgerColumn}=${normalizeLedgerKey(current[0].stableKey)} AND "fileId"<>${fileId} AND withdrawn=false ORDER BY "sourceDate" DESC,"createdAt" DESC LIMIT 1`;
   if(prior.length!==1)throw new Error('No retained rollback generation');
-  if(!await tx.ticMembership.count({where:{fileId:prior[0].fileId}})||!await tx.ticPlanLink.count({where:{fileId:prior[0].fileId}}))throw new Error('Rollback generation incomplete');
+  if(!(await tx.ticMembership.count({where:{fileId:prior[0].fileId}})||await readCompactIndex(tx,prior[0].fileId))||!await tx.ticPlanLink.count({where:{fileId:prior[0].fileId}}))throw new Error('Rollback generation incomplete');
   await tx.$executeRaw`UPDATE "TicRefreshPublication" SET withdrawn=true WHERE "fileId"=${fileId}`;
   await tx.ticFile.update({where:{id:fileId},data:{active:false}});
   await tx.ticFile.update({where:{id:prior[0].fileId},data:{active:true}});

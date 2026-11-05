@@ -24,7 +24,7 @@ export async function GET(req: Request) {
 
   if (process.env.DATABASE_URL) {
     try {
-      await prisma.$queryRaw`SELECT 1`;
+      await prisma.$queryRaw`SELECT 1 FROM "TicNpiIndex" LIMIT 1`;
       checks.database = "ok";
     } catch {
       checks.database = "error";
@@ -60,6 +60,7 @@ export async function GET(req: Request) {
       service: "affinity",
       release: releaseIdentity(process.env.RENDER_GIT_COMMIT, process.env.RENDER_GIT_BRANCH),
       checks,
+      ticServingFormats: ["npi-prefix-v1"],
       sourceFreshness: marketplaceCatalogFreshness(),
       nodeEnv: process.env.NODE_ENV ?? "unknown",
     },

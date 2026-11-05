@@ -221,3 +221,13 @@ test('giant unused references and a giant used NPI array complete under a 32 MiB
   assert.equal((await readFile(f.out, 'utf8')).trim().split('\n').length, 1);
   assert.ok((await stat(input)).size > 0); await clean(f.scratchRoot);
 });
+
+test('larger complete local extractions retain explicit limits and preserve the legacy cloud cap',async t=>{
+ const f=await fixture(t,JSON.stringify(v2([group(Array.from({length:200001},(_,i)=>1000000000+i))])));
+ await assert.rejects(runDiskExtract(f.options),/Membership limit exceeded/);
+ const result=await runDiskExtract({...f.options,maxPairs:200001});assert.equal(result.pairs_emitted,200001);
+ const {extractionAcceptanceSchema}=await import('../src/lib/tic/source-proof');
+ assert.equal(extractionAcceptanceSchema.safeParse({...result,sourceSha256:'a'.repeat(64),sourceBytes:1,membershipSha256:'b'.repeat(64),tocSha256:'c'.repeat(64)}).success,true);
+ const {REFRESH_POLICY}=await import('../scripts/lib/refresh-policy');assert.equal(REFRESH_POLICY.memberships,200000);assert.equal(REFRESH_POLICY.scratchBytes,4000000000);
+ await clean(f.scratchRoot);
+});

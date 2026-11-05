@@ -1,3 +1,4 @@
+import {compactManifest} from '../../src/lib/tic/compact-archive';
 /** Reclaim only verified raw/normalized bytes belonging to retired managed publications. */
 import { readFile, realpath, unlink, lstat, writeFile } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
@@ -9,6 +10,7 @@ export async function reclaimRetiredArchives(db:PrismaClient, retired:Array<{id:
  for(const p of retained){
   guard();const r=receiptSchema.parse(JSON.parse(await readFile(p.receiptPath,'utf8')));
   for(const path of [r.sourcePath,r.membershipPath,r.tocPath])protectedPaths.add(resolve(path));
+  if(r.serving){protectedPaths.add(resolve(r.serving.manifestPath));for(const b of (await compactManifest(r.serving)).buckets)protectedPaths.add(join(dirname(resolve(r.serving.manifestPath)),b.prefix+'.deflate'));}
  }
  const removed:string[]=[];
  for(const p of retired){
@@ -24,6 +26,10 @@ export async function reclaimRetiredArchives(db:PrismaClient, retired:Array<{id:
    if(protectedPaths.has(target)||target===resolve(r.tocPath))continue;
    if(dirname(target)!==dirname(receiptPath)||await realpath(target)!==target||!(await lstat(target)).isFile()||await sha256(target)!==hash)throw new Error('Unsafe or changed retired bytes');
    entries.push({path:target,sha256:hash});
+  }
+  if(r.serving){const manifest=await compactManifest(r.serving);const bucketRoot=dirname(resolve(r.serving.manifestPath));
+   if(bucketRoot!==join(dirname(receiptPath),'npi-prefix-v1')||await realpath(bucketRoot)!==bucketRoot)throw new Error('Unsafe retired compact root');
+   for(const b of manifest.buckets){const target=join(bucketRoot,b.prefix+'.deflate');if(protectedPaths.has(target))continue;if(await realpath(target)!==target||!(await lstat(target)).isFile()||await sha256(target)!==b.payloadSha256)throw new Error('Retired compact bytes changed');entries.push({path:target,sha256:b.payloadSha256});}
   }
   // Keep receipt, TOC and a deletion manifest. No directory, legacy archive or
   // shared parent TOC is removed. Interrupted cleanup is reviewable and fails closed.
