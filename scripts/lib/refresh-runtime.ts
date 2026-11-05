@@ -61,9 +61,9 @@ export async function credential() {
   if (u.hostname !== 'dpg-d93fiqpkh4rs73d75cjg-a.ohio-postgres.render.com' || u.pathname !== '/affinity_db_grhk' || u.username !== 'affinity_refresh' || u.searchParams.get('sslmode') !== 'require') throw new Error('Credential destination mismatch');
   return url as string;
 }
-export async function lockRun(directory = stateRoot) {
+/** Shared by publishers and supervisor checkpoint updates; never changes PID ownership. */
+export async function lockRunMutex(directory = stateRoot) {
   await mkdir(directory, { recursive: true, mode: 0o700 });
-  const path = join(directory, 'run.lock');
   // The OS releases SQLite's write reservation even after SIGKILL/OOM. Never
   // unlink its inode: all contenders must coordinate through the same database.
   const mutexPath=join(directory,'run-mutex.sqlite');
@@ -71,6 +71,12 @@ export async function lockRun(directory = stateRoot) {
   const mutex=new DatabaseSync(mutexPath);
   try { mutex.exec('PRAGMA busy_timeout=0; BEGIN IMMEDIATE'); }
   catch(error) { mutex.close(); if((error as Error).message.includes('locked')) throw new Deferred('publisher_already_running'); throw error; }
+  let released=false;
+  return ()=>{if(released)return;released=true;try{mutex.exec('ROLLBACK');}finally{mutex.close();}};
+}
+export async function lockRun(directory = stateRoot) {
+  const releaseMutex=await lockRunMutex(directory);
+  const path = join(directory, 'run.lock');
   try {
     // Honor a still-running publisher from the older PID-lock runtime as well.
     let previous:string|undefined;
@@ -88,9 +94,9 @@ export async function lockRun(directory = stateRoot) {
     return async()=>{
       if(released)return;released=true;
       try { if(await readFile(path,'utf8')===owner)await unlink(path); }
-      finally { mutex.exec('ROLLBACK');mutex.close(); }
+      finally { releaseMutex(); }
     };
-  } catch(error) { mutex.exec('ROLLBACK');mutex.close();throw error; }
+  } catch(error) { releaseMutex();throw error; }
 
 }
 export function sourceKey(url: string) {

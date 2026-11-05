@@ -102,3 +102,28 @@ test('an orphaned copy writer prevents stage reclamation until its handle closes
   assert.equal((await compressNormalizedEvidence(f.options)).state,'compressed');assert.deepEqual(await f.stages(),[]);await validatePublication(f.receipt,f.options.keyPath);
  }finally{child?.kill('SIGKILL');await rm(f.root,{recursive:true,force:true});}
 });
+
+test('SIGKILL before and after atomic replacement recovers durable stages without changing receipt identity',mac,async()=>{
+ const implementation=new URL('../scripts/lib/normalized-compression.ts',import.meta.url).href;
+ for(const phase of ['before_replace','after_replace']){
+  const f=await fixture();let child:ReturnType<typeof spawn>|undefined;
+  try{
+   const before=await lstat(f.receipt.membershipPath);
+   const script=`import {compressNormalizedEvidence} from ${JSON.stringify(implementation)};
+    await compressNormalizedEvidence({receiptPath:process.argv[1],root:process.argv[2],keyPath:process.argv[3],
+     guard(){},async reserve(){},checkpoint(phase){if(phase===process.argv[4]){
+      process.send({phase});Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0);
+     }}});`;
+   child=spawn(process.execPath,['--import','tsx','--import','./tests/fixture-clock.ts','--input-type=module','-e',script,f.receiptPath,f.root,f.options.keyPath,phase],{stdio:['ignore','ignore','pipe','ipc']});
+   const errors:string[]=[];child.stderr!.on('data',chunk=>errors.push(String(chunk)));
+   const exited=once(child,'exit');
+   await Promise.race([once(child,'message'),exited.then(([code])=>{throw Error(`Compression exited before checkpoint (${code}): ${errors.join('')}`);})]);
+   child.kill('SIGKILL');await exited;child=undefined;
+   assert.equal(await readFile(f.receiptPath,'utf8'),f.receiptText);await validatePublication(f.receipt,f.options.keyPath);
+   assert.equal((await lstat(f.receipt.membershipPath)).ino===before.ino,phase==='before_replace');
+   assert.equal((await f.stages()).length,1);
+   assert.equal((await compressNormalizedEvidence(f.options)).state,phase==='before_replace'?'compressed':'already_space_efficient');
+   assert.deepEqual(await f.stages(),[]);assert.equal(await readFile(f.receiptPath,'utf8'),f.receiptText);
+  }finally{child?.kill('SIGKILL');await rm(f.root,{recursive:true,force:true});}
+ }
+});

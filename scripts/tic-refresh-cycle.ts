@@ -12,6 +12,7 @@ import { join,dirname,resolve }  from 'node:path';
 import { preparedSource,type PreparedSource } from './lib/prepared-source';
 import { reuseSourceArchive,type SourceArchive } from './lib/source-archive';
 import { hostname } from 'node:os';
+import { randomUUID } from 'node:crypto';
 import { createAnthemSelectionDiscoverer } from './lib/anthem-selection';
 import { discoverAnthemProjections, type ProjectedCandidate } from './lib/anthem-large-toc';
 import { createIssuerDiscoverer, sourceIdentity, type IssuerDiscovery } from './lib/issuer-discovery';
@@ -27,6 +28,7 @@ import { stateRoot, archiveRoot, atomicJson, progressJson, credential, lockRun, 
 type Item = {issuer:string; source?:string; state:string; reason?:string; memberships?:number; plans?:number; sourceDate?:string};
 async function main(){
  if(hostname()!=='nmai-mac-mini') throw new Error('Mini host required');
+ const supervisionId=process.env.AFFINITY_REFRESH_SUPERVISION_ID??randomUUID();
  const unlock=await lockRun();
  const results:Item[]=[];
  const statusPath=join(stateRoot,'status.json');
@@ -49,7 +51,7 @@ async function main(){
  let latestSources:Record<string,{sourceDate:string;publishedAt:string}>={};
  try {const previous=JSON.parse(await readFile(statusPath,'utf8'));lastPublishedAt=previous.lastPublishedAt;latestSources=previous.latestSources??{};} catch {}
  try{
-  await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{phase:'storage_preflight'},results});
+  await atomicJson(statusPath,{version:1,supervisionId,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{phase:'storage_preflight'},results});
   const cleanupGuard=volumeCleanupSessionGuard();
   process.send?.({type:'refresh_storage_ready'});
   try{await recoverDownloadStages(downloadJournal,cleanupGuard);}catch(e){cleanupGuard();throw e;}
@@ -80,7 +82,7 @@ async function main(){
    catch(e){if(e instanceof Deferred)throw e;throw Error('normalized_evidence_compression_requires_review');}
   };
   const runId=new Date().toISOString().replace(/[:.]/g,'-');
-  await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{phase:'discovery'},results});
+  await atomicJson(statusPath,{version:1,supervisionId,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{phase:'discovery'},results});
   const selected=process.argv.includes('--issuer') ? [process.argv[process.argv.indexOf('--issuer')+1]] : ['mmoh','cigna','anthem'];
   if(selected.some(x=>!['mmoh','cigna','anthem'].includes(x)))throw new Error('Unknown issuer');
   const maxFiles=Number(process.env.AFFINITY_REFRESH_MAX_FILES??REFRESH_POLICY.newFilesPerCycle);
@@ -112,7 +114,7 @@ async function main(){
     const prior=priorRows.find(p=>p.active&&sourceIdentity(p.url)===sourceIdentity(candidate.url));
     let replayCandidate:TicPublication|undefined;
     if(prior?.receiptPath && ticSourceCurrent(prior.sourceLastUpdated?.toISOString(), new Date().toISOString())){
-     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'verify_existing_evidence'},results});
+     await atomicJson(statusPath,{version:1,supervisionId,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'verify_existing_evidence'},results});
      try {
       const saved=await validatePublication(JSON.parse(await readFile(prior.receiptPath,'utf8')));
       const mappingsSame=planMappingIdentity(await tocPlans(tocPath,candidate.url))===planMappingIdentity(saved.plans);
@@ -147,7 +149,7 @@ async function main(){
      if(attempted>=maxFiles){results.push({issuer,source:path,state:'deferred',reason:'run_file_budget'});continue;}
      await storageBudget(sourceWorkspaceReserve(undefined,compact));attempted++;
     }
-    await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'download_validate_publish'},results});
+    await atomicJson(statusPath,{version:1,supervisionId,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'download_validate_publish'},results});
     const dir=cached?dirname(prepared[key].receiptPath):join(directory,sourceKey(candidate.url));await ensureArchiveDirectory(dir);
     try{
      const sourcePath=join(dir,'source.json.gz');
@@ -162,12 +164,12 @@ async function main(){
       identicalPath=await availableIdenticalReceipt(identicalPath,archiveRoot);
       if(!identicalPath){delete content[download.sha256];await atomicJson(contentPath,content);}
      }
-     if(identicalPath)await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'identical_source_validation'},results});
-     let receipt=cached??(reuse ? replayCandidate! : identicalPath?await prepareIdenticalPublication({priorReceiptPath:identicalPath,sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard}):await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard,compact,disk:{scratchRoot:dir,onProgress:progress=>progressJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'ssd_extraction',progress},results})}}));
+     if(identicalPath)await atomicJson(statusPath,{version:1,supervisionId,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'identical_source_validation'},results});
+     let receipt=cached??(reuse ? replayCandidate! : identicalPath?await prepareIdenticalPublication({priorReceiptPath:identicalPath,sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard}):await preparePublication({sourcePath,sourceUrl:candidate.url,tocPath,tocProjection:candidate.tocProjection,tocUrl:discovery.tocUrl,directory:dir,guard,compact,disk:{scratchRoot:dir,onProgress:progress=>progressJson(statusPath,{version:1,supervisionId,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'ssd_extraction',progress},results})}}));
      let publicationPath=cached?prepared[key].receiptPath:reuse?prior!.receiptPath!:join(dir,'publication.json');
      if(compact&&!receipt.serving&&!reuse){const derived=await deriveCompactPublication(receipt,publicationPath,guard);receipt=derived.receipt;publicationPath=derived.receiptPath;}
      guard();await validatePublication(receipt);
-     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'capacity_check'},results});
+     await atomicJson(statusPath,{version:1,supervisionId,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'capacity_check'},results});
      const verifiedReplay=sameManagedContent(receipt,replayCandidate);
      if(!reuse&&etag){prepared[key]={etag,policy,receiptPath:publicationPath};await atomicJson(preparedPath,prepared);}
      const sizes=await db.$queryRaw<Array<{bytes:bigint}>>`SELECT pg_database_size(current_database()) AS bytes`;
@@ -178,7 +180,7 @@ async function main(){
       results.push({issuer,source:path,state:'blocked',reason:'database_capacity_budget'});continue;
      }
      // A source reaching the publication path is complete and hash-verified; its transaction is atomic.
-     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'atomic_publish'},results});
+     await atomicJson(statusPath,{version:1,supervisionId,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'atomic_publish'},results});
      const result=await publishManaged(db,receipt,publicationPath,()=>{guard();requireVolume();},archiveRoot,undefined,sharedPlans);
      guard();await atomicJson(join(dir,'published.json'),result);
      if(prepared[key]){delete prepared[key];await atomicJson(preparedPath,prepared);}
@@ -189,7 +191,7 @@ async function main(){
      latestSources[issuer]={sourceDate:receipt.sourceDate,publishedAt:result.publishedAt};
      results.push({issuer,source:path,state:replayed?'verified_unchanged':'published',sourceDate:receipt.sourceDate,memberships:result.memberships,plans:result.plans});
      if(reuse){archives[key]={...archives[key],path:receipt.sourcePath};await atomicJson(archivesPath,archives);await reclaimDuplicateDownload(sourcePath,receipt.sourcePath,download.sha256,guard,receipt);}
-     await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'serving_readback'},results});
+     await atomicJson(statusPath,{version:1,supervisionId,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{issuer,source:path,phase:'serving_readback'},results});
      try{await verifyServing(db,result.fileId);}catch{results.push({issuer,source:path,state:'blocked',reason:'published_but_public_readback_failed'});}
      if(!reuse){
       try{await compactEligible(publicationPath);}
@@ -210,14 +212,14 @@ async function main(){
       }
      }
     }
-    await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),results});
+    await atomicJson(statusPath,{version:1,supervisionId,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),results});
    }
   }
   const state=results.some(x=>x.state==='blocked'||x.state==='deferred')?'partial':'complete_for_discovered_scope';
-  const receipt={version:1,pid:process.pid,state,lastPublishedAt,latestSources,observedAt:new Date().toISOString(),results};
+  const receipt={version:1,supervisionId,pid:process.pid,state,lastPublishedAt,latestSources,observedAt:new Date().toISOString(),results};
   await atomicJson(statusPath,receipt);console.log(JSON.stringify(receipt));
  }catch(e){
-  const receipt={version:1,pid:process.pid,lastPublishedAt,latestSources,state:e instanceof Deferred?'deferred':'failed',reason:safeReason(e),observedAt:new Date().toISOString(),results};
+  const receipt={version:1,supervisionId,pid:process.pid,lastPublishedAt,latestSources,state:e instanceof Deferred?'deferred':'failed',reason:safeReason(e),observedAt:new Date().toISOString(),results};
   await atomicJson(statusPath,receipt);console.log(JSON.stringify(receipt));
   if(!(e instanceof Deferred))process.exitCode=1;
  }finally{await db?.$disconnect();await unlock();}

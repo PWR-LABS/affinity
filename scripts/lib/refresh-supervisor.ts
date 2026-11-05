@@ -1,6 +1,8 @@
 import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
-import { atomicJson } from './refresh-runtime';
+import { dirname } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { atomicJson, Deferred, lockRunMutex } from './refresh-runtime';
 import { REFRESH_POLICY } from './refresh-policy';
 
 type Options = { deadlineMs?: number; graceMs?: number; preflightMs?: number };
@@ -14,7 +16,9 @@ export async function superviseRefresh(args: string[], statusPath: string, optio
   // A dedicated process group includes local tar/SQLite helper children. Never
   // signal an unrelated process or delete a lock while a stuck worker survives.
   const grouped = process.platform !== 'win32';
-  const child = spawn(process.execPath, args, { detached: grouped, stdio: ['inherit', 'inherit', 'inherit', 'ipc'] });
+  const supervisionId = randomUUID(), startedAt = new Date().toISOString(), started = performance.now();
+  const child = spawn(process.execPath, args, { detached: grouped, stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+    env: { ...process.env, AFFINITY_REFRESH_SUPERVISION_ID: supervisionId } });
   let reason: string | undefined, stoppedCode = 124, exited = false;
   let grace: ReturnType<typeof setTimeout> | undefined;
   let preflight: ReturnType<typeof setTimeout> | undefined;
@@ -48,19 +52,37 @@ export async function superviseRefresh(args: string[], statusPath: string, optio
       child.once('error', reject);
       child.once('exit', (code, exitSignal) => {
         exited = true;
-        // Stop any helper that outlived its interrupted worker before releasing
-        // the supervisor. This group was created exclusively for this child.
-        if (reason) signal('SIGKILL');
+        // A crash/OOM can strand the same helpers as a deadline interruption.
+        // Stop them before returning; this group belongs exclusively to this child.
+        if (reason || code !== 0) signal('SIGKILL');
         resolve({ code, signal: exitSignal });
       });
     });
     if (result.code !== 0 || reason) {
-      const status = JSON.parse(await readFile(statusPath, 'utf8').catch(() => '{}'));
-      if (status.pid === child.pid && status.state === 'running') {
-        await atomicJson(statusPath, { ...status, state: reason ? 'deferred' : 'failed', reason: reason ?? 'worker_exited',
-          exitCode: result.code, signal: result.signal, terminationPending: result.pending ?? false,
-          observedAt: new Date().toISOString() });
+      const outcome = { version: 1, supervisionId, pid: child.pid, supervisorPid: process.pid, startedAt,
+        elapsedMs: Math.floor(performance.now() - started), reason: reason ?? 'worker_exited',
+        exitCode: result.code, signal: result.signal,
+        state: reason ? 'deferred' : 'failed',
+        terminationPending: result.pending ?? false, observedAt: new Date().toISOString() };
+      let unlock: (() => void) | undefined;
+      let checkpointUpdate: 'updated' | 'not_owned' | 'deferred' = 'not_owned';
+      let checkpointReason: string | undefined;
+      try { unlock = await lockRunMutex(dirname(statusPath)); }
+      catch (error) {
+        if (!(error instanceof Deferred)) throw error;
+        // The worker may still be in kernel I/O, or another publisher may have
+        // taken over. Preserve its checkpoint and both lock files. A separate
+        // small receipt keeps the timeout/termination outcome explicit.
+        checkpointUpdate = 'deferred'; checkpointReason = error.message;
       }
+      if (unlock) try {
+        const status = JSON.parse(await readFile(statusPath, 'utf8').catch(() => '{}'));
+        if (status.pid === child.pid && status.supervisionId === supervisionId && status.state === 'running') {
+          await atomicJson(statusPath, { ...status, ...outcome });
+          checkpointUpdate = 'updated';
+        }
+      } finally { unlock(); }
+      await atomicJson(`${statusPath}.${supervisionId}.supervision.json`, { ...outcome, checkpointUpdate, checkpointReason });
     }
     return reason ? stoppedCode : result.code ?? 1;
   } finally {
