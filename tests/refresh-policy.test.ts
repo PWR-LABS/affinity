@@ -16,6 +16,8 @@ test('large local processing reserves scratch while preserving compact publicati
 test('scratch representation upgrades reuse complete evidence and retry only changed-policy failures',()=>{
  const current=REFRESH_POLICY.version+'-npi-prefix-v1',old='5gb-200k-disk-v5-npi-prefix-v1';
  assert.equal(compatiblePreparedPolicy(old,true),old);
+ assert.equal(compatiblePreparedPolicy('5gb-ref-intern-v6-npi-prefix-v1',true),'5gb-ref-intern-v6-npi-prefix-v1');
+ assert.equal(compatiblePreparedPolicy('5gb-ref-buffer-v999',true),undefined);
  assert.equal(compatiblePreparedPolicy('5gb-200k-disk-v5',true),'5gb-200k-disk-v5');
  assert.equal(compatiblePreparedPolicy(old,false),undefined);
  assert.equal(compatiblePreparedPolicy('150mb-200k-strict-zip-memory-v3',true),undefined);

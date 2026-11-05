@@ -42,6 +42,7 @@ type Frame = {
   kind: 'object' | 'array'; path: string[]; key?: string; keys?: Set<string>; keyBytes: number;
   ref?: number; group?: number; groupOrder?: number; identifier?: string; hasGroups?: boolean;
   tinType?: string; tinValue?: string; hasNpis?: boolean; inline?: boolean;
+  pendingNpis?: Map<string,{seq:number;occurrences:number}>; pendingBytes?:number;
   scalarRelevant: boolean;
 };
 const equal = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
@@ -110,7 +111,7 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
     db.exec('PRAGMA max_page_count=' + Math.floor(maxScratch / 4096));
     db.exec(`
       CREATE TABLE refs(id INTEGER PRIMARY KEY, identifier TEXT UNIQUE);
-      CREATE TABLE groups(id INTEGER PRIMARY KEY, ref INTEGER, tin_type TEXT NOT NULL DEFAULT '', tin_value TEXT NOT NULL DEFAULT '', has_npis INTEGER NOT NULL DEFAULT 0);
+      CREATE TABLE groups(id INTEGER PRIMARY KEY, ref INTEGER, tin_type TEXT NOT NULL DEFAULT '', tin_value TEXT NOT NULL DEFAULT '', has_npis INTEGER NOT NULL DEFAULT 0,resolved_zero INTEGER,resolved_tin INTEGER);
       CREATE TABLE group_catalog(hash TEXT PRIMARY KEY,group_id INTEGER NOT NULL) WITHOUT ROWID;
       CREATE TABLE ref_groups(ref INTEGER NOT NULL,group_id INTEGER NOT NULL,seq INTEGER NOT NULL,occurrences INTEGER NOT NULL DEFAULT 1,PRIMARY KEY(ref,group_id)) WITHOUT ROWID;
       CREATE INDEX ref_groups_order ON ref_groups(ref,seq);
@@ -128,6 +129,7 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
     const addGroup = db.prepare('INSERT INTO groups(ref) VALUES(?)');
     const finishGroup = db.prepare('UPDATE groups SET tin_type=?,tin_value=?,has_npis=? WHERE id=?');
     const addNpi = db.prepare('INSERT INTO npis(g,raw,seq) VALUES(?,?,?) ON CONFLICT(g,raw) DO UPDATE SET occurrences=occurrences+1');
+    const addBufferedNpi = db.prepare('INSERT INTO npis(g,raw,seq,occurrences) VALUES(?,?,?,?)');
     const addUse = db.prepare('INSERT OR IGNORE INTO uses VALUES(?,?)');
     const groupNpis = db.prepare('SELECT raw,occurrences FROM npis WHERE g=? ORDER BY seq');
     const inlinePair = db.prepare('INSERT OR IGNORE INTO inline_pairs VALUES(?,?,?)');
@@ -176,21 +178,40 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
       }
       removeNpis.run(frame.group!); removeGroup.run(frame.group!);
     };
+    // Only small groups are buffered (128 distinct scalars / 64 KiB). A larger
+    // group spills immediately to the same bounded disk representation.
+    const flushGroup = (frame:Frame) => {
+      frame.group??=Number(addGroup.run(activeRef!.ref!).lastInsertRowid);
+      for(const [raw,row] of frame.pendingNpis??[])addBufferedNpi.run(frame.group,raw,row.seq,row.occurrences);
+      frame.pendingNpis=undefined;
+    };
+    const recordNpi = (frame:Frame,raw:string) => {
+      const seq=++sequence;
+      if(frame.pendingNpis){
+        const known=frame.pendingNpis.get(raw);
+        if(known)known.occurrences++;
+        else{
+          const bytes=Buffer.byteLength(raw);
+          if(frame.pendingNpis.size===128||(frame.pendingBytes??0)+bytes>65_536){flushGroup(frame);addNpi.run(frame.group!,raw,seq);}
+          else{frame.pendingNpis.set(raw,{seq,occurrences:1});frame.pendingBytes=(frame.pendingBytes??0)+bytes;}
+        }
+      }else addNpi.run(frame.group!,raw,seq);
+    };
     // Identical provider groups recur across references in large issuer files.
     // Retain one exact content-addressed group, with ordered per-reference links
     // and multiplicity for the dropped-NPI counters. No source tokens are skipped.
     const internReferenceGroup = (frame:Frame) => {
       const tinType=frame.tinType??'',tinValue=frame.tinValue??'',hasNpis=frame.hasNpis?1:0;
-      finishGroup.run(tinType,tinValue,hasNpis,frame.group!);
       const hash=createHash('sha256').update(JSON.stringify([tinType,tinValue,hasNpis])+'\n');
-      for(const row of groupHashRows.iterate(frame.group!)){
+      const hashRows=frame.pendingNpis?[...frame.pendingNpis].map(([raw,row])=>({raw,occurrences:row.occurrences,sortKey:Buffer.from(raw)})).sort((a,b)=>Buffer.compare(a.sortKey,b.sortKey)):groupHashRows.iterate(frame.group!);
+      for(const row of hashRows){
         if(++operations%4096===0)checkpoint();
         hash.update(JSON.stringify([row.raw,row.occurrences])+'\n');
       }
       const key=hash.digest('hex'),existing=canonicalGroup.get(key);
-      const id=existing?Number(existing.group_id):frame.group!;
-      if(existing){removeNpis.run(frame.group!);removeGroup.run(frame.group!);}
-      else addCanonicalGroup.run(key,id);
+      let id:number;
+      if(existing){id=Number(existing.group_id);if(frame.group!==undefined){removeNpis.run(frame.group);removeGroup.run(frame.group);}}
+      else{flushGroup(frame);id=frame.group!;finishGroup.run(tinType,tinValue,hasNpis,id);addCanonicalGroup.run(key,id);}
       addGroupUse.run(activeRef!.ref!,id,frame.groupOrder!);
     };
     const nextPath = () => {
@@ -209,7 +230,7 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
         const p = activeGroup.path;
         if (equal(path, [...p, 'tin', 'type'])) activeGroup.tinType = raw.trim().toLowerCase();
         if (equal(path, [...p, 'tin', 'value'])) activeGroup.tinValue = raw.trim();
-        if (equal(path, [...p, 'npi', '*']) && !(activeGroup.inline && sawReferences)) addNpi.run(activeGroup.group!, raw.trim(), ++sequence);
+        if (equal(path, [...p, 'npi', '*']) && !(activeGroup.inline && sawReferences)) recordNpi(activeGroup,raw.trim());
       }
       if (equal(path, usePath)) {
         const id = raw.trim(); if (!id) throw new Error('Unresolved provider reference');
@@ -274,9 +295,10 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
         if (activeRef && equal(path, [...referencePath, 'location'])) throw new Error('Unarchived or malformed provider reference: external location');
         if (equal(path, inlineGroupPath) || equal(path, referenceGroupPath)) {
           if (kind !== 'object') throw new Error('Malformed provider group');
-          frame.group = Number(addGroup.run(equal(path, referenceGroupPath) ? activeRef!.ref! : null).lastInsertRowid);
           frame.groupOrder=++sequence;
           frame.inline = equal(path, inlineGroupPath);
+          if(frame.inline)frame.group=Number(addGroup.run(null).lastInsertRowid);
+          else{frame.pendingNpis=new Map();frame.pendingBytes=0;}
           activeGroup = frame; disk.groups++;
         }
         if (activeGroup && equal(path, [...activeGroup.path, 'npi']) && kind === 'array') activeGroup.hasNpis = true;
@@ -327,6 +349,7 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
     const schema = sawReferences ? 'v1' : 'v2';
     const findRef = db.prepare('SELECT id FROM refs WHERE identifier=?');
     const orderedGroups = db.prepare('SELECT g.*,r.occurrences AS group_occurrences FROM ref_groups r JOIN groups g ON g.id=r.group_id WHERE r.ref=? ORDER BY r.seq');
+    const resolvedGroup = db.prepare('UPDATE groups SET resolved_zero=?,resolved_tin=? WHERE id=?');
     const insertPair = db.prepare('INSERT OR IGNORE INTO pairs VALUES(?,?,?)');
     const insertNpi = db.prepare('INSERT OR IGNORE INTO emitted_npis VALUES(?)');
     let zeroDropped = 0, tinDropped = 0;
@@ -339,15 +362,22 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
     };
     const emitGroups = async (ref: number | null) => {
       for (const group of orderedGroups.iterate(ref)) {
+        if (++operations % 4096 === 0) { checkpoint(); await yieldLoop(); }
         if (!group.has_npis || !group.tin_type || !group.tin_value) continue;
+        const multiplicity=Number(group.group_occurrences);
+        // The first selected use emits the exact group's pairs. Later selected
+        // references add its counters but cannot introduce a new membership.
+        if(group.resolved_zero!==null){zeroDropped+=Number(group.resolved_zero)*multiplicity;tinDropped+=Number(group.resolved_tin)*multiplicity;continue;}
+        let groupZero=0,groupTin=0;
         for (const row of groupNpis.iterate(group.id)) {
           if (++operations % 4096 === 0) { checkpoint(); await yieldLoop(); }
-          const npi = String(row.raw), count = Number(row.occurrences)*Number(group.group_occurrences), tinType = String(group.tin_type), tinValue = String(group.tin_value);
+          const npi = String(row.raw), count = Number(row.occurrences), tinType = String(group.tin_type), tinValue = String(group.tin_value);
           const kind = classify(npi, tinType, tinValue);
-          if (kind === 'zero') zeroDropped += count;
-          else if (kind === 'tin') tinDropped += count;
+          if (kind === 'zero') groupZero += count;
+          else if (kind === 'tin') groupTin += count;
           else if (kind === 'valid') emitPair(npi, tinType, tinValue);
         }
+        resolvedGroup.run(groupZero,groupTin,group.id);zeroDropped+=groupZero*multiplicity;tinDropped+=groupTin*multiplicity;
       }
     };
     // Iterate first-use order, not definition order. Repeated use IDs expand once,

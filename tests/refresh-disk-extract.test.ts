@@ -249,3 +249,12 @@ test('repeated reference catalogs remain complete within a bounded scratch budge
  assert.equal(result.disk.groups,100000);assert.equal(result.disk.references,500);assert.equal(result.pairs_emitted,1);
  assert.equal(result.zero_npi_dropped,100000);assert.equal(result.tin_in_npi_dropped,100000);assert.ok(result.disk.peakScratchBytes<=524288);await clean(f.scratchRoot);
 });
+test('reference buffers spill by distinct count and UTF-8 bytes without changing order or multiplicity',async t=>{
+ const small=Array.from({length:128},(_,i)=>String(1234567000+i));
+ const large=[...small,'1234567999',0,0,123456789];
+ const long=[1234567890,'a'.repeat(40000),'é'.repeat(20000),0,123456789];
+ const body=v1([{provider_group_id:1,provider_groups:[group(small),group(large),group([...large].reverse()),group(long),group([...long].reverse())]},{provider_group_id:2,provider_groups:[group(large,'npi')]}],[2,1]);
+ const f=await fixture(t,JSON.stringify(body));const old=await runExtract({input:f.input,out:join(f.root,'legacy'),sourceUrl:SOURCE,progress:false});const result=await runDiskExtract(f.options);
+ assert.equal(await readFile(f.out,'utf8'),await readFile(join(f.root,'legacy'),'utf8'));
+ for(const key of ['pairs_emitted','npis_emitted','zero_npi_dropped','tin_in_npi_dropped'] as const)assert.equal(result[key],old[key]);await clean(f.scratchRoot);
+});
