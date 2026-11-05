@@ -49,7 +49,9 @@ async function main(){
  let latestSources:Record<string,{sourceDate:string;publishedAt:string}>={};
  try {const previous=JSON.parse(await readFile(statusPath,'utf8'));lastPublishedAt=previous.lastPublishedAt;latestSources=previous.latestSources??{};} catch {}
  try{
+  await atomicJson(statusPath,{version:1,pid:process.pid,state:'running',lastPublishedAt,latestSources,observedAt:new Date().toISOString(),current:{phase:'storage_preflight'},results});
   const cleanupGuard=volumeCleanupSessionGuard();
+  process.send?.({type:'refresh_storage_ready'});
   try{await recoverDownloadStages(downloadJournal,cleanupGuard);}catch(e){cleanupGuard();throw e;}
   requireVolume(); await storageBudget();await verifySourceProofKey();
   const guardVolume=volumeSessionGuard();
