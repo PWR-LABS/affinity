@@ -24,3 +24,11 @@ The current compression implementation and its ownership/open-handle checks were
 - Notion: **not applicable**; keeper doctrine unchanged.
 
 Both defects were surfaced to the Mini during the audit. This is a reviewable source repair, not proof of installation, production acceptance or resolution of the original USB fault. No production database writes, Mini credentials/proof-key access, bulk issuer downloads, shared-SSD operations, resource changes, merge or deployment occurred. Integrate the supervisor, runtime mutex helper and cycle identity together at a safe publisher boundary; adopt the sidecar read contract before unattended consumption. Mini retains production execution and resource ownership.
+
+## Mini integration verification
+
+The Mini independently fetched and reviewed exact Air commit `b064fb43bf902e16d1f346f260e79696180d50e3`. Its twenty focused supervisor/compression tests and TypeScript passed. The owning Mini added a read-only orchestration consumer for UUID/PID-bound outcomes; six additional tests cover matching interrupted outcomes, reused PIDs, malformed/mismatched events, terminal worker results, missing evidence and symlink refusal. All 284 application tests passed with no skipped tests.
+
+At `2026-11-05T18:43:45.287041Z`, the Mini also completed the existing managed, authenticated-compaction and compact-index database evaluators against a newly created isolated loopback `affinity_employer_e2e` fixture on port 55439. These exercised real transactions, injected disconnect rollback, durable-identity replay without a local result, generation retirement, withdrawal, and corrupt compact-index rejection. They do not simulate every possible network or process failure. Only synthetic data entered the fixture. Its PostgreSQL server was stopped and its exact owned temporary cluster removed afterward; no production database or existing local database was changed.
+
+The active Mini publisher remains on its prior pinned runtime until a committed-source stopping point. Passing review and merging the repair do not themselves establish installation or a completed issuer backfill. The installed status reader and both local orchestration prompts must adopt the supervision contract together before the next unattended run.
