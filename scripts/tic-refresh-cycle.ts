@@ -1,6 +1,7 @@
 import {compactServingEnabled,deriveCompactPublication} from './lib/compact-serving';
 /** Deterministic Mini runner. Codex schedules this command; it never provisions cloud compute. */
 import { verifySourceProofKey } from '../src/lib/tic/source-proof';
+import {recoverDownloadStages} from './lib/download-staging';
 import { REFRESH_POLICY,sourceWorkspaceReserve,publicationCapacity,compatiblePreparedPolicy,compatibleSourceBlock } from './lib/refresh-policy';
 import { PrismaClient } from '@prisma/client';
 import { readFile } from 'node:fs/promises';
@@ -19,7 +20,7 @@ import { ticSourceCurrent } from '../src/lib/tic/freshness';
 import { validatePublication, tocPlans, type TicPublication } from '../src/lib/tic/publication';
 import { verifyServing } from './lib/refresh-serving-check';
 import { publishManaged,planMappingIdentity,sameManagedContent } from './lib/managed-publication';
-import { stateRoot, archiveRoot, atomicJson, progressJson, credential, lockRun, Deferred, requireVolume, volumeSessionGuard, storageBudget, downloadFile, sourceKey, ensureArchiveDirectory } from './lib/refresh-runtime';
+import { stateRoot, archiveRoot, atomicJson, progressJson, credential, lockRun, Deferred, requireVolume, volumeSessionGuard, volumeCleanupSessionGuard,downloadJournal, storageBudget, downloadFile, sourceKey, ensureArchiveDirectory } from './lib/refresh-runtime';
 type Item = {issuer:string; source?:string; state:string; reason?:string; memberships?:number; plans?:number; sourceDate?:string};
 async function main(){
  if(hostname()!=='nmai-mac-mini') throw new Error('Mini host required');
@@ -42,6 +43,8 @@ async function main(){
  let latestSources:Record<string,{sourceDate:string;publishedAt:string}>={};
  try {const previous=JSON.parse(await readFile(statusPath,'utf8'));lastPublishedAt=previous.lastPublishedAt;latestSources=previous.latestSources??{};} catch {}
  try{
+  const cleanupGuard=volumeCleanupSessionGuard();
+  try{await recoverDownloadStages(downloadJournal,cleanupGuard);}catch(e){cleanupGuard();throw e;}
   requireVolume(); await storageBudget();await verifySourceProofKey();
   const guardVolume=volumeSessionGuard();
   const guard=()=>{if(performance.now()-cycleStarted>REFRESH_POLICY.cycleMs)throw new Deferred('cycle_time_budget');guardVolume();};
@@ -80,7 +83,7 @@ async function main(){
     if(issuer==='anthem'){const selected=await discoverAnthemSelection(directory,{guard});discovery=await discoverAnthemProjections(selected.tocUrl,selected.selectedPath,guard,cycleFetch);}
     else discovery=await discoverIssuer(issuer as 'mmoh'|'cigna',directory,{guard});
    }
-   catch(e){results.push({issuer,state:'blocked',reason:safeReason(e)});continue;}
+   catch(e){guard();results.push({issuer,state:'blocked',reason:safeReason(e)});continue;}
    guard();await storageBudget();
    // Process existing archived candidates first; unchanged sources are still
    // checked even after the new-attempt allowance is exhausted.

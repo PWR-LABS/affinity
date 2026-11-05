@@ -1,4 +1,5 @@
-import { createHash } from 'node:crypto';
+import { createHash,randomUUID } from 'node:crypto';
+import {recoverCompletedDownload} from './download-staging';
 import { readFile, stat } from 'node:fs/promises';
 import { join, dirname, resolve } from 'node:path';
 import { buildSelectedToc } from '../../tools/tic-ingest/selected-toc';
@@ -6,7 +7,7 @@ import { sha256, type TicPublication } from '../../src/lib/tic/publication';
 import { validateTocLineage } from '../../src/lib/tic/toc-lineage';
 import { sourceIdentity } from './issuer-discovery';
 import { ticSourceCurrent } from '../../src/lib/tic/freshness';
-import { stateRoot,archiveRoot,atomicJson,progressJson,sourceKey,downloadFile,storageBudget,ensureArchiveDirectory } from './refresh-runtime';
+import { stateRoot,archiveRoot,atomicJson,progressJson,sourceKey,downloadFile,downloadJournal,storageBudget,ensureArchiveDirectory } from './refresh-runtime';
 export type ProjectedCandidate={url:string;transportUrl:string;stableKey:string;tocPath:string;tocProjection:NonNullable<TicPublication['tocProjection']>};
 /** Immutable parent evidence stays unchanged; only known signing fields may renew. */
 export function renewedAnthemTransport(sourceUrl:string,selected:string[]):string {
@@ -19,6 +20,11 @@ export function renewedAnthemTransport(sourceUrl:string,selected:string[]):strin
 }
 type Cache={tocUrl:string;etag:string|null;parentPath:string;download:{bytes:number;sha256:string};selectionSha256?:string;planScopeSha256?:string;receiptPath?:string};
 const cachePath=join(stateRoot,'anthem-large-toc.json');
+/** Bind the validator independently. Appending '?etag=' to an already signed
+ * URL can accidentally put the validator inside a discarded signature value. */
+export function anthemTocArchiveKey(url:string,etag:string|null,nonce:string=randomUUID()){
+ return createHash('sha256').update(JSON.stringify([sourceIdentity(url),etag||nonce])).digest('hex');
+}
 export async function discoverAnthemProjections(tocUrl:string,selectedPath:string,guard:()=>void,fetcher=fetch){
  const u=new URL(tocUrl);
  if(!/^antm-pt-prod-dataz-nogbd-nophi-us-east[12]\.s3(?:\.us-east-2)?\.amazonaws\.com$/.test(u.hostname)||!/^\/anthem\/\d{4}-\d{2}-01_anthem_index\.json\.gz$/.test(u.pathname)||u.protocol!=='https:')throw new Error('Unverified Anthem TOC locator');
@@ -33,10 +39,10 @@ export async function discoverAnthemProjections(tocUrl:string,selectedPath:strin
  if(cache){try{if((await stat(cache.parentPath)).size!==bytes)cache=undefined;}catch{cache=undefined;}}
  if(!cache){
   await storageBudget(bytes+2_000_000_000);
-  const directory=join(archiveRoot,'large-toc',sourceKey(tocUrl+'?etag='+encodeURIComponent(etag??Date.now().toString())));await ensureArchiveDirectory(directory);
+  const directory=join(archiveRoot,'large-toc',anthemTocArchiveKey(tocUrl,etag));await ensureArchiveDirectory(directory);
   const parentPath=join(directory,'index.json.gz');
   await atomicJson(join(stateRoot,'large-toc-status.json'),{state:'downloading',startedAt:new Date().toISOString(),bytes});
-  const download=await downloadFile(tocUrl,parentPath,12_000_000_000,guard,fetcher,3600000);
+  const download=await recoverCompletedDownload({journal:downloadJournal,path:parentPath,url:tocUrl,etag,bytes,guard})??await downloadFile(tocUrl,parentPath,12_000_000_000,guard,fetcher,3600000);
   cache={tocUrl,etag,parentPath,download};guard();await atomicJson(cachePath,cache);
  }
  const selected=JSON.parse(await readFile(selectedPath,'utf8')) as string[];
