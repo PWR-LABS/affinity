@@ -1,7 +1,7 @@
 import {compactServingEnabled,deriveCompactPublication} from './lib/compact-serving';
 /** Deterministic Mini runner. Codex schedules this command; it never provisions cloud compute. */
 import { verifySourceProofKey } from '../src/lib/tic/source-proof';
-import { REFRESH_POLICY,sourceWorkspaceReserve,publicationCapacity } from './lib/refresh-policy';
+import { REFRESH_POLICY,sourceWorkspaceReserve,publicationCapacity,compatiblePreparedPolicy,compatibleSourceBlock } from './lib/refresh-policy';
 import { PrismaClient } from '@prisma/client';
 import { readFile } from 'node:fs/promises';
 import { join,dirname,resolve }  from 'node:path';
@@ -122,12 +122,12 @@ async function main(){
       if(head.ok)etag=head.headers.get('etag');
       // Some issuer frontends use a different HEAD validator. A 304 from the
       // actual GET representation may reuse a known block/preparation safely.
-      const known=blocks[key]?.policy===policy?blocks[key].etag:prepared[key]&&[policy,REFRESH_POLICY.version].includes(prepared[key].policy)?prepared[key].etag:undefined;
+      const known=compatibleSourceBlock(blocks[key],policy)?blocks[key].etag:compatiblePreparedPolicy(prepared[key]?.policy,compact)?prepared[key].etag:undefined;
       if(known&&etag!==known&&await conditionalSourceUnchanged(transportUrl,known,cycleFetch))etag=known;
-      if(!replayCandidate&&etag&&blocks[key]?.etag===etag&&blocks[key]?.policy===policy){results.push({issuer,source:path,state:'blocked',reason:blocks[key].reason});continue;}
+      if(!replayCandidate&&etag&&blocks[key]?.etag===etag&&compatibleSourceBlock(blocks[key],policy)){results.push({issuer,source:path,state:'blocked',reason:blocks[key].reason});continue;}
     }catch{/* A bounded GET can still succeed when HEAD is unavailable. */}
     let cached:TicPublication|undefined;
-    try{cached=await preparedSource(prepared[key],{etag,policy:compact&&prepared[key]?.policy===REFRESH_POLICY.version?REFRESH_POLICY.version:policy,sourceUrl:candidate.url,tocPath,root:archiveRoot});}
+    try{cached=await preparedSource(prepared[key],{etag,policy:compatiblePreparedPolicy(prepared[key]?.policy,compact)??policy,sourceUrl:candidate.url,tocPath,root:archiveRoot});}
     catch(e){if(e instanceof Deferred)throw e;results.push({issuer,source:path,state:'blocked',reason:'prepared_source_requires_review'});continue;}
     if(!cached){
      if(attempted>=maxFiles){results.push({issuer,source:path,state:'deferred',reason:'run_file_budget'});continue;}
