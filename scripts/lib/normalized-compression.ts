@@ -1,5 +1,5 @@
 /** macOS transparent compression preserves every logical byte and receipt path.
- * Stage a streamed system-ditto copy, verify it, then atomically replace only the
+ * Stage a streamed system-bsdtar copy, verify it, then atomically replace only the
  * normalized file. Raw source archives and publication receipts are unchanged.
  */
 import {spawn,spawnSync,type ChildProcess} from 'node:child_process';
@@ -10,6 +10,9 @@ import {sha256,validatePublication} from '../../src/lib/tic/publication';
 import {durableJson} from '../../src/lib/tic/source-proof';
 const active=new Set<string>();
 const prefix='.normalized-compression-';
+export function compressionWorthInstalling(logicalBytes:bigint,beforeAllocatedBytes:bigint,afterAllocatedBytes:bigint){
+ return afterAllocatedBytes<beforeAllocatedBytes&&afterAllocatedBytes<logicalBytes*BigInt(8)/BigInt(10);
+}
 type Options={receiptPath:string;root:string;guard:()=>void;reserve:(bytes:number)=>Promise<void>;cleanupGuard?:()=>void;keyPath?:string;
  checkpoint?:(phase:string)=>void;copy?:(source:string,directory:string,guard:()=>void)=>Promise<void>};
 function stable(a:BigIntStats,b:BigIntStats){return a.dev===b.dev&&a.ino===b.ino&&a.size===b.size&&a.mtimeNs===b.mtimeNs&&a.ctimeNs===b.ctimeNs;}
@@ -24,8 +27,8 @@ function noOpenFiles(directory:string){
 }
 /** No shell, internal-volume staging or user-controlled archive is involved. */
 async function copyCompressed(source:string,directory:string,guard:()=>void){
- const producer=spawn('/usr/bin/ditto',['-c',source,'-'],{stdio:['ignore','pipe','pipe']});
- const consumer=spawn('/usr/bin/ditto',['-x','--hfsCompression','-',directory],{stdio:['pipe','ignore','pipe']});
+ const producer=spawn('/usr/bin/tar',['-c','-f','-','-C',dirname(source),basename(source)],{stdio:['ignore','pipe','pipe']});
+ const consumer=spawn('/usr/bin/tar',['-x','-p','--hfsCompression','-f','-','-C',directory],{stdio:['pipe','ignore','pipe']});
  producer.stderr.resume();consumer.stderr.resume();producer.stdout.pipe(consumer.stdin);
  consumer.stdin.on('error',()=>{});let failure:unknown;
  const stop=()=>{producer.kill('SIGTERM');consumer.kill('SIGTERM');};
@@ -76,7 +79,10 @@ export async function compressNormalizedEvidence(options:Options){
   const candidate=join(stage,basename(path)),copied=await ownedFile(candidate,owner.dev);
   if(copied.size!==before.size||copied.mode!==before.mode||copied.gid!==before.gid||await sha256(candidate)!==receipt.membershipSha256)throw Error('Normalized compression candidate bytes differ');
   if(!stable(before,await lstat(path,{bigint:true})))throw Error('Normalized source changed during compression');
-  if(copied.blocks>=before.blocks){await cleanStage(stage,path,owner.dev,cleanup);stage=undefined;return {state:'no_space_saving' as const};}
+  // Allocation rounding/extent packing alone is not compression. Require the
+  // same material saving used by the replay fast path, so a near-size copy
+  // cannot be installed and recopied on every subsequent refresh.
+  if(!compressionWorthInstalling(before.size,before.blocks*BigInt(512),copied.blocks*BigInt(512))){await cleanStage(stage,path,owner.dev,cleanup);stage=undefined;return {state:'no_space_saving' as const};}
   const output=await open(candidate,'r');try{await output.sync();}finally{await output.close();}
   guard();if(!stable(before,await lstat(path,{bigint:true})))throw Error('Normalized source changed before replacement');
   options.checkpoint?.('before_replace');guard();await rename(candidate,path);await syncDirectory(directory);options.checkpoint?.('after_replace');

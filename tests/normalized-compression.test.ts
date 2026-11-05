@@ -3,11 +3,16 @@ import {mkdtemp,realpath,mkdir,writeFile,readFile,rm,lstat,readdir,symlink,renam
 import {tmpdir} from 'node:os';import {join,basename} from 'node:path';import {gzipSync} from 'node:zlib';
 import {spawn} from 'node:child_process';import {once} from 'node:events';
 import {preparePublication} from '../scripts/tic-refresh';
-import {compressNormalizedEvidence} from '../scripts/lib/normalized-compression';
+import {compressNormalizedEvidence,compressionWorthInstalling} from '../scripts/lib/normalized-compression';
 import {compactSourceArchive} from '../scripts/lib/source-compaction';
 import {createSourceProofKey} from '../src/lib/tic/source-proof';
 import {sha256,validatePublication} from '../src/lib/tic/publication';
 const mac={skip:process.platform!=='darwin'};
+test('large-file extent repacking is not classified as material compression',()=>{
+ assert.equal(compressionWorthInstalling(BigInt(921788928),BigInt(922845184),BigInt(921792512)),false);
+ assert.equal(compressionWorthInstalling(BigInt(11117250),BigInt(11120640),BigInt(450560)),true);
+ assert.equal(compressionWorthInstalling(BigInt(11117250),BigInt(450560),BigInt(454656)),false);
+});
 async function fixture(sealed=true){
  const root=await realpath(await mkdtemp(join(tmpdir(),'affinity-normalized-'))),directory=join(root,'source');await mkdir(directory);
  const keyPath=join(root,'key');await createSourceProofKey(keyPath);
