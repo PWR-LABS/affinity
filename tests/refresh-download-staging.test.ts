@@ -37,6 +37,11 @@ test('network and cap failures clean their own partials immediately while preser
  const f=await fixture(t);await writeFile(join(f.journal.archiveRoot,'other.partial'),'unrelated');
  await assert.rejects(downloadOwnedFile({...f,url,maxBytes:3,timeoutMs:1000,guard:()=>{},fetcher:response('too large')}),/source_size_limit/);
  assert.deepEqual(await readdir(f.journal.archiveRoot),['other.partial']);assert.equal((await readdir(f.journal.directory)).filter(n=>n.endsWith('.json')).length,0);
+ let chunks=0;
+ const broken=new ReadableStream<Uint8Array>({pull(c){if(chunks++===0)c.enqueue(Buffer.from('written-prefix'));else c.error(new Error('connection reset'));}},{highWaterMark:0});
+ await assert.rejects(downloadOwnedFile({...f,url,maxBytes:100,timeoutMs:1000,guard:()=>{},fetcher:(async()=>new Response(broken)) as typeof fetch}),/connection reset/);
+ assert.deepEqual(await readdir(f.journal.archiveRoot),['other.partial']);assert.equal((await readdir(f.journal.directory)).filter(n=>n.endsWith('.json')).length,0);
+ assert.equal(await readFile(join(f.journal.archiveRoot,'other.partial'),'utf8'),'unrelated');
 });
 test('changed partial bytes, replaced inodes, wrong volume and directory replacements are never reclaimed',async t=>{
  const f=await interrupted(t,true);await assert.rejects(recoverDownloadStages({...f.journal,volumeUUID:'other'},()=>{}),/ownership mismatch/);
