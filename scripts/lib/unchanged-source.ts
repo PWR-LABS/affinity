@@ -1,6 +1,6 @@
 import { readFile, realpath, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
-import { sha256 } from '../../src/lib/tic/publication';
+import { sha256,validatePublication,type TicPublication } from '../../src/lib/tic/publication';
 
 /** Some issuer CDNs reject HEAD but honor a normal conditional GET. */
 export async function conditionalSourceUnchanged(url:string,etag:string,fetcher=fetch):Promise<boolean>{
@@ -12,12 +12,16 @@ export async function conditionalSourceUnchanged(url:string,etag:string,fetcher=
 }
 
 /** Remove only this run's duplicate download after its existing publication readback. */
-export async function reclaimDuplicateDownload(path:string,retained:string,expected:string,guard:()=>void){
+export async function reclaimDuplicateDownload(path:string,retained:string,expected:string,guard:()=>void,retainedPublication?:TicPublication,archiveKeyPath?:string){
  guard();
- if(resolve(path)===resolve(retained)||await realpath(path)!==resolve(path)||await realpath(retained)!==resolve(retained))throw new Error('Unsafe duplicate archive');
- if(await sha256(path)!==expected||await sha256(retained)!==expected)throw new Error('Duplicate archive hash mismatch');
+ if(resolve(path)===resolve(retained)||await realpath(path)!==resolve(path))throw new Error('Unsafe duplicate archive');
+ if(retainedPublication?.sourceArchive){
+  if(resolve(retainedPublication.sourcePath)!==resolve(retained)||retainedPublication.sourceSha256!==expected)throw new Error('Compacted duplicate source mismatch');
+  await validatePublication(retainedPublication,archiveKeyPath);
+ }else if(await realpath(retained)!==resolve(retained)||await sha256(retained)!==expected)throw new Error('Duplicate archive hash mismatch');
+ if(await sha256(path)!==expected)throw new Error('Duplicate archive hash mismatch');
  const receipt=JSON.parse(await readFile(join(dirname(path),'download.json'),'utf8'));
  if(receipt.sha256!==expected)throw new Error('Duplicate download receipt mismatch');
- guard();await writeFile(join(dirname(path),'retention.json'),JSON.stringify({reason:'identical bytes; validated original and publication retained',removed:path,retained,sha256:expected,observedAt:new Date().toISOString()},null,2)+'\n',{flag:'wx',mode:0o600});
+ guard();await writeFile(join(dirname(path),'retention.json'),JSON.stringify({reason:'identical bytes; validated publication evidence retained',removed:path,retained,sourceArchive:retainedPublication?.sourceArchive,sha256:expected,observedAt:new Date().toISOString()},null,2)+'\n',{flag:'wx',mode:0o600});
  guard();await unlink(path);
 }

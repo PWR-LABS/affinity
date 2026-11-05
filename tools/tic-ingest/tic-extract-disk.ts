@@ -4,7 +4,9 @@
  * writing or cleaning through a replaced scratch root. Inaccessible cleanup is
  * explicit on an error (cleanupPending/scratchPath) or successful summary.disk.
  */
-import { constants, lstatSync, realpathSync, type BigIntStats } from 'node:fs';
+import { constants, lstatSync, realpathSync, readFileSync,type BigIntStats } from 'node:fs';
+import {createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
 import { open, lstat, realpath, mkdtemp, rm, rename, type FileHandle } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { createRequire } from 'node:module';
@@ -17,6 +19,7 @@ import { openZipJson, type ZipJsonReadable } from './lib/zip-json';
 import type { ExtractSummary } from './tic-extract';
 
 const require = createRequire(import.meta.url);
+const extractorRevision=createHash('sha256').update(readFileSync(fileURLToPath(import.meta.url))).update(readFileSync(fileURLToPath(new URL('./lib/zip-json.ts',import.meta.url)))).update(process.version).digest('hex');
 const { parser } = require('stream-json');
 const SCALAR_BYTES = 65_536, DEPTH = 64, KEY_BYTES = 65_536;
 export interface DiskExtractProgress {
@@ -31,7 +34,7 @@ export interface DiskExtractOptions {
 export type DiskExtractSummary = ExtractSummary & { disk: {
   decodedBytes: number; peakScratchBytes: number; groups: number; references: number;
   cleanupPending?: boolean; scratchPath?: string;
-} };
+}; validation:{policy:'tic-membership-v1-strict';extractorRevision:string;jsonEof:true;archiveIntegrity:true;referenceClosure:true;sourceStable:true;limits:{maxPairs:number;maxMs:number;maxScratchBytes:number;maxDecodedBytes:number}} };
 type Token = { name: string; value?: unknown };
 type Frame = {
   kind: 'object' | 'array'; path: string[]; key?: string; keys?: Set<string>; keyBytes: number;
@@ -62,9 +65,9 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
   const source = new URL(options.sourceUrl);
   if (source.protocol !== 'https:' || source.username || source.password || Buffer.byteLength(options.sourceUrl) > SCALAR_BYTES) throw new Error('Invalid source URL');
   const maxPairs = bounded(options.maxPairs, 200_000, 'membership');
-  const maxMs = bounded(options.maxMs, 1_800_000, 'time');
+  const maxMs = bounded(options.maxMs, 7_200_000, 'time');
   const maxScratch = bounded(options.maxScratchBytes, 4_000_000_000, 'scratch');
-  const maxDecoded = bounded(options.maxDecodedBytes, 64_000_000_000, 'decoded');
+  const maxDecoded = bounded(options.maxDecodedBytes, 128_000_000_000, 'decoded');
   if (maxScratch < 65_536) throw new Error('scratch_limit: insufficient SQLite space');
   const started = performance.now(), root = resolve(options.scratchRoot), input = resolve(options.input), out = resolve(options.out);
   options.guard?.();
@@ -353,7 +356,8 @@ export async function runDiskExtract(options: DiskExtractOptions): Promise<DiskE
     await handle.close(); handle = undefined;
     check(); await rename(outputPath, out); committed = true;
     return { files: 1, npis_emitted: npiCount, pairs_emitted: pairs, zero_npi_dropped: zeroDropped, tin_in_npi_dropped: tinDropped,
-      remote_refs_fetched: 0, remote_refs_404: 0, schema, seconds: Number(((performance.now() - started) / 1000).toFixed(3)), peak_rss_mb: Math.round(process.resourceUsage().maxRSS / 1024), disk };
+      remote_refs_fetched: 0, remote_refs_404: 0, schema, seconds: Number(((performance.now() - started) / 1000).toFixed(3)), peak_rss_mb: Math.round(process.resourceUsage().maxRSS / 1024), disk,
+      validation:{policy:'tic-membership-v1-strict',extractorRevision,jsonEof:true,archiveIntegrity:true,referenceClosure:true,sourceStable:true,limits:{maxPairs,maxMs,maxScratchBytes:maxScratch,maxDecodedBytes:maxDecoded}} };
   } catch (error) {
     // ZIP integrity adapters wrap guard exceptions. Preserve the caller's exact
     // deferral error so the scheduler can still distinguish storage loss.
