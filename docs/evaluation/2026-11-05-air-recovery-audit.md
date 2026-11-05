@@ -1,0 +1,26 @@
+# Air refresh recovery audit — November 5, 2026
+
+Observed on `nmai-macbook-air`, starting at `2026-11-05T18:21:25Z`; final code checks completed by `18:34:09Z`. Reviewed baseline: `94597bcb3bb3c7e88af4d084d75b62d09d65a8dc`. The Mini reported installed runtime `267cc5a11f845e518fbb9cf679faa9eddc8e5ae9`; this audit did not independently inspect that runtime or production state.
+
+## Reproduced defects
+
+1. **P1: abnormal exit leaves helpers running.** `refresh-supervisor.ts` killed the dedicated process group after a supervisor interruption, but skipped that cleanup when the worker independently exited nonzero or died from a signal. A synthetic helper acknowledged startup, ignored SIGTERM and wrote a marker 700 ms after its worker exited with code 7. The baseline supervisor returned 7 while the helper completed that write. A crashed publisher can therefore release its OS mutex while helper I/O continues without its guard. The fix kills the exclusively owned group on both nonzero and signal exits. Regression coverage exercises code 7 and SIGKILL, retaining earlier published progress in the checkpoint.
+
+2. **P2: checkpoint takeover races the ownership check.** The supervisor read a checkpoint, checked its worker PID, then asynchronously replaced the file without holding the publisher mutex. Fault injection paused after that read, admitted a new publisher through the real local SQLite mutex, and wrote its new checkpoint/PID sidecar. The baseline supervisor overwrote the new checkpoint with the old worker's failure. The fix reserves the same OS mutex around read/check/replace without changing the PID sidecar. If another owner holds the mutex, its checkpoint and lock inodes survive. A separate per-run outcome receipt preserves supervisor diagnostics.
+
+The repair also binds all cycle checkpoints and abnormal-exit receipts to a supervisor-generated UUID. A reused PID cannot associate an earlier checkpoint with a new outcome. The exact sidecar schema, association rules and Mini consumer requirements are in [the refresh runbook](../EMPLOYER_REFRESH.md#unattended-publisher-implementation). Adoption by the Mini orchestrator remains an integration step; this slice installs no reader or automation changes.
+
+## Compression and publication review
+
+The current compression implementation and its ownership/open-handle checks were inspected. New tests kill an actual synthetic compression worker immediately before and after atomic replacement, then validate the complete publication and recover its durable stage in a fresh call. Both preserve the exact receipt and normalized logical hash/count. Before replacement the original inode survives; after replacement the verified replacement survives. Recovery removes the recognized stage. Existing tests also pass for a live orphan writer, unexpected files, symlinks, changed bytes, storage-loss injection and space admission. No additional correctness defect was reproduced in these compression paths. Temporary fixtures used the Air's local temporary directory, never the shared SSD.
+
+`publishManaged`, the transactional publisher, cycle replay and source compaction were source-reviewed for an uncertain commit/lost local result. The durable identity lookup occurs under the database advisory lock; a matching active publication follows readback rather than insertion, and an inactive match fails closed. Source-compaction boundary tests passed in the application suite. These observations do not establish real-database fault recovery: loopback Postgres answered on port 5432, but the required disposable `affinity_employer_e2e` database did not exist. No database was created, no alternative database was substituted, and `eval:refresh-recovery` was not run. The Mini should run that existing evaluator against its suitably configured disposable database before treating the database fault path as freshly verified.
+
+## Validation and delivery limits
+
+- Node 24.22.1: all **278 tests passed**, with no skipped tests. This includes nine supervisor tests and eleven compression tests.
+- TypeScript: passed against a temporary Prisma client generated from the current checked-out schema. The Air's existing shared generated client lacked newer TiC models; an initial typecheck failed on those stale types. The shared dependency directory was preserved. An ignored schema copy added only a temporary client output path, and an ignored tsconfig extended the repository config with paths to that generated client and the existing source alias. No database connection or migration was needed.
+- `git diff --check`: passed. Test/typecheck logs and the temporary generation configuration are under ignored `tmp/recovery-audit/`.
+- Notion: **not applicable**; keeper doctrine unchanged.
+
+Both defects were surfaced to the Mini during the audit. This is a reviewable source repair, not proof of installation, production acceptance or resolution of the original USB fault. No production database writes, Mini credentials/proof-key access, bulk issuer downloads, shared-SSD operations, resource changes, merge or deployment occurred. Integrate the supervisor, runtime mutex helper and cycle identity together at a safe publisher boundary; adopt the sidecar read contract before unattended consumption. Mini retains production execution and resource ownership.
