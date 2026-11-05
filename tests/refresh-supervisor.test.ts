@@ -33,3 +33,43 @@ test('killed publisher releases OS mutex and concurrent stale takeover has exact
   await(await lockRun(dir))();
  }finally{child.kill('SIGKILL');await rm(dir,{recursive:true,force:true});}
 });
+
+test('independent deadline interrupts a blocked worker and its helper without discarding progress',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'affinity-supervisor-')),path=join(dir,'status.json'),escaped=join(dir,'escaped');
+ try{
+  const script=`
+    require('fs').writeFileSync(process.argv[1],JSON.stringify({pid:process.pid,state:'running',results:[{state:'published'}]}));
+    process.on('SIGTERM',()=>{});
+    require('child_process').spawn(process.execPath,['-e',"setTimeout(()=>require('fs').writeFileSync(process.argv[1],'escaped'),1600)",process.argv[2]],{stdio:'ignore'});
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0);
+  `;
+  const started=performance.now();
+  assert.equal(await superviseRefresh(['-e',script,path,escaped],path,{deadlineMs:600,graceMs:100}),124);
+  assert.ok(performance.now()-started<1500);
+  const status=JSON.parse(await readFile(path,'utf8'));
+  assert.equal(status.reason,'worker_deadline');assert.equal(status.state,'deferred');assert.equal(status.results[0].state,'published');
+  await new Promise(resolve=>setTimeout(resolve,1700));
+  await assert.rejects(readFile(escaped),{code:'ENOENT'});
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('storage preflight has its own deadline; readiness cancels only that deadline',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'affinity-supervisor-')),path=join(dir,'status.json');
+ const prefix=`require('fs').writeFileSync(process.argv[1],JSON.stringify({pid:process.pid,state:'running',current:{phase:'storage_preflight'}}));`;
+ try{
+  assert.equal(await superviseRefresh(['-e',prefix+`Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0)`,path],path,{preflightMs:300,deadlineMs:2000,graceMs:50}),124);
+  assert.equal(JSON.parse(await readFile(path,'utf8')).reason,'storage_preflight_timeout');
+  assert.equal(await superviseRefresh(['-e',prefix+`process.send({type:'refresh_storage_ready'});setTimeout(()=>process.exit(0),500)`,path],path,{preflightMs:300,deadlineMs:2000,graceMs:50}),0);
+  assert.equal(await superviseRefresh(['-e',prefix+`process.send({type:'refresh_storage_ready'});setInterval(()=>{},1000)`,path],path,{preflightMs:300,deadlineMs:700,graceMs:50}),124);
+  assert.equal(JSON.parse(await readFile(path,'utf8')).reason,'worker_deadline');
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('deadline cannot overwrite another publisher checkpoint',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'affinity-supervisor-')),path=join(dir,'status.json');
+ try{
+  await writeFile(path,JSON.stringify({pid:process.pid,state:'running',sentinel:'other publisher'}));
+  assert.equal(await superviseRefresh(['-e','setInterval(()=>{},1000)'],path,{deadlineMs:200,graceMs:50}),124);
+  assert.deepEqual(JSON.parse(await readFile(path,'utf8')),{pid:process.pid,state:'running',sentinel:'other publisher'});
+ }finally{await rm(dir,{recursive:true,force:true});}
+});

@@ -57,7 +57,7 @@
     "partd:load": "tsx scripts/partd-load.ts",
     "partd:region-backfill": "tsx scripts/partd-region-backfill.ts",
     "eval:partd-reconcile": "tsx scripts/eval-partd-reconcile.ts",
-    "refresh:employers": "node --import tsx scripts/tic-refresh-cycle.ts",
+    "refresh:employers": "node --import tsx scripts/run-mini-refresh.ts",
     "refresh:volume": "node scripts/check-refresh-volume.cjs",
     "eval:refresh-recovery": "node --import tsx scripts/eval-managed-refresh.ts",
     "prestart": "node scripts/ensure-compact-tic-schema.cjs"
