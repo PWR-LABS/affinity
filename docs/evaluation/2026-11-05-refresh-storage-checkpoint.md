@@ -44,3 +44,15 @@ At the current readback, the database occupied 2,427,524,799 bytes, below the un
 The 150 GB SSD free-space floor, 100 GB task cap, existing raw archives, source-completeness checks and public unknown-on-absence behavior remain intact. The earlier Cigna identity and Medical Mutual stale/Optum gaps remain as recorded in `2026-11-04-source-discovery-gap-review.md` and the retained refresh receipts. No keeper doctrine changed; Notion sync is not applicable. Air receipt remains pending.
 
 Next executable step: restore responsive access to the exact approved SSD, verify its identity and retained checkpoints, then resume the pinned Mini runtime and assess all 86 remaining unprocessed identities. Mounted metadata alone is insufficient recovery evidence. The operator has been asked whether the SSD remains physically attached; no answer was available when this checkpoint was written.
+
+## Recovery observation — 18:00–18:08 UTC
+
+The approved SSD responded again at `2026-11-05T18:00:14.573Z`: exact UUID and mount checks passed, the entire 4,030-byte root manifest was read successfully, and 164,620,398,592 bytes were available. The cause of the earlier USB/storage fault was not established; network reconnection alone is not evidence of its cause or repair.
+
+All 273 application tests subsequently passed, including the ten native compression tests that had been blocked. The earlier preparer batch's final receipt was recovered: two complete preparations, both already published and verified, followed by one free-space reservation deferral. No additional complete preparation was waiting to be published. Exact selected-source readback at `18:02:36.305Z` remained 208 of 297 current; the database remained 2,427,524,799 bytes.
+
+The installed supervised Mini runtime resumed the Anthem backfill at approximately 18:03 UTC. At `18:07:57.354Z` it was actively revalidating retained evidence with 104 verified-unchanged results; that is replay progress, not 104 new publications. All source, disk and cloud limits remain enforced. The explicit catch-up run permits up to 1,000 attempts within the unchanged four-hour deadline; routine daily defaults are unchanged.
+
+A temporary local completion check, `finish-affinity-issuer-backfill`, is active every 30 minutes in the existing Mini thread to continue this authorized backfill and remove itself once the queue is fully assessed or further continuation is non-actionable. The daily 06:00 Eastern refresh remains separate and active. Neither creates Render compute. The Air task's app connection still failed two bounded read attempts despite the operator's same-network update; no receiver receipt or cross-machine synchronization is claimed.
+
+The refresh remains in progress. Current source counts and actual completion must be read from the latest protected checkpoint and production evidence, not inferred from this recovery entry.
