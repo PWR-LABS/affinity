@@ -1,6 +1,7 @@
+import {existsSync} from 'node:fs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,realpath,readFile,writeFile,rm} from 'node:fs/promises';
+import {mkdtemp,realpath,readFile,writeFile,rm,readdir,mkdir,rename} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,dirname} from 'node:path';
 import {encodeBucket,decodeBucket,bucketContains,digest,compactReservation} from '../src/lib/tic/compact-codec';
@@ -40,4 +41,37 @@ test('schema startup is scoped to the known service or disposable loopback datab
  assert.equal(allowed({DATABASE_URL:'postgresql://user@127.0.0.1:55439/affinity_employer_e2e',AFFINITY_COMPACT_SCHEMA_LOCAL:'1'}),true);
  assert.throws(()=>allowed({DATABASE_URL:'postgresql://user@remote/affinity_employer_e2e',AFFINITY_COMPACT_SCHEMA_LOCAL:'1'}));
  assert.throws(()=>allowed({DATABASE_URL:'postgresql://user@remote/other',RENDER:'true',RENDER_SERVICE_ID:'other'}));
+});
+
+test('completed compact directory recovers the receipt gap and refuses changed source bytes',async t=>{
+ const dir=await realpath(await mkdtemp(join(tmpdir(),'tic-compact-recovery-')));t.after(()=>rm(dir,{recursive:true,force:true}));
+ async function* source(){yield {npi:'1234000001'};yield {npi:'1234000002'};}
+ const first=await buildCompactArchive(dir,'a'.repeat(64),source());
+ assert.deepEqual(await buildCompactArchive(dir,'a'.repeat(64),source()),first);
+ await assert.rejects(buildCompactArchive(dir,'b'.repeat(64),source()),/differs/);
+ async function* changed(){yield {npi:'1234000003'};}
+ await assert.rejects(buildCompactArchive(dir,'a'.repeat(64),changed()),/differs/);
+});
+test('interrupted compact construction preserves the source directory and retries safely',async t=>{
+ const dir=await realpath(await mkdtemp(join(tmpdir(),'tic-compact-stop-')));t.after(()=>rm(dir,{recursive:true,force:true}));
+ await writeFile(join(dir,'source-evidence'),'preserve');
+ async function* interrupted(){yield {npi:'1234000001'};yield {npi:'2345000001'};throw new Error('interrupted');}
+ await assert.rejects(buildCompactArchive(dir,'a'.repeat(64),interrupted()),/interrupted/);
+ assert.deepEqual((await readdir(dir)).sort(),['source-evidence']);
+ async function* complete(){yield {npi:'1234000001'};}
+ await buildCompactArchive(dir,'a'.repeat(64),complete());assert.equal(await readFile(join(dir,'source-evidence'),'utf8'),'preserve');
+});
+test('a replacement source directory cannot receive compact writes or cleanup',async t=>{
+ const parent=await realpath(await mkdtemp(join(tmpdir(),'tic-compact-replaced-')));t.after(()=>rm(parent,{recursive:true,force:true}));const dir=join(parent,'source');await mkdir(dir);
+ async function* replaced(){yield {npi:'1234000001'};await rename(dir,dir+'-original');await mkdir(dir);await writeFile(join(dir,'unrelated'),'preserve');yield {npi:'2345000001'};}
+ await assert.rejects(buildCompactArchive(dir,'a'.repeat(64),replaced()),/directory changed/);
+ assert.equal(await readFile(join(dir,'unrelated'),'utf8'),'preserve');assert.deepEqual(await readdir(dir),['unrelated']);
+});
+
+test('disconnect after atomic directory install leaves a recoverable complete archive',async t=>{
+ const dir=await realpath(await mkdtemp(join(tmpdir(),'tic-compact-installed-')));t.after(()=>rm(dir,{recursive:true,force:true}));
+ async function* source(){yield {npi:'1234000001'};}
+ let interrupt=true;
+ await assert.rejects(buildCompactArchive(dir,'a'.repeat(64),source(),()=>{if(interrupt&&existsSync(join(dir,'npi-prefix-v1'))){interrupt=false;throw new Error('simulated disconnect');}}),/simulated disconnect/);
+ const recovered=await buildCompactArchive(dir,'a'.repeat(64),source());assert.equal(recovered.npiCount,1);
 });
