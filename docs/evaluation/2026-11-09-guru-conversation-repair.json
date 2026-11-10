@@ -1,0 +1,77 @@
+{
+  "manifestHash": "68b4a3ab7e2cb7e1940e76faf6fa71730af81a2a990bd710ce09f2915a26eaf8",
+  "sourceCommit": "8ed7bf5549703f3950fc7627b11ab7cb128d138f",
+  "phase": "repair_probe",
+  "results": [
+    {
+      "caseId": "household-offer-official-path",
+      "reply": {
+        "step": "compare",
+        "changes": {
+          "employerOffer": "offered_household"
+        },
+        "reply": "Yes, I can help. Please confirm the proposed household employer offer. Affordability and Marketplace savings require an official review; Medicaid may also be worth reviewing. Your current household size is 1\u2014how many people are in your household for this coverage review?",
+        "proposedAction": "none",
+        "evidenceIds": []
+      },
+      "usage": {
+        "input_tokens": 1148,
+        "input_tokens_details": {
+          "cache_write_tokens": 1145,
+          "cached_tokens": 0
+        },
+        "output_tokens": 226,
+        "output_tokens_details": {
+          "reasoning_tokens": 44
+        },
+        "total_tokens": 1374
+      },
+      "conservativeUsageMicro": 2565,
+      "returnedModel": "gpt-6.1-terra",
+      "latencyMs": 4009,
+      "checked": {
+        "passed": true,
+        "failures": [],
+        "effectiveChanges": {
+          "employerOffer": "offered_household"
+        },
+        "semanticReview": "required"
+      }
+    },
+    {
+      "caseId": "followup-natural-doctor-intake",
+      "reply": {
+        "step": "coverage",
+        "changes": {
+          "doctorQuery": "Dr Morgan Sample"
+        },
+        "reply": "Please confirm the suggested doctor search name, Dr Morgan Sample. Whether you can keep your doctor depends on the specific plan\u2019s network; the premium comparison doesn\u2019t establish network fit. What is the name of the plan you\u2019re considering?",
+        "proposedAction": "none",
+        "evidenceIds": []
+      },
+      "usage": {
+        "input_tokens": 1395,
+        "input_tokens_details": {
+          "cache_write_tokens": 1392,
+          "cached_tokens": 0
+        },
+        "output_tokens": 213,
+        "output_tokens_details": {
+          "reasoning_tokens": 38
+        },
+        "total_tokens": 1608
+      },
+      "conservativeUsageMicro": 2809,
+      "returnedModel": "gpt-6.1-terra",
+      "latencyMs": 3819,
+      "checked": {
+        "passed": true,
+        "failures": [],
+        "effectiveChanges": {
+          "doctorQuery": "Dr Morgan Sample"
+        },
+        "semanticReview": "required"
+      }
+    }
+  ]
+}
