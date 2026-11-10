@@ -6,7 +6,7 @@ Working implementation scope, November 8, 2026 Eastern. This records the operato
 
 Help someone choose a feasible insurance path and understand exact plan evidence. Primary navigation: **guru / Discover / Coverage / Compare / How**. guru is the conversational entry point, with a conversation pane alongside editable context, source-backed results and next actions. Discover is its first workflow. Structured forms remain available independently of chat or its budget.
 
-The operator requested live AI with a capped budget, then comparison of **gpt-6.1-sol**, **gpt-6.1-terra**, and **gpt-6-luna** across the app's functions before completing the website updates. A one-time benchmark budget and the recurring public allowance are distinct decisions. Credentials are being coordinated with Mini Chief through the operator-authorized task channel. No secret belongs in this document, a benchmark artifact or Git.
+The operator requested live AI with a capped budget, then comparison of **gpt-6.1-sol**, **gpt-6.1-terra**, and **gpt-6-luna** across the app's functions before completing the website updates. A one-time benchmark budget and the recurring public allowance are distinct decisions. On November 9 Eastern, the operator approved the one-time $5 benchmark cap. Mini Chief provisioned the dedicated restricted credential; the Mini verified its protected local presence before execution. No secret belongs in this document, a benchmark artifact or Git.
 
 ## Architecture to evaluate
 
@@ -39,7 +39,7 @@ Official model/pricing pages were inspected November 9 UTC. Standard short-conte
 | gpt-6.1-terra | 1.00 | 5.00 | Candidate for the default conversational workflow |
 | gpt-6-luna | 0.10 | 0.50 | Candidate for focused routing, extraction and concise explanations |
 
-Sources: [Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol), [Terra](https://developers.openai.com/api/docs/models/gpt-6.1-terra), [Luna](https://developers.openai.com/api/docs/models/gpt-6-luna), [pricing](https://developers.openai.com/api/docs/pricing). No model wins by price or published positioning alone. Account access is unverified until a permitted request succeeds. Model aliases and returned model IDs must be retained; aliases can change over time.
+Sources: [Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol), [Terra](https://developers.openai.com/api/docs/models/gpt-6.1-terra), [Luna](https://developers.openai.com/api/docs/models/gpt-6-luna), [pricing](https://developers.openai.com/api/docs/pricing). No model wins by price or published positioning alone. All three models responded during the approved benchmark. Requested aliases and returned model IDs are retained in the local ledger; aliases can change over time.
 
 ### First-stage executable benchmark
 
@@ -61,7 +61,7 @@ Report per-model and per-function counts, failures, conservative token cost, who
 
 ## Spending and execution
 
-Recommended public pilot remains $10/month plus $1/day, pending operator selection. The benchmark proposal is a separate one-time cap of $5. Its current two-repeat conservative reservation total is $4.054254; one repeat is $2.027127. These are preflight allowances, not charges or measured usage.
+Recommended public pilot remains $10/month plus $1/day, pending operator selection. The separately approved benchmark has a one-time cap of $5. Its two-repeat conservative reservation total is $4.054254; one repeat is $2.027127. These are preflight allowances, not charges or measured usage.
 
 Dry run (no credential, network or database required):
 
@@ -72,12 +72,12 @@ node --import tsx scripts/eval-guru-models.ts
 Only after the operator approves the one-time cap and a dedicated credential is securely available:
 
 ```sh
-node --env-file=.env.local --import tsx scripts/eval-guru-models.ts --live --cap-usd=5
+node --use-system-ca --env-file=.env.local --import tsx scripts/eval-guru-models.ts --live --cap-usd=5
 ```
 
 The command has no implicit API-key fallback and no model substitution. Its fixed local pilot ledger lives under ignored `tmp/guru-benchmark/pilot-v1/`. It reserves before dispatch, persists with fsync, serializes runs, retains the full reservation even after successful lower usage, and stops on ambiguous transport/local failures. It never resets a budget or silently retries. A surviving lock or uncertain row requires review; do not delete it to rerun. Rate configuration expires after seven days pending source review. Returned usage is checked against reservations. Reservations also cover the published 1.25x input rate for 30-minute cache writes; extended cache retention is not requested. Usage-based costs use that conservative rate and are estimates, not provider invoice totals. Cache savings are deliberately not assumed.
 
-This local serialized benchmark ledger is **not** the production multi-instance spending gate. Production needs transactional shared reservations, rate limits and bounded retention in the existing database, with current capacity verified before enabling. No new Render service or allocation is proposed. No database migration, provider settings change or paid request has been performed by preparing this scope.
+This local serialized benchmark ledger is **not** the production multi-instance spending gate. Production needs transactional shared reservations, rate limits and bounded retention in the existing database, with current capacity verified before enabling. No new Render service or allocation is proposed. The approved benchmark makes paid synthetic requests; it does not authorize a database migration, public model activation or recurring allowance.
 
 ## Voice answer
 
@@ -100,8 +100,10 @@ Institutional support would be most useful for dependable source access, expert 
 
 ## Current verification
 
-- Dry manifest: 38 cases, 228 planned calls, all three requested models, 13 families; no API calls.
-- Six focused harness tests pass; repository TypeScript check passes.
-- Credential request delivered to Mini Chief; readiness receipt pending.
-- One-time benchmark cap and recurring public cap pending operator selection.
-- Model measurements, blinded semantic review, final routing selection, website implementation and deployment remain unfinished.
+- The approved one-time run completed 228/228 requests on November 9 Eastern / November 10 UTC; conservative usage estimate $0.274661, retained reservation $4.054254, approved cap $5.
+- All 60 conceptual tool selections passed. All 168 prose answers received assistant review; independent blinded human review remains pending.
+- Terra is the candidate for the next integration stage, not an established production winner. Two Luna structured coverage contradictions remain open integration findings.
+- [Measured report](evaluation/2026-11-09-guru-model-benchmark.md) and [full synthetic results](evaluation/2026-11-09-guru-model-benchmark.json) preserve original scores, responses, per-function findings and limitations.
+- Six focused harness tests pass. The earlier repository TypeScript check passed; report publication changes documentation only.
+- Air owns guru/UI implementation. The old Mini navigation draft is excluded from this benchmark checkpoint. Actual adapter execution, browser acceptance and production spending controls remain separate work.
+- The public recurring cap and voice spending remain unapproved. No production activation or deployment occurred.
