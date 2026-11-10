@@ -78,3 +78,11 @@ test('the full accepted current user message survives history limits, including 
  const input=JSON.parse(conversationBody('gpt-6.1-terra',history,context(),[]).input[0].content);
  assert.equal(input.currentUserMessage,text);assert.match(input.currentUserMessage,/household size is 2/);
 });
+
+test('pending model suggestions cannot masquerade as completed context edit receipts',async()=>{
+ const {validateConversationReply}=await import('../src/lib/guru/conversation');
+ const reply={step:'discover',changes:{householdSize:'2'},reply:'Updated your household size to 2; nothing else changed.',proposedAction:'none',evidenceIds:[]};
+ assert.throws(()=>validateConversationReply(reply,[]),/Premature context edit/);
+ for(const text of ["I've updated your household size to 2.",'I changed your household size.','We have saved your new ZIP.'])assert.throws(()=>validateConversationReply({...reply,reply:text},[]));
+ assert.equal(validateConversationReply({...reply,reply:'Please confirm household size 2. The earlier premium comparison needs renewed confirmation.'},[]).changes.householdSize,'2');
+});
