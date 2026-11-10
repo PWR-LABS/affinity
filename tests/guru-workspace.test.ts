@@ -15,7 +15,7 @@ const wire=(value:unknown)=>({model:'gpt-6.1-terra',status:'completed',output:[{
 test('employment and individual or household offers remain distinct from screening inputs',()=>{
  const c={...base(),employment:'working' as const};
  assert.equal(actionInput('screen',c).income,0);
- for(const employerOffer of ['unknown','offered','offered_household'] as const)assert.throws(()=>actionInput('screen',{...c,employerOffer}),/affordability/);
+ for(const employerOffer of ['unknown','offered','offered_household'] as const)assert.throws(()=>actionInput('plans',{...c,employerOffer}),/affordability/);
  for(const changes of [{income:''},{income:'NaN'},{age:''},{householdSize:'0'},{year:1999}])assert.throws(()=>actionInput('screen',{...c,...changes}));
 });
 test('declared premiums preserve pay frequency and same-person basis; unknown never means zero',()=>{

@@ -1433,3 +1433,7 @@ body {
 .guru-handoff { margin-top:1.3rem; border-top:1px solid var(--border); padding-top:.4rem; }
 @media(max-width:850px){ .guru-layout { grid-template-columns:minmax(0,1fr); }.guru-conversation { position:static; }.guru-messages { max-height:18rem; } }
 @media(max-width:480px){ .guru-fields { grid-template-columns:minmax(0,1fr); }.guru-layout>.page-panel { padding:1rem; }.guru-steps button { padding:.5rem .2rem!important; font-size:.75rem; }.guru-evidence dl div { grid-template-columns:minmax(0,1fr); gap:.15rem; } }
+
+.guru-message[data-superseded=true] { border-left:3px solid var(--warn); background:var(--control-bg); }
+.guru-message[data-superseded=true] > p:first-of-type { text-decoration:line-through; color:var(--muted); }
+.guru-message a { color:var(--accent); text-underline-offset:3px; }

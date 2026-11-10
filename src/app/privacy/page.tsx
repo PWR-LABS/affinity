@@ -23,8 +23,8 @@ export default function PrivacyPage() {
         <h2>guru conversation</h2>
         <p>
           Guided mode organizes your next step in the browser. If you explicitly select connected AI,
-          your next question and confirmed workspace fields are sent through our server to OpenAI for
-          task routing and proposed edits. You review suggestions before applying them. The model does
+          your recent conversation, confirmed workspace fields and applicable tool evidence are sent
+          through our server to OpenAI for conversational guidance, explanations and proposed edits/checks. You review suggestions before applying them. The model does
           not determine coverage or enroll you. Connected AI may be unavailable when its allowance or
           service is unavailable; the structured tools remain usable.
         </p>

@@ -1,12 +1,13 @@
 'use client';
 import { createContext,useContext,useState,type Dispatch,type SetStateAction,type ReactNode } from 'react';
 import { DEFAULT_MARKETPLACE_PLAN_YEAR } from '@/lib/marketplace/states';
-import { initialContext,type GuruContext } from '@/lib/guru/workspace';
+import { initialContext,reconcileContext,type GuruContext } from '@/lib/guru/workspace';
 
 type Store={context:GuruContext;setContext:Dispatch<SetStateAction<GuruContext>>;memory:Record<string,unknown>;setMemory:Dispatch<SetStateAction<Record<string,unknown>>>};
 const Context=createContext<Store|null>(null);
 export function GuruContextProvider({children}:{children:ReactNode}){
- const [context,setContext]=useState(()=>initialContext(DEFAULT_MARKETPLACE_PLAN_YEAR));
+ const [context,rawSetContext]=useState(()=>initialContext(DEFAULT_MARKETPLACE_PLAN_YEAR));
+ const setContext:Dispatch<SetStateAction<GuruContext>>=value=>rawSetContext(old=>reconcileContext(old,typeof value==='function'?value(old):value));
  const [memory,setMemory]=useState<Record<string,unknown>>({});
  return <Context.Provider value={{context,setContext,memory,setMemory}}>{children}</Context.Provider>;
 }

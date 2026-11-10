@@ -14,12 +14,14 @@ interface TypeaheadProps {
   fetchSuggestions: (q: string) => Promise<Suggestion[]>;
   onSelect: (s: Suggestion) => void;
   describedBy?: string;
+  initialQuery?:string;
+  onQueryChange?:()=>void;
 }
 
 /** Accessible combobox: debounced server lookup, keyboard nav, ARIA listbox. Clears after select. */
-export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, describedBy }: TypeaheadProps) {
+export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, describedBy,initialQuery='',onQueryChange }: TypeaheadProps) {
   const id = useId();
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuery);
   const [items, setItems] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -93,7 +95,7 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
           autoComplete="off"
           placeholder={placeholder}
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => {setQ(e.target.value);onQueryChange?.();}}
           onKeyDown={onKeyDown}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           onFocus={() => items.length && setOpen(true)}

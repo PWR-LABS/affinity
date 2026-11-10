@@ -35,6 +35,13 @@ export function parseProposal(response:unknown):Proposal{
 }
 export async function planTurn(options:{model:string;message:string;context:GuruContext;key:string;reserve:()=>Promise<void>;fetcher?:typeof fetch;now?:Date}){
  const body=plannerBody(options.model,options.message,options.context);
+ return parseProposal(await dispatchModel({...options,body}));
+}
+export async function dispatchModel(options:{model:string;body:{model:string;max_output_tokens:number};key:string;reserve:()=>Promise<void>;fetcher?:typeof fetch;now?:Date}){
+ const body=options.body;
+ if(!MODEL_IDS.includes(options.model as typeof MODEL_IDS[number])||body.model!==options.model)throw Error('Unreviewed model');
+ const bytes=Buffer.byteLength(JSON.stringify(body),'utf8');
+ if(bytes>12000||!Number.isInteger(body.max_output_tokens)||body.max_output_tokens<1||(bytes+4096)*2.5+body.max_output_tokens*10>RESERVATION_MICRO)throw Error('Model turn exceeds its upper reservation');
  // Expired pricing cannot authorize a new reservation or dispatch.
  const age=(options.now?.getTime()??Date.now())-Date.parse(PRICING_DATE+'T00:00:00Z');
  if(age<0||age>7*86400000)throw Error('Planner pricing requires review');
@@ -44,5 +51,5 @@ export async function planTurn(options:{model:string;message:string;context:Guru
  if(!response.ok)throw Error('Planner unavailable');
  const data=await response.json();
  if(typeof data.model!=='string'||!(data.model===options.model||data.model.startsWith(options.model+'-')))throw Error('Unexpected planner model');
- return parseProposal(data);
+ return data;
 }

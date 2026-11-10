@@ -14,16 +14,50 @@ export const contextSchema = z.object({
   marketplacePremium: z.string().max(12),
   premiumBasis: z.enum(['unknown','self','household']),
   comparison: z.enum(['employer','medicaid']),
+  doctorQuery:z.string().max(120),employerQuery:z.string().max(120),planQuery:z.string().max(120),
 }).strict();
 export type GuruContext = z.infer<typeof contextSchema>;
 export type Action = 'screen' | 'plans' | 'network' | 'premium';
+export const ACTIONS=['screen','plans','network','premium'] as const;
 export type Evidence = {
   action: Action; requestKey: string; observedAt: string; title: string;
   facts: Array<{label: string; value: string}>; notes: string[];
 };
 export function initialContext(year: number): GuruContext {
   return {state:'',zip:'',year,age:'',income:'',householdSize:'1',employment:'unknown',employerOffer:'unknown',
-    npi:'',planId:'',planIdType:'ein',employerPremium:'',employerFrequency:'monthly',marketplacePremium:'',premiumBasis:'unknown',comparison:'employer'};
+    npi:'',planId:'',planIdType:'ein',employerPremium:'',employerFrequency:'monthly',marketplacePremium:'',premiumBasis:'unknown',comparison:'employer',doctorQuery:'',employerQuery:'',planQuery:''};
+}
+/** Applies through every form, proposal and shared-context write path. */
+export function reconcileContext(previous:GuruContext,next:GuruContext):GuruContext{
+  return {...next,
+    ...(previous.householdSize!==next.householdSize?{premiumBasis:'unknown' as const}:{}),
+    ...(previous.doctorQuery!==next.doctorQuery?{npi:''}:{}),
+    ...(previous.planQuery!==next.planQuery||previous.employerQuery!==next.employerQuery?{planId:''}:{}),
+  };
+}
+export const CONTEXT_LABELS:Record<keyof GuruContext,string>={state:'State',zip:'ZIP code',year:'Marketplace coverage year',age:'Age',income:'Annual household income',householdSize:'Household size',employment:'Work situation',employerOffer:'Employer insurance offer',npi:'Doctor NPI',planId:'Plan or employer identifier',planIdType:'Identifier type',employerPremium:'Other option’s premium contribution',employerFrequency:'Contribution frequency',marketplacePremium:'Marketplace monthly premium',premiumBasis:'People covered by both amounts',comparison:'Comparison option',doctorQuery:'Doctor name to search',employerQuery:'Employer name to search',planQuery:'Plan name to search'};
+export function contextValue(key:keyof GuruContext,value:unknown):string{
+ const labels:Record<string,string>={unknown:'Not confirmed',working:'Working',not_working:'Not working',retired:'Retired',offered:'Offered to you',offered_household:'Offered through a household member',none:'No relevant employer offer',self:'You only',household:'The same household members',monthly:'Monthly',weekly:'Weekly',biweekly:'Every two weeks',semimonthly:'Twice a month',employer:'Employer offer',medicaid:'Medicaid',ein:'Employer EIN',hios:'HIOS plan identifier'};
+ return labels[String(value)]??String(value);
+}
+export function missingQuestion(action:Action,c:GuruContext):string|null{
+ if(action==='network')return !/^\d{10}$/.test(c.npi)?'What is your doctor’s name, and what ZIP or location should we search? Choose the matching doctor so we check the right person.':!c.planId?'What is your plan or employer’s name? We can help find the identifier, then you can confirm the matching option.':null;
+ if(action==='premium')return c.premiumBasis==='unknown'?'Do both premium amounts cover just you, or the same household members?':!c.employerPremium?'What is the other option’s premium contribution and how often would you pay it?':!c.marketplacePremium?'What Marketplace monthly premium have you been quoted?':null;
+ if(!c.state)return 'Which state do you need coverage in?';
+ if(c.employerOffer==='unknown')return 'Has an employer actually offered insurance to you or someone in your household, or is that still unknown?';
+ if(c.employerOffer!=='none')return null;
+ return !c.zip?'What is your ZIP code?':!c.age?'How old will you be in the coverage year?':c.income===''?'What annual household income do you expect for that coverage year?':null;
+}
+/** A useful route, without pretending an offer review is an eligibility verdict. */
+export function offerHandoff(c:GuruContext):Evidence|undefined{
+ if(c.employerOffer==='none')return undefined;
+ const unknown=c.employerOffer==='unknown';
+ return {action:'screen',requestKey:requestKey('screen',c),observedAt:new Date().toISOString(),
+  title:unknown?'Clarify the offer; keep your coverage routes open':'Keep Medicaid open and review the employer offer',
+  facts:[{label:'Employer offer',value:contextValue('employerOffer',c.employerOffer)},{label:'Subsidized estimate',value:'Not calculated'},{label:'Source',value:'Official navigation and your stated situation'}],
+  notes:[unknown?'Working does not establish an insurance offer. Confirm whether an offer exists, including through another household member.':'The official Marketplace can review the offer’s affordability and minimum value for each relevant household member.',
+   'You can still use your state Medicaid application to check categories that may apply. An employer offer is not a finding that you cannot qualify.',
+   'Use the official Medicaid and Marketplace links below. No eligibility or enrollment decision was made here.']};
 }
 const amount = (s: string) => s.trim() !== '' && /^\d+(?:\.\d{1,2})?$/.test(s) && Number.isFinite(Number(s)) ? Number(s) : undefined;
 export const usd = (n: number) => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(n);
@@ -41,7 +75,7 @@ export function actionInput(action: Action,c: GuruContext): Record<string,unknow
     return {npi:c.npi,planIdType:c.planIdType,planId:c.planId};
   }
   if(action==='premium') return {};
-  if(c.employerOffer!=='none') throw Error('An employer offer needs an affordability and minimum-value review. Use the official Marketplace before relying on a subsidy estimate. Working does not by itself answer whether you have an offer.');
+  if(action==='plans'&&c.employerOffer!=='none') throw Error('An employer offer needs an affordability and minimum-value review. Use the official Marketplace before relying on a subsidy estimate. Working does not by itself answer whether you have an offer.');
   if(!/^[A-Z]{2}$/.test(c.state)||!/^\d{5}$/.test(c.zip)||parseMarketplacePlanYear(c.year)===undefined) throw Error('Choose a state, ZIP code and supported coverage year.');
   const age=Number(c.age),householdSize=Number(c.householdSize),income=amount(c.income);
   if(c.age.trim()===''||!Number.isInteger(age)||age<0||age>120||income===undefined||!Number.isInteger(householdSize)||householdSize<1||householdSize>12) throw Error('Enter your age, annual household income and household size. Zero income is valid.');

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { contextSchema, STEPS, type GuruContext } from './workspace';
+import { contextSchema, STEPS, reconcileContext, type GuruContext } from './workspace';
 import { medicaidResourceByCode } from '../medicaid/states';
 import { parseMarketplacePlanYear } from '../marketplace/states';
 
@@ -10,5 +10,5 @@ export type Proposal=z.infer<typeof proposalSchema>;
 export function applyProposal(context:GuruContext,proposal:Proposal){
  const next=contextSchema.parse({...context,...proposalSchema.parse(proposal).changes});
  if((next.state&&!medicaidResourceByCode(next.state))||(next.zip&&!/^\d{5}$/.test(next.zip))||parseMarketplacePlanYear(next.year)===undefined)throw Error('Unsupported context suggestion');
- return next;
+ return reconcileContext(context,next);
 }
