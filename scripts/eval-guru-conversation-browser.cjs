@@ -24,7 +24,7 @@ async function main(){
     4:{step:'coverage',reply:'Confirm the doctor search name, then choose the matching record.',changes:{doctorQuery:'Dr Morgan Sample'}},
     5:{step:'coverage',reply:'Dr Morgan Sample is selected. What is the plan or employer’s name?'},
     6:{step:'coverage',reply:'The doctor and plan are selected. Shall I check this pair?',proposedAction:'network'},
-    7:{step:'coverage',reply:'The dated issuer fixture lists this doctor. Confirm the exact benefit option and effective year before relying on that listing.',evidenceIds:['current-network']},
+    7:{step:'coverage',reply:'The dated issuer fixture lists this doctor. Confirm the exact benefit option and effective year before relying on that listing. [current-network]',evidenceIds:['current-network']},
     8:{step:'coverage',reply:'The file describes its source date; it does not promise next-year coverage. Ask the insurer and doctor to confirm the exact option for your coverage year.',evidenceIds:['current-network']},
     9:{step:'discover',reply:'Please confirm household size 2. Earlier household-dependent results will need a new check.',changes:{householdSize:'2'}},
    };
@@ -46,10 +46,10 @@ async function main(){
   await page.getByText('Dr Morgan Sample is selected. What is the plan or employer’s name?',{exact:true}).waitFor();
   await page.getByRole('combobox',{name:'Or find your plan by name',exact:true}).fill('Example');await page.getByRole('option').filter({hasText:'Synthetic Example Plan'}).click();
   await page.getByRole('button',{name:'Confirm and run: Check this doctor and plan',exact:true}).click();
-  await page.getByText('The dated issuer fixture lists this doctor. Confirm the exact benefit option and effective year before relying on that listing.',{exact:true}).waitFor();
+  await page.getByText('The dated issuer fixture lists this doctor. Confirm the exact benefit option and effective year before relying on that listing. issuer evidence',{exact:true}).waitFor();
   assert.equal(requests[6].context.npi,'1234567890');assert.equal(requests[6].context.planId,'111111111');
   const positive=page.locator('.guru-message').filter({hasText:'The dated issuer fixture lists this doctor.'});assert.equal(await positive.getAttribute('data-superseded'),'false');
-  assert.ok(await positive.locator('a[data-evidence-id="current-network"]').count());
+  assert.ok(await positive.locator('a[data-evidence-id="current-network"]').count());assert.ok(!(await positive.innerText()).includes('[current-network]'));
   passed.push('doctor and plan name search → explicit match selection → confirmed care-fit check, without requiring the user to know identifiers');
   await ask('Why can’t you guarantee next year?');await page.getByText('The file describes its source date; it does not promise next-year coverage. Ask the insurer and doctor to confirm the exact option for your coverage year.',{exact:true}).waitFor();
   assert.ok(requests[7].history.some(m=>m.text.includes('dated issuer fixture')));assert.ok(requests[7].evidenceActions.includes('network'));
