@@ -4,7 +4,7 @@
  * reach only the existing SSH local forward. Never listen on a public interface. */
 const http=require('node:http');
 const REVIEW_ORIGIN='http://127.0.0.1:3013';
-const NOTICE='Private guru review: real AI conversation with fictional people and synthetic source evidence. This is not a live coverage or eligibility finding. Calls share the existing one-time benchmark cap; the service may stop when its allowance is exhausted.';
+const NOTICE='Private guru review: real AI conversation with synthetic insurer/source evidence. Context you choose to provide may be real and is kept in protected private review records. This is not a live coverage or eligibility finding. Calls share the existing one-time benchmark cap; the service may stop when its allowance is exhausted.';
 const json=(res,value)=>{res.writeHead(200,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(value));};
 const server=http.createServer(async(req,res)=>{
  if(req.headers.host!=='127.0.0.1:3013'||!req.url?.startsWith('/')||req.url.startsWith('//')||!['GET','HEAD','POST'].includes(req.method)){
@@ -12,7 +12,7 @@ const server=http.createServer(async(req,res)=>{
  }
  if(req.url==='/review'&&req.method==='GET'){
   res.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'"});
-  res.end('<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Private guru review</title><style>body{font:18px/1.6 system-ui;max-width:44rem;margin:4rem auto;padding:1.5rem;color:#17221b}a{color:#156d43}</style><h1>Try the conversational guru</h1><p>'+NOTICE+'</p><p>Use a fictional scenario: Ohio 44113, age35, one-person household, annual income $30,000 and no known employer offer. Ask a question, confirm only accurate suggested facts, then follow up or correct them. Choose synthetic matches when offered. Do not enter personal or identifying health information in this evaluation.</p><p>The dedicated credential and spending ledger stay on the Mini. The public site remains unchanged.</p><p><a href="/">Open the private workspace →</a></p></html>');return;
+  res.end('<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Private guru review</title><style>body{font:18px/1.6 system-ui;max-width:44rem;margin:4rem auto;padding:1.5rem;color:#17221b}a{color:#156d43}</style><h1>Try the conversational guru</h1><p>'+NOTICE+'</p><p>You can use a fictional scenario or the personal context you have authorized for this private walkthrough. Your recent conversation and confirmed context are sent to OpenAI when connected mode is selected. Confirm only accurate suggested facts, then follow up or correct them. Source matches and coverage evidence here remain synthetic, even when your context is real. Private inputs and responses do not belong in public reports or test fixtures.</p><p>Review calls use the dedicated Mini gateway and its existing shared spending ledger. The public site remains unchanged.</p><p><a href="/">Open the private workspace →</a></p></html>');return;
  }
  const guru=req.url.split('?')[0]==='/api/guru';
  if(guru&&(req.method!=='POST'||req.headers.origin!==REVIEW_ORIGIN)){

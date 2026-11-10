@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { STATE_MEDICAID_RESOURCES, medicaidResourceByCode } from '@/lib/medicaid/states';
 import { DEFAULT_MARKETPLACE_PLAN_YEAR, SUPPORTED_MARKETPLACE_PLAN_YEARS, stateBasedMarketplace } from '@/lib/marketplace/states';
-import { actionInput, comparePremiums, evidenceFrom, initialContext, requestKey, STEPS, STEP_REPLY, suggestStep, missingQuestion, offerHandoff, CONTEXT_LABELS, contextValue, reconcileContext, type Action, type Evidence, type GuruContext, type Step } from '@/lib/guru/workspace';
+import { actionInput, comparePremiums, evidenceFrom, initialContext, requestKey, STEPS, suggestStep, guidedReply, missingQuestion, offerHandoff, CONTEXT_LABELS, contextValue, reconcileContext, type Action, type Evidence, type GuruContext, type Step } from '@/lib/guru/workspace';
 import { applyProposal, type Proposal } from '@/lib/guru/proposal';
 import { useGuruStore,useGuruMemory } from './GuruContext';
 import { Typeahead,type Suggestion } from './Typeahead';
@@ -70,7 +70,7 @@ export function GuruWorkspace(){
    if(next.proposedAction!=='none')setActionProposal(next.proposedAction);
    setEvidence(old=>[...fresh,...old.filter(e=>!fresh.some(n=>n.action===e.action))]);
    say(next.reply,fresh.map(bindEvidence),'model');
-  }catch{if(id===chatSequence.current){setAvailability('unavailable');setStep(fallback);say('Connected guru is unavailable for this turn. Your context is still here. '+(missingQuestion(fallback==='coverage'?'network':fallback==='compare'?'premium':'screen',snapshot)??STEP_REPLY[fallback]));}}
+  }catch{if(id===chatSequence.current){setAvailability('unavailable');const guided=guidedReply(history.findLast(m=>m.role==='you')?.text??'',snapshot,fallback);setStep(guided.step);say('Connected guru is unavailable for this turn. Your context is still here. '+guided.reply);}}
   finally{if(id===chatSequence.current)setChatPending(false);}
  }
  async function ask(text:string){
@@ -78,7 +78,7 @@ export function GuruWorkspace(){
   const history:ChatMessage[]=[...messages.slice(-23),{role:'you',text:text.trim().slice(0,1500)}];setMessages(history);
   if(connected){await respond(history,evidence,step);return;}
   setStep(step);
-  say(missingQuestion(step==='coverage'?'network':step==='compare'?'premium':'screen',current.current)??STEP_REPLY[step]);
+  say(guidedReply(text,current.current,step).reply);
  }
  async function run(action:Action){
   const snapshot={...current.current},id=++sequence.current;controller.current?.abort();

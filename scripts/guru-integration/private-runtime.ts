@@ -15,7 +15,7 @@ import {usageMicro,type Response} from '../guru-benchmark/core';
 
 export const SOURCE_COMMIT='8ed7bf5549703f3950fc7627b11ab7cb128d138f';
 export const MODEL='gpt-6.1-terra';
-export const sourceFiles=['src/lib/guru/conversation.ts','src/lib/guru/chat.ts','src/lib/guru/planner.ts','src/lib/guru/workspace.ts','src/lib/guru/proposal.ts','scripts/guru-integration/conversation-cases.ts'];
+export const sourceFiles=['src/lib/guru/conversation.ts','src/lib/guru/chat.ts','src/lib/guru/planner.ts','src/lib/guru/workspace.ts','src/lib/guru/proposal.ts','src/lib/medicaid/states.ts','scripts/guru-integration/conversation-cases.ts'];
 export const hash=(x:unknown)=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
 export async function sourceHashes(root:string){return Object.fromEntries(await Promise.all(sourceFiles.map(async f=>[f,createHash('sha256').update(await readFile(path.join(root,f))).digest('hex')])));}
 export async function exclusiveEvidence(file:string,data:unknown){
