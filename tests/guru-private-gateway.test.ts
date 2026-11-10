@@ -23,7 +23,7 @@ test('private gateway rejects wrong origin and client evidence before dispatch, 
   assert.match(options.evidence[0].notes[0],/SYNTHETIC/);
   return {reply:{step:'coverage',changes:{},reply:'Synthetic status remains unknown.',proposedAction:'none',evidenceIds:['private-network']}};
  }) as typeof runPrivateTurn;
- const server=privateGateway({root,key:'synthetic',manifestHash:'a'.repeat(64),verifySource:async()=>{},turn});
+ const server=privateGateway({root,key:'synthetic',manifestHash:'a'.repeat(64),verifySource:async()=>{},turn,now:()=>new Date('2026-11-10')});
  await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
  const address=server.address() as {port:number};const url=`http://127.0.0.1:${address.port}/api/guru`;
  const body={id:randomUUID(),history:[{role:'you',text:'Can I keep my doctor?',superseded:false}],context:initialContext(2027),evidenceActions:['network']};

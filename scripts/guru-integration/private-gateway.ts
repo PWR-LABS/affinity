@@ -33,7 +33,7 @@ export async function remainingInteractive(root:string){
  const maximum=events.some(e=>e.kind==='allocation_amended')?8:10;
  return Math.max(0,maximum-events.filter(e=>e.kind==='reserved'&&e.request.phase==='interactive').length);
 }
-export function privateGateway(options:{root:string;key:string;manifestHash:string;verifySource:()=>Promise<void>;turn?:typeof runPrivateTurn}):Server{
+export function privateGateway(options:{root:string;key:string;manifestHash:string;verifySource:()=>Promise<void>;turn?:typeof runPrivateTurn;now?:()=>Date}):Server{
  return createServer(async(req,res)=>{
   res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/json');res.setHeader('X-Content-Type-Options','nosniff');
   const send=(status:number,data:unknown)=>{res.writeHead(status);res.end(JSON.stringify(data));};
@@ -47,7 +47,7 @@ export function privateGateway(options:{root:string;key:string;manifestHash:stri
    if(!body.history.findLast(m=>m.role==='you')||body.history.findLast(m=>m.role==='you')!.text.length>1500)throw Error('Current user message missing or too long');
    await options.verifySource();
    const evidence=reviewEvidence(body.evidenceActions,body.context);
-   const modelBody=conversationBody(MODEL,body.history,body.context,evidence);validateBound(modelBody);
+   const modelBody=conversationBody(MODEL,body.history,body.context,evidence);validateBound(modelBody,options.now?.());
    const result=await(options.turn??runPrivateTurn)({root:options.root,key:options.key,request:{requestId:body.id,phase:'interactive',sourceCommit:SOURCE_COMMIT,manifestHash:options.manifestHash,requestHash:hash(modelBody),model:MODEL},history:body.history,context:body.context,evidence});
    send(200,{mode:'connected',reply:result.reply,evidence,review:{mode:'synthetic',disclosure,remainingTurns:await remainingInteractive(options.root)}});
   }catch{send(503,{mode:'guided',error:'Private review unavailable; preserve reservations and inspect the local checkpoint. No automatic retry.'});}
