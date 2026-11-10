@@ -1,4 +1,9 @@
-/** Private synthetic evaluation transport; never imported by the public app. */
+/** Private evaluation transport; never imported by the public app.
+ * Interactive inputs/provider receipts may contain real authorized user context.
+ * Keep those artifacts private: never export, replay, or promote them to synthetic
+ * benchmark cases. Only held-out/repair fixtures are synthetic inputs. Insurer
+ * evidence remains synthetic regardless of the interactive input's provenance.
+ */
 import {createHash} from 'node:crypto';
 import {open,readFile,mkdir} from 'node:fs/promises';
 import path from 'node:path';
