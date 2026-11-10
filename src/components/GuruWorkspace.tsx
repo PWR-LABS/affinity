@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { STATE_MEDICAID_RESOURCES, medicaidResourceByCode } from '@/lib/medicaid/states';
 import { DEFAULT_MARKETPLACE_PLAN_YEAR, SUPPORTED_MARKETPLACE_PLAN_YEARS, stateBasedMarketplace } from '@/lib/marketplace/states';
-import { actionInput, comparePremiums, evidenceFrom, initialContext, requestKey, STEPS, STEP_REPLY, suggestStep, missingQuestion, offerHandoff, CONTEXT_LABELS, contextValue, reconcileContext, type Action, type Evidence, type GuruContext, type Step } from '@/lib/guru/workspace';
+import { actionInput, comparePremiums, evidenceFrom, initialContext, requestKey, STEPS, suggestStep, guidedReply, missingQuestion, offerHandoff, CONTEXT_LABELS, contextValue, reconcileContext, type Action, type Evidence, type GuruContext, type Step } from '@/lib/guru/workspace';
 import { applyProposal, type Proposal } from '@/lib/guru/proposal';
 import { useGuruStore,useGuruMemory } from './GuruContext';
 import { Typeahead,type Suggestion } from './Typeahead';
@@ -13,6 +13,15 @@ import { conversationSchema,referencedEvidenceSchema,modelHistory,superseded,bin
 const ACTION_LABEL:Record<Action,string>={screen:'Check coverage routes',network:'Check this doctor and plan',plans:'Find Marketplace estimates',premium:'Compare these declared premiums'};
 function selectionLabel(value:unknown,id:string,fallback:string){return value&&typeof value==='object'&&'id'in value&&'label'in value&&value.id===id?String(value.label):fallback;}
 const LABEL:Record<Step,string>={discover:'Discover',coverage:'Coverage',compare:'Compare',how:'How'};
+const CITATION_LABEL:Record<Action,string>={screen:'coverage routes',plans:'plan estimates',network:'issuer evidence',premium:'premium assumptions'};
+function conversationText(message:ChatMessage,isOld:boolean){
+ return message.text.split(/(\[(?:current|private)-(?:screen|plans|network|premium)\])/g).map((part,i)=>{
+  const action=part.match(/^\[(?:current|private)-(screen|plans|network|premium)\]$/)?.[1] as Action|undefined;
+  if(!action)return part;
+  if(!message.bindings?.some(b=>b.action===action))return '[source unavailable]';
+  return isOld?`[previous ${CITATION_LABEL[action]}]`:<a key={i} href={`#guru-evidence-${action}`} data-evidence-id={part.slice(1,-1)}>{CITATION_LABEL[action]}</a>;
+ });
+}
 
 export function GuruWorkspace(){
  const store=useGuruStore();
@@ -61,7 +70,7 @@ export function GuruWorkspace(){
    if(next.proposedAction!=='none')setActionProposal(next.proposedAction);
    setEvidence(old=>[...fresh,...old.filter(e=>!fresh.some(n=>n.action===e.action))]);
    say(next.reply,fresh.map(bindEvidence),'model');
-  }catch{if(id===chatSequence.current){setAvailability('unavailable');setStep(fallback);say('Connected guru is unavailable for this turn. Your context is still here. '+(missingQuestion(fallback==='coverage'?'network':fallback==='compare'?'premium':'screen',snapshot)??STEP_REPLY[fallback]));}}
+  }catch{if(id===chatSequence.current){setAvailability('unavailable');const guided=guidedReply(history.findLast(m=>m.role==='you')?.text??'',snapshot,fallback);setStep(guided.step);say('Connected guru is unavailable for this turn. Your context is still here. '+guided.reply);}}
   finally{if(id===chatSequence.current)setChatPending(false);}
  }
  async function ask(text:string){
@@ -69,7 +78,7 @@ export function GuruWorkspace(){
   const history:ChatMessage[]=[...messages.slice(-23),{role:'you',text:text.trim().slice(0,1500)}];setMessages(history);
   if(connected){await respond(history,evidence,step);return;}
   setStep(step);
-  say(missingQuestion(step==='coverage'?'network':step==='compare'?'premium':'screen',current.current)??STEP_REPLY[step]);
+  say(guidedReply(text,current.current,step).reply);
  }
  async function run(action:Action){
   const snapshot={...current.current},id=++sequence.current;controller.current?.abort();
@@ -137,7 +146,7 @@ export function GuruWorkspace(){
     <p className="field-help">Tell guru what you are trying to work out. Connected mode carries the conversation and explains the evidence. Guided mode keeps the structured tools available without an AI service.</p>
     <label className="guru-ai-choice"><input type="checkbox" checked={connected} onChange={e=>{setConnected(e.target.checked);chatSequence.current++;chatController.current?.abort();setChatPending(false);setProposal(null);setActionProposal(null);}}/>Use connected guru</label>
     <p className="field-help">When selected, your recent conversation, confirmed context and applicable tool evidence are sent to OpenAI through our server. Edits and checks need your confirmation; coverage labels stay source-derived. <Link href="/privacy">Data flow</Link>.</p>
-    <div ref={logRef} className="guru-messages" role="log" aria-live="polite" aria-label="Conversation with guru">{messages.map((m,i)=><div key={i} data-superseded={superseded(m,context,evidence)} className={`guru-message guru-message-${m.role}`}><strong>{m.role==='you'?'You':superseded(m,context,evidence)?'guru · superseded result':m.kind==='model'?'guru · AI explanation':'guru'}</strong><p>{m.text}</p>{superseded(m,context,evidence)&&<p className="field-help">Earlier context—this answer is superseded. The inputs or current source evidence changed. Review the latest result or run a new check.</p>}{m.bindings?.length&&!superseded(m,context,evidence)?<p className="field-help">Evidence: {m.bindings.map(b=><a key={b.action} href={`#guru-evidence-${b.action}`} data-evidence-id={`current-${b.action}`}>{LABEL[b.action==='network'?'coverage':b.action==='premium'?'compare':'discover']} · current result </a>)}</p>:null}</div>)}</div>
+    <div ref={logRef} className="guru-messages" role="log" aria-live="polite" aria-label="Conversation with guru">{messages.map((m,i)=><div key={i} data-superseded={superseded(m,context,evidence)} className={`guru-message guru-message-${m.role}`}><strong>{m.role==='you'?'You':superseded(m,context,evidence)?'guru · superseded result':m.kind==='model'?'guru · AI explanation':'guru'}</strong><p>{conversationText(m,superseded(m,context,evidence))}</p>{superseded(m,context,evidence)&&<p className="field-help">Earlier context—this answer is superseded. The inputs or current source evidence changed. Review the latest result or run a new check.</p>}{m.bindings?.length&&!superseded(m,context,evidence)?<p className="field-help">Evidence: {m.bindings.map(b=><a key={b.action} href={`#guru-evidence-${b.action}`} data-evidence-id={`current-${b.action}`}>{LABEL[b.action==='network'?'coverage':b.action==='premium'?'compare':'discover']} · current result </a>)}</p>:null}</div>)}</div>
     <div className="guru-suggestions">{[['I lost Medicaid','discover'],['Can I keep my doctor?','coverage'],['Compare my employer offer','compare']] .map(([text,s])=><button type="button" key={s} onClick={()=>ask(text)}>{text}</button>)}</div>
     <form onSubmit={e=>{e.preventDefault();ask(draft);}}><label htmlFor="guru-question">What would you like to work out?</label><textarea id="guru-question" value={draft} maxLength={1500} rows={3} onChange={e=>setDraft(e.target.value)} placeholder="For example: I work part time. What are my coverage options?"/><button className="primary" type="submit" disabled={!draft.trim()||chatPending}>{chatPending?'Thinking…':'Send to guru'}</button></form>
     {proposal&&<aside className="guru-note"><h3>Review suggested context edits</h3><p>Next step: {LABEL[proposal.step]}</p>{Object.entries(proposal.changes).length?<dl>{Object.entries(proposal.changes).map(([key,value])=><div key={key}><dt>{CONTEXT_LABELS[key as keyof GuruContext]}</dt><dd>{contextValue(key as keyof GuruContext,value)}</dd></div>)}</dl>:<p>No context edits proposed.</p>}<button type="button" onClick={confirmProposal}>Confirm suggested edits</button><button type="button" onClick={()=>setProposal(null)}>Dismiss</button></aside>}

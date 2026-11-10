@@ -1,11 +1,23 @@
 import { z } from 'zod';
 import { parseMarketplacePlanYear } from '../marketplace/states';
 import { ticSourceCurrent } from '../tic/freshness';
+import { STATE_MEDICAID_RESOURCES } from '../medicaid/states';
 
 export const STEPS = ['discover', 'coverage', 'compare', 'how'] as const;
 export type Step = typeof STEPS[number];
+// The same supported registry drives app validation and the model's enum.
+// Empty means explicitly unknown/cleared; null is unchanged in model output.
+export const GURU_STATE_CODES=['',...STATE_MEDICAID_RESOURCES.map(s=>s.code)] as [string,...string[]];
+const stateNames=new Map(STATE_MEDICAID_RESOURCES.flatMap(s=>[[s.code,s.code],[s.state.toUpperCase(),s.code]]));
+export function normalizeExplicitState(value:string):string{
+ const normalized=value.trim().replace(/\s+/g,' ').toUpperCase();
+ if(normalized==='')return '';
+ const code=stateNames.get(normalized);
+ if(!code)throw Error('Unsupported explicit state suggestion');
+ return code;
+}
 export const contextSchema = z.object({
-  state: z.string().max(2), zip: z.string().max(5), year: z.number().int(),
+  state: z.enum(GURU_STATE_CODES), zip: z.string().max(5), year: z.number().int(),
   age: z.string().max(3), income: z.string().max(12), householdSize: z.string().max(2),
   employment: z.enum(['unknown', 'working', 'not_working', 'retired']),
   employerOffer: z.enum(['unknown', 'offered', 'offered_household', 'none']),
@@ -42,7 +54,7 @@ export function contextValue(key:keyof GuruContext,value:unknown):string{
 }
 export function missingQuestion(action:Action,c:GuruContext):string|null{
  if(action==='network')return !/^\d{10}$/.test(c.npi)?'What is your doctor’s name, and what ZIP or location should we search? Choose the matching doctor so we check the right person.':!c.planId?'What is your plan or employer’s name? We can help find the identifier, then you can confirm the matching option.':null;
- if(action==='premium')return c.premiumBasis==='unknown'?'Do both premium amounts cover just you, or the same household members?':!c.employerPremium?'What is the other option’s premium contribution and how often would you pay it?':!c.marketplacePremium?'What Marketplace monthly premium have you been quoted?':null;
+ if(action==='premium')return !c.employerPremium.trim()?'What is the other option’s premium contribution and how often would you pay it?':!c.marketplacePremium.trim()?'What Marketplace monthly premium have you been quoted?':c.premiumBasis==='unknown'?'Do both premium amounts cover just you, or the same household members?':null;
  if(!c.state)return 'Which state do you need coverage in?';
  if(c.employerOffer==='unknown')return 'Has an employer actually offered insurance to you or someone in your household, or is that still unknown?';
  if(c.employerOffer!=='none')return null;
@@ -93,8 +105,9 @@ export function comparePremiums(c: GuruContext): Evidence {
       'A Marketplace amount is not a confirmed subsidy. An employer offer can affect eligibility for savings; confirm with the official Marketplace.']};
 }
 export function suggestStep(message: string): Step {
-  if(/compar|premium|cost|paycheck|cheaper/i.test(message))return 'compare';
   if(/doctor|network|drug|medication|medicare|coverage check/i.test(message))return 'coverage';
+  if(workTransition(message)&&!/compar/i.test(message))return 'discover';
+  if(/compar|premium|cost|paycheck|cheaper/i.test(message))return 'compare';
   if(/how|source|privacy|explain/i.test(message))return 'how';
   return 'discover';
 }
@@ -104,6 +117,17 @@ export const STEP_REPLY: Record<Step,string> = {
   compare:'Let’s put the options side by side. Enter the employee contribution and its pay period, then the Marketplace monthly premium. We’ll separate known premiums from the care costs and eligibility questions still unresolved.',
   how:'The conversation helps organize the next step. The coverage tools supply the evidence and calculations. A listing is a source claim, and an eligibility estimate is not an official decision. You stay in control of what runs.',
 };
+function workTransition(message:string){
+ return /\b(?:jobs?|roles?|employers?|employment|work)\b/i.test(message)&&/\b(?:transfer(?:ring)?|transition(?:ing)?|chang(?:e|es|ing)|switch(?:ing)?|new|start(?:ing)?|leav(?:e|ing)|lost|loss|end(?:ing)?)\b/i.test(message);
+}
+/** Useful source-independent next step when a conversation service is absent.
+ * A role change does not establish a coverage change or known premiums. */
+export function guidedReply(message:string,c:GuruContext,step:Step=suggestStep(message)){
+ const reply=step==='discover'&&workTransition(message)
+  ?'For a job or role transition, first ask your benefits administrator whether your insurance changes, when current coverage would end and when any new coverage would start. Keep dates, premiums and benefit terms unknown until confirmed. Has your benefits team confirmed whether the role change affects your insurance?'
+  :missingQuestion(step==='coverage'?'network':step==='compare'?'premium':'screen',c)??STEP_REPLY[step];
+ return {step,reply};
+}
 /** Render only known server fields. Model prose never substitutes for tool evidence. */
 export function evidenceFrom(action: Exclude<Action,'premium'>,c: GuruContext,data: Record<string,unknown>): Evidence {
   const facts: Evidence['facts']=[],notes:string[]=[];
