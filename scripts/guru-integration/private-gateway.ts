@@ -1,4 +1,7 @@
-/** Loopback synthetic review only. No model key, phase or evidence accepted from client. */
+/** Private loopback interactive review. User context may be real/private;
+ * server-derived insurer evidence is synthetic and cannot establish real coverage.
+ * No model key, phase or trusted evidence accepted from client.
+ */
 import {createServer,type Server} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import path from 'node:path';
