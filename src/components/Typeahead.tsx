@@ -30,15 +30,15 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
   const reqId = useRef(0);
 
   useEffect(() => {
+    const myReq=++reqId.current;
     if (timer.current) clearTimeout(timer.current);
+    setItems([]);setOpen(false);setActive(-1);
     if (q.trim().length < 2) {
-      setItems([]);
-      setOpen(false);
+      setLoading(false);
       return;
     }
     setLoading(true);
     timer.current = setTimeout(async () => {
-      const myReq = ++reqId.current;
       try {
         const res = await fetchSuggestions(q.trim());
         if (myReq === reqId.current) {
@@ -52,6 +52,7 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
     }, 300);
     return () => {
       if (timer.current) clearTimeout(timer.current);
+      if(myReq===reqId.current)reqId.current++;
     };
   }, [q, fetchSuggestions]);
 

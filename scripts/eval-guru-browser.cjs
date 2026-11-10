@@ -8,7 +8,7 @@ async function main(){
  const browser=await chromium.launch({headless:true,...(process.env.AFFINITY_TEST_BROWSER_CHANNEL?{channel:process.env.AFFINITY_TEST_BROWSER_CHANNEL}:{})});
  const page=await browser.newPage({viewport:{width:1440,height:1050}});
  const failures=[],passed=[];page.on('pageerror',e=>failures.push(e.message));
- let networkMode='listed',delayedRelease,received=false;
+ let networkMode='listed',delayedRelease,received=false;const sourceDate=new Date(Date.now()-86400000).toISOString();
  try{
   await page.route('**/api/eligibility',route=>{
    const c=route.request().postDataJSON();assert.equal(route.request().method(),'POST');assert.equal(new URL(route.request().url()).search,'');
@@ -16,7 +16,7 @@ async function main(){
   });
   await page.route('**/api/tic/verify',async route=>{
    const c=route.request().postDataJSON();
-   const data={npi:c.npi,plan:{idType:c.planIdType,id:c.planId},value:networkMode==='absent'?'unknown':'yes',source:'SYNTHETIC_ISSUER_FIXTURE',sourceUpdated:networkMode==='stale'?'2020-01-01':new Date(Date.now()-86400000).toISOString(),evidenceStatus:networkMode==='listed'?'listed':networkMode==='absent'?'incomplete_index':networkMode==='stale'?'listed':'conflict',sourceUrl:'https://example.com/synthetic-network.json',explanation:'Synthetic source fixture. Missing or conflicting evidence is not an exclusion.'};
+   const data={npi:c.npi,plan:{idType:c.planIdType,id:c.planId},value:networkMode==='absent'?'unknown':'yes',source:'SYNTHETIC_ISSUER_FIXTURE',sourceUpdated:networkMode==='stale'?'2020-01-01':sourceDate,evidenceStatus:networkMode==='listed'?'listed':networkMode==='absent'?'incomplete_index':networkMode==='stale'?'listed':'conflict',sourceUrl:'https://example.com/synthetic-network.json',explanation:'Synthetic source fixture. Missing or conflicting evidence is not an exclusion.'};
    if(networkMode==='delayed'){received=true;await new Promise(r=>{delayedRelease=r;});}
    await route.fulfill({json:data}).catch(()=>{});
   });
@@ -26,13 +26,24 @@ async function main(){
   await page.getByLabel('Your age',{exact:true}).fill('35');await page.getByLabel('Annual household income ($)',{exact:true}).fill('30000');
   await page.getByLabel('Work situation',{exact:true}).selectOption('working');
   await page.getByRole('button',{name:'Check Medicaid / Marketplace routes',exact:true}).click();
-  await page.getByRole('alert').filter({hasText:'affordability'}).waitFor();
+  await page.getByRole('heading',{name:'Clarify the offer; keep your coverage routes open',exact:true}).waitFor();
+  await page.getByRole('log').getByText(/Has an employer actually offered insurance/).waitFor();
+  await page.getByLabel('Employer insurance offer',{exact:true}).selectOption('offered_household');
+  await page.getByRole('button',{name:'Check Medicaid / Marketplace routes',exact:true}).click();
+  await page.getByRole('heading',{name:'Keep Medicaid open and review the employer offer',exact:true}).waitFor();
   await page.getByLabel('Employer insurance offer',{exact:true}).selectOption('none');
   await page.getByRole('button',{name:'Check Medicaid / Marketplace routes',exact:true}).click();
   await page.getByRole('heading',{name:'Synthetic screening: explore Marketplace options'}).waitFor();
   passed.push('employment is distinct from an actual offer; screening is explicit and source-limited');
   await page.getByRole('button',{name:'Next: check my care →'}).click();
-  await page.getByLabel('Doctor NPI',{exact:true}).fill('1234567890');await page.getByLabel('Plan / employer identifier',{exact:true}).fill('111111111');
+  await page.route('**/api/providers/autocomplete',r=>r.fulfill({json:{items:[{npi:'1234567890',name:'Dr Morgan Sample',specialty:'Synthetic family medicine'}]}}));
+  await page.route('**/api/employers/search?*',r=>r.fulfill({json:{items:[{ein:'111111111',name:'Synthetic Example Employer',state:'OH'}]}}));
+  await page.getByRole('combobox',{name:'Find your doctor by name',exact:true}).fill('Morgan');
+  await page.getByRole('option').filter({hasText:'Dr Morgan Sample'}).click();
+  await page.getByRole('combobox',{name:'Find your employer',exact:true}).fill('Example');
+  await page.getByRole('option').filter({hasText:'Synthetic Example Employer'}).click();
+  await page.getByText('Use exact identifiers instead',{exact:true}).click();
+  assert.equal(await page.getByLabel('Doctor NPI',{exact:true}).inputValue(),'1234567890');
   await page.getByRole('button',{name:'Check issuer evidence',exact:true}).click();await page.getByRole('heading',{name:'Listed in the issuer file',exact:true}).waitFor();
   await page.getByText('SYNTHETIC_ISSUER_FIXTURE',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Next: compare options →'}).click();
@@ -46,29 +57,35 @@ async function main(){
   passed.push('Discover → dated care-fit evidence → declared premium comparison → official confirmation handoff');
   const discover=page.getByRole('button',{name:'1 Discover',exact:true});await discover.focus();await page.keyboard.press('Tab');await page.keyboard.press('Space');
   await page.getByRole('heading',{name:'Can your care come with you?',exact:true}).waitFor();
-  passed.push('journey controls work with keyboard Tab and Space');
+  passed.push('journey controls work with keyboard Tab and Space; names resolve through explicitly selected identities');
+  const positive=page.locator('.guru-message').filter({hasText:'Listed in the issuer file.'}).first();
+  assert.equal(await positive.getAttribute('data-superseded'),'false');
+  await page.getByRole('button',{name:'Check issuer evidence',exact:true}).click();
+  assert.equal(await positive.getAttribute('data-superseded'),'false');
   for(const mode of ['absent','stale','conflict']){
    networkMode=mode;await page.getByRole('button',{name:'Check issuer evidence',exact:true}).click();
    await page.getByRole('heading',{name:'Coverage remains unknown',exact:true}).waitFor();assert.equal(await page.getByRole('heading',{name:'Listed in the issuer file',exact:true}).count(),0);
   }
+  assert.equal(await positive.getAttribute('data-superseded'),'true');
   fs.mkdirSync('tmp/guru-demo',{recursive:true});await page.screenshot({path:'tmp/guru-demo/unknown.png',fullPage:true});
   passed.push('absent, stale and conflicting source fixtures stay unknown with a concrete handoff');
   networkMode='delayed';await page.getByRole('button',{name:'Check issuer evidence',exact:true}).click();
   await page.waitForFunction(()=>true);for(let i=0;i<50&&!received;i++)await page.waitForTimeout(20);assert.ok(received);
+  if(!(await page.getByLabel('Doctor NPI',{exact:true}).isVisible()))await page.getByText('Use exact identifiers instead',{exact:true}).click();
   await page.getByLabel('Doctor NPI',{exact:true}).fill('1234567891');delayedRelease();await page.waitForTimeout(200);
   assert.equal(await page.getByRole('heading',{name:'Listed in the issuer file',exact:true}).count(),0);
   await discover.click();assert.equal(await page.getByLabel('ZIP code',{exact:true}).inputValue(),'44113');
   await page.getByLabel('ZIP code',{exact:true}).fill('44114');assert.equal(await page.getByRole('heading',{name:'Synthetic screening: explore Marketplace options'}).count(),0);
   passed.push('context survives views; corrections invalidate affected evidence and ignore late responses');
-  await page.getByLabel('Use connected AI for question routing and proposed edits',{exact:true}).check();
-  await page.route('**/api/guru',r=>r.fulfill({json:{mode:'connected',proposal:{step:'discover',changes:{state:'PA',zip:'19103'}}}}));
-  await page.getByLabel('What would you like to work out?',{exact:true}).fill('Actually I live in Pennsylvania, ZIP 19103');await page.getByRole('button',{name:'Find my next step',exact:true}).click();
+  await page.getByLabel('Use connected guru',{exact:true}).check();
+  await page.route('**/api/guru',r=>r.fulfill({json:{mode:'connected',reply:{step:'discover',changes:{state:'PA',zip:'19103'},reply:'Please confirm your new state and ZIP.',proposedAction:'none',evidenceIds:[]},evidence:[]}}));
+  await page.getByLabel('What would you like to work out?',{exact:true}).fill('Actually I live in Pennsylvania, ZIP 19103');await page.getByRole('button',{name:'Send to guru',exact:true}).click();
   await page.getByRole('button',{name:'Confirm suggested edits',exact:true}).waitFor();assert.equal(await page.getByLabel('State',{exact:true}).inputValue(),'OH');
   await page.getByRole('button',{name:'Confirm suggested edits',exact:true}).click();assert.equal(await page.getByLabel('State',{exact:true}).inputValue(),'PA');assert.equal(await page.getByLabel('ZIP code',{exact:true}).inputValue(),'19103');
   passed.push('mocked AI only proposes context; confirmation applies it, with no model coverage badge');
   await page.unroute('**/api/guru');await page.route('**/api/guru',r=>r.fulfill({status:503,json:{mode:'guided'}}));
-  await page.getByLabel('What would you like to work out?',{exact:true}).fill('Compare my options');await page.getByRole('button',{name:'Find my next step',exact:true}).click();
-  await page.getByText('Connected AI is unavailable for this turn.',{exact:false}).waitFor();
+  await page.getByLabel('What would you like to work out?',{exact:true}).fill('Compare my options');await page.getByRole('button',{name:'Send to guru',exact:true}).click();
+  await page.getByText('Connected guru is unavailable for this turn.',{exact:false}).waitFor();
   await page.getByLabel('Compare with Marketplace',{exact:true}).selectOption('medicaid');await page.getByLabel('Confirmed Medicaid monthly premium ($)',{exact:true}).fill('0');
   await page.getByRole('button',{name:'Compare declared premiums',exact:true}).click();await page.getByText('$0.00',{exact:true}).waitFor();
   passed.push('AI failure preserves guided mode, including explicit Medicaid vs Marketplace comparison');
