@@ -142,3 +142,11 @@ as `response_schema_invalid`, `context_validation_failed`,
 `usage_evidence_invalid` and `evidence_write_failed`. Never use raw exception
 messages or rejected values as codes. This is a proposal only; the present
 terminal failure code and existing records remain unchanged.
+
+## Prepared state-contract repair pin
+
+The isolated Mini caller now pins protocol `5534ee609eca7c17e5e6f9df1310647a58641637`. Its seven reviewed files are conversation, chat, planner, workspace, proposal, the Medicaid state registry, and frozen conversational cases. The registry is now included because the supported state enumeration is shared by the wire schema and application validation. Explicit full state names normalize to supported codes without applying changes or inferring other fields. The guided transition fallback asks about benefits changes and dates before assuming premium comparability.
+
+All seven local file bytes match the named Git source. SHA-256 of the UTF-8 `JSON.stringify(sourceHashes)` object in the runtime's listed insertion order, without a trailing newline, is `d15288adc534106ad268ee954a16deda9338b0c15cff4264144fd31657436a1a`. Forty-two focused guru tests with standard fixtures and TypeScript checking pass on Mini. This verifies source and synthetic behavior, not a new real-model answer.
+
+Preparation does not append a real failed-attempt review, create a replacement interactive manifest, start a gateway or dispatch a provider call. The gateway remains stopped pending the separately bound review evidence and operational handoff. Existing private user artifacts remain unread and unchanged.
