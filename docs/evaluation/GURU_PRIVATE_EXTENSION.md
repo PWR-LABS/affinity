@@ -68,3 +68,25 @@ lost response, sanitized failures, changed baseline, truncated journal and
 invalid/excessive usage. They use temporary synthetic files and no network or
 model calls. A real gateway, SSH tunnel, held-out model exercise and human
 walkthrough are not established by those tests.
+
+## Compatible allocation amendment after the eight-call result
+
+The eight completed held-out results remain unchanged. A separately recorded
+`allocation_amended` event (version 2, identity
+`conversation-repair-2-interactive-8/v1`) changes only future phase ceilings to
+eight held-out, two explicitly labeled repair probes and eight interactive turns.
+The aggregate maximum remains eighteen $0.05 reservations. The original baseline
+and every prior reservation remain charged against the same $5 authority.
+
+`amendRepairAllocation` holds the same lock and validates the full journal before
+appending the event. It refuses an existing amendment, uncertain/failed attempts,
+or more than eight already-consumed interactive slots. It does not dispatch a
+model. The repair phase has zero capacity before the amendment. New readers
+accept original version-1 events plus this version-2 amendment; older readers
+fail closed on the new event and must not be used for subsequent dispatch.
+
+Two added tests verify byte-preserving amendment, phase ceilings, aggregate
+reservation conservation and refusal to reduce already-consumed allocations.
+The repaired protocol and exact two-case manifest still require review before
+those probes. This is an explicit repair exercise, not an automatic retry or
+an interactive turn relabeled to evade a limit.
