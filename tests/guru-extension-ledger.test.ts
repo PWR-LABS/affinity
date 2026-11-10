@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { withExtensionReservation, amendRepairAllocation, type ExtensionRequest } from '../scripts/guru-benchmark/extension-ledger';
+import { withExtensionReservation, amendRepairAllocation, reviewFailedAttempt, type FailedAttemptReview, type ExtensionRequest } from '../scripts/guru-benchmark/extension-ledger';
 
 async function fixture() {
   const root = await mkdtemp(path.join(tmpdir(), 'affinity-eval-ledger-'));
@@ -108,5 +108,96 @@ test('allocation cannot erase nine already consumed interactive reservations', a
   const before=await readFile(path.join(f.root,'extension-events.jsonl'),'utf8');
   await assert.rejects(amendRepairAllocation(f.root,f.baselineHash),/cannot be reduced/);
   assert.equal(await readFile(path.join(f.root,'extension-events.jsonl'),'utf8'),before);
+ }finally{await rm(f.root,{recursive:true});}
+});
+
+async function failedReview(f: Awaited<ReturnType<typeof fixture>>, r = request('interactive')) {
+ await assert.rejects(withExtensionReservation({...f,request:r,dispatch:async()=>{throw Error('SYNTHETIC_PRIVATE_BODY');}}),/reservation retained/);
+ const journal=await readFile(path.join(f.root,'extension-events.jsonl'),'utf8');
+ const failureLine=journal.trimEnd().split('\n').at(-1)!+'\n';
+ const review:FailedAttemptReview={requestId:r.requestId,failedEventSha256:createHash('sha256').update(failureLine).digest('hex'),
+  repairedSourceCommit:'d'.repeat(40),repairedSourceSha256:'e'.repeat(64),reviewEvidenceSha256:'f'.repeat(64),
+  reason:'validated_response_schema_mismatch_repaired'};
+ return {r,review,journal};
+}
+
+test('review preserves the failed terminal and spent slot; only seven new repaired-source interactive IDs remain', async()=>{
+ const f=await fixture();let calls=0;
+ const dispatch=async()=>{calls++;return {value:'synthetic',usageMicro:1};};
+ try{
+  for(let i=0;i<8;i++)await withExtensionReservation({...f,request:request(),dispatch});
+  await amendRepairAllocation(f.root,f.baselineHash);
+  for(let i=0;i<2;i++)await withExtensionReservation({...f,request:request('repair_probe'),dispatch});
+  const {r,review,journal}=await failedReview(f);
+  const result=await reviewFailedAttempt({...f,review});
+  assert.deepEqual(result,{totalReservedMicro:4_604_254,remainingInPhase:7,requiredSourceCommit:review.repairedSourceCommit,failedReservationRetained:true});
+  const reviewed=await readFile(path.join(f.root,'extension-events.jsonl'),'utf8');
+  assert.ok(reviewed.startsWith(journal));assert.ok(!reviewed.includes('SYNTHETIC_PRIVATE_BODY'));
+  await assert.rejects(withExtensionReservation({...f,request:{...r,sourceCommit:review.repairedSourceCommit},dispatch}),/already reserved/);
+  await assert.rejects(withExtensionReservation({...f,request:request('interactive'),dispatch}),/source differs/);
+  await assert.rejects(reviewFailedAttempt({...f,review}),/Invalid failed-attempt review/);
+  assert.equal(await readFile(path.join(f.root,'extension-events.jsonl'),'utf8'),reviewed);
+  for(let i=0;i<7;i++)await withExtensionReservation({...f,request:{...request('interactive'),sourceCommit:review.repairedSourceCommit},dispatch});
+  await assert.rejects(withExtensionReservation({...f,request:{...request('interactive'),sourceCommit:review.repairedSourceCommit},dispatch}),/allowance exhausted/);
+  const events=(await readFile(path.join(f.root,'extension-events.jsonl'),'utf8')).trim().split('\n').map(s=>JSON.parse(s));
+  assert.equal(events.filter(e=>e.kind==='reserved').length,18);assert.equal(events.filter(e=>e.kind==='failed').length,1);
+  assert.equal(events.filter(e=>e.kind==='failed_attempt_reviewed').length,1);assert.equal(calls,17);
+  assert.equal(await readFile(path.join(f.root,'ledger.json'),'utf8'),f.baseline);
+ }finally{await rm(f.root,{recursive:true});}
+});
+
+test('review rejects wrong identity/hash/source, free text and an owned mutex without modifying evidence', async()=>{
+ const f=await fixture();
+ try{
+  const {r,review,journal}=await failedReview(f);
+  for(const bad of [{...review,requestId:randomUUID()},{...review,failedEventSha256:'0'.repeat(64)},
+   {...review,repairedSourceCommit:r.sourceCommit},{...review,reason:'RAW_PRIVATE_TEXT'},
+   {...review,answer:'RAW_PRIVATE_TEXT'},{...review,reviewEvidenceSha256:'not-a-hash'}]){
+   await assert.rejects(reviewFailedAttempt({...f,review:bad as FailedAttemptReview}));
+   assert.equal(await readFile(path.join(f.root,'extension-events.jsonl'),'utf8'),journal);
+  }
+  await mkdir(path.join(f.root,'publisher.lock'));
+  await assert.rejects(reviewFailedAttempt({...f,review}),/EEXIST/);
+  assert.equal(await readFile(path.join(f.root,'extension-events.jsonl'),'utf8'),journal);
+ }finally{await rm(f.root,{recursive:true});}
+});
+
+test('pending/completed attempts are not reviewable and review cannot implicitly change phase limits', async()=>{
+ const f=await fixture();
+ try{
+  const {review,journal}=await failedReview(f);
+  await writeFile(path.join(f.root,'extension-events.jsonl'),journal.split('\n')[0]+'\n');
+  await assert.rejects(reviewFailedAttempt({...f,review}),/Invalid failed-attempt review/);
+  await assert.rejects(withExtensionReservation({...f,request:request(),dispatch:async()=>({value:0,usageMicro:0})}),/requires review/);
+  await writeFile(path.join(f.root,'extension-events.jsonl'),journal);
+  await reviewFailedAttempt({...f,review});
+  const before=await readFile(path.join(f.root,'extension-events.jsonl'),'utf8');
+  await assert.rejects(amendRepairAllocation(f.root,f.baselineHash),/Allocation cannot change/);
+  assert.equal(await readFile(path.join(f.root,'extension-events.jsonl'),'utf8'),before);
+  const events=journal.trim().split('\n').map(s=>JSON.parse(s));
+  events[1]={version:1,baselineHash:f.baselineHash,requestId:review.requestId,at:events[1].at,kind:'completed',usageMicro:1};
+  await writeFile(path.join(f.root,'extension-events.jsonl'),events.map(e=>JSON.stringify(e)+'\n').join(''));
+  await assert.rejects(reviewFailedAttempt({...f,review}),/Invalid failed-attempt review/);
+ }finally{await rm(f.root,{recursive:true});}
+});
+
+test('malformed, duplicate, mismatched and late review events fail closed on reopening', async()=>{
+ const f=await fixture();let calls=0;
+ try{
+  const {review,journal}=await failedReview(f);await reviewFailedAttempt({...f,review});
+  const good=await readFile(path.join(f.root,'extension-events.jsonl'),'utf8');
+  const event=JSON.parse(good.trimEnd().split('\n').at(-1)!);
+  const dispatch=async()=>{calls++;return {value:0,usageMicro:0};};
+  const next={...request('interactive'),sourceCommit:review.repairedSourceCommit};
+  const premature={version:1,baselineHash:f.baselineHash,at:event.at,requestId:next.requestId,kind:'reserved',request:next,reservedMicro:50000};
+  for(const broken of [good+JSON.stringify(event)+'\n',good.slice(0,-1),
+   journal+JSON.stringify({...event,failedEventSha256:'0'.repeat(64)})+'\n',
+   journal+JSON.stringify({...event,reviewEvidenceSha256:'malformed'})+'\n',
+   journal+JSON.stringify(premature)+'\n'+JSON.stringify(event)+'\n']){
+   await writeFile(path.join(f.root,'extension-events.jsonl'),broken);
+   await assert.rejects(withExtensionReservation({...f,request:next,dispatch}));
+   assert.equal(await readFile(path.join(f.root,'extension-events.jsonl'),'utf8'),broken);
+  }
+  assert.equal(calls,0);
  }finally{await rm(f.root,{recursive:true});}
 });
