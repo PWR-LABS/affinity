@@ -68,3 +68,13 @@ test('all frozen conversational inputs fit the shared per-request upper bound wi
   assert.equal(checkConversation(item,{step:item.steps[0],changes:item.expectedChanges,reply:'synthetic',proposedAction:'none',evidenceIds:item.requiredEvidence}).passed,true);
  }
 });
+
+test('the full accepted current user message survives history limits, including a late correction',()=>{
+ const text='Background detail. '.repeat(60)+'Correction: household size is 2 and the offer is through my spouse.';
+ assert.ok(text.length>750&&text.length<=1500);
+ const messages:ChatMessage[]=[...Array.from({length:12},()=>({role:'guru' as const,text:'Older exchange'})),{role:'you',text}];
+ const history=modelHistory(messages,context(),[]);
+ assert.equal(history.at(-1)?.text,text);assert.match(history[0].text,/Earlier conversation omitted/);
+ const input=JSON.parse(conversationBody('gpt-6.1-terra',history,context(),[]).input[0].content);
+ assert.equal(input.currentUserMessage,text);assert.match(input.currentUserMessage,/household size is 2/);
+});

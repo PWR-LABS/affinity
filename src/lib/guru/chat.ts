@@ -27,5 +27,8 @@ export function superseded(message:Pick<ChatMessage,'bindings'>,context:GuruCont
  }));
 }
 export function modelHistory(messages:ChatMessage[],context:GuruContext,evidence:Evidence[]=[]):History{
- return messages.slice(-8).map(m=>({role:m.role,text:m.text.slice(0,750),superseded:superseded(m,context,evidence),...(m.bindings?{bindings:m.bindings}:{})}));
+ const latestUser=messages.findLastIndex(m=>m.role==='you'),start=Math.max(0,messages.length-8);
+ return messages.slice(start).map((m,i)=>({role:m.role,
+  text:(i===0&&start>0?'[Earlier conversation omitted.] ':'')+m.text.slice(0,start+i===latestUser?1500:750),
+  superseded:superseded(m,context,evidence),...(m.bindings?{bindings:m.bindings}:{})}));
 }
