@@ -1,5 +1,7 @@
 # Conversational guru review — November 9, 2026
 
+**Dated development/evaluation receipt.** Later source repairs and synthetic regression results are recorded in the [state-contract repair report](guru-state-contract-repair.md). Runtime/allowance observations below are historical snapshots; private interactive results and current acceptance remain in the authorized private channel.
+
 The development slice now carries a coverage conversation through missing facts, confirmed context edits, confirmed tool actions, evidence explanations, follow-ups and corrections. The original guided router was insufficient for the operator’s requested [ribosome.]-like interaction. Its [dated prototype receipt](2026-11-09-guru-demo.md) remains historical; this report describes the subsequent implementation.
 
 UI/source checkpoint: `b690d3e215a8230a9bef6d139d39b5a7212599e4`, branch `codex/guru-coverage-workspace`, [draft PR41](https://github.com/PWR-LABS/affinity/pull/41). The actual model repair protocol is separately pinned to `8ed7bf5549703f3950fc7627b11ab7cb128d138f`. Observations span November 9 Eastern / November 10 UTC on the Air and Mini. No merge, production migration, public AI activation, recurring allowance or application submission is established.
