@@ -30,7 +30,8 @@ export async function remainingInteractive(root:string){
  let text='';try{text=await readFile(path.join(root,'extension-events.jsonl'),'utf8');}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
  if(text&&!text.endsWith('\n'))throw Error('Journal incomplete');
  const events=text.trim()?text.trim().split('\n').map(line=>JSON.parse(line)):[];
- return Math.max(0,10-events.filter(e=>e.kind==='reserved'&&e.request.phase==='interactive').length);
+ const maximum=events.some(e=>e.kind==='allocation_amended')?8:10;
+ return Math.max(0,maximum-events.filter(e=>e.kind==='reserved'&&e.request.phase==='interactive').length);
 }
 export function privateGateway(options:{root:string;key:string;manifestHash:string;verifySource:()=>Promise<void>;turn?:typeof runPrivateTurn}):Server{
  return createServer(async(req,res)=>{

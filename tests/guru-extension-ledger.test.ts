@@ -4,7 +4,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { withExtensionReservation, type ExtensionRequest } from '../scripts/guru-benchmark/extension-ledger';
+import { withExtensionReservation, amendRepairAllocation, type ExtensionRequest } from '../scripts/guru-benchmark/extension-ledger';
 
 async function fixture() {
   const root = await mkdtemp(path.join(tmpdir(), 'affinity-eval-ledger-'));
@@ -82,4 +82,31 @@ test('invalid or excessive usage remains a failed reserved attempt', async () =>
       assert.equal(JSON.parse(lines[0]).kind, 'reserved'); assert.equal(JSON.parse(lines[1]).kind, 'failed');
     } finally { await rm(f.root, { recursive: true }); }
   }
+});
+
+
+test('explicit append-only amendment reserves two repair probes without resetting the original eight calls', async () => {
+ const f=await fixture();let calls=0;
+ const run=(phase:ExtensionRequest['phase'])=>withExtensionReservation({...f,request:request(phase),dispatch:async()=>{calls++;return {value:1,usageMicro:1};}});
+ try {
+  for(let i=0;i<8;i++)await run('held_out');
+  await assert.rejects(run('repair_probe'),/allowance exhausted/);
+  const before=await readFile(path.join(f.root,'extension-events.jsonl'),'utf8');
+  await amendRepairAllocation(f.root,f.baselineHash);
+  assert.ok((await readFile(path.join(f.root,'extension-events.jsonl'),'utf8')).startsWith(before));
+  await assert.rejects(amendRepairAllocation(f.root,f.baselineHash),/already amended/);
+  for(let i=0;i<2;i++)await run('repair_probe');
+  for(let i=0;i<8;i++)await run('interactive');
+  for(const phase of ['held_out','repair_probe','interactive'] as const)await assert.rejects(run(phase),/allowance exhausted/);
+  assert.equal(calls,18);assert.equal(await readFile(path.join(f.root,'ledger.json'),'utf8'),f.baseline);
+ }finally{await rm(f.root,{recursive:true});}
+});
+test('allocation cannot erase nine already consumed interactive reservations', async () => {
+ const f=await fixture();
+ try{
+  for(let i=0;i<9;i++)await withExtensionReservation({...f,request:request('interactive'),dispatch:async()=>({value:1,usageMicro:1})});
+  const before=await readFile(path.join(f.root,'extension-events.jsonl'),'utf8');
+  await assert.rejects(amendRepairAllocation(f.root,f.baselineHash),/cannot be reduced/);
+  assert.equal(await readFile(path.join(f.root,'extension-events.jsonl'),'utf8'),before);
+ }finally{await rm(f.root,{recursive:true});}
 });

@@ -10,13 +10,15 @@ export const EXTENSION_RESERVATION_MICRO = 50_000;
 const digest = (bytes: Buffer | string) => createHash('sha256').update(bytes).digest('hex');
 const hex = z.string().regex(/^[a-f0-9]{64}$/);
 const requestSchema = z.object({
-  requestId: z.string().uuid(), phase: z.enum(['held_out', 'interactive']),
+  requestId: z.string().uuid(), phase: z.enum(['held_out', 'repair_probe', 'interactive']),
   sourceCommit: z.string().regex(/^[a-f0-9]{40}$/), manifestHash: hex, requestHash: hex,
   model: z.literal('gpt-6.1-terra'),
 }).strict();
 export type ExtensionRequest = z.infer<typeof requestSchema>;
 const common = { version: z.literal(1), baselineHash: hex, requestId: z.string().uuid(), at: z.string().datetime() };
 const eventSchema = z.discriminatedUnion('kind', [
+  z.object({ version: z.literal(2), baselineHash: hex, at: z.string().datetime(),
+    kind: z.literal('allocation_amended'), allocationId: z.literal('conversation-repair-2-interactive-8/v1') }).strict(),
   z.object({ ...common, kind: z.literal('reserved'), request: requestSchema,
     reservedMicro: z.literal(EXTENSION_RESERVATION_MICRO) }).strict(),
   z.object({ ...common, kind: z.literal('completed'), usageMicro: z.number().int().min(0).max(EXTENSION_RESERVATION_MICRO) }).strict(),
@@ -47,11 +49,19 @@ async function inspect(root: string, baselineHash: string) {
   if (content && !content.endsWith('\n')) throw Error('Partial journal; review required');
   const events = content ? content.slice(0, -1).split('\n').map(line => eventSchema.parse(JSON.parse(line))) : [];
   const requests = new Map<string, { request: ExtensionRequest; state: 'reserved' | 'completed' | 'failed' }>();
+  let amended = false;
+  let limits = { held_out: 8, repair_probe: 0, interactive: 10 };
   for (const e of events) {
     if (e.baselineHash !== baselineHash) throw Error('Extension baseline mismatch');
+    if (e.kind === 'allocation_amended') {
+      if (amended || [...requests.values()].some(r => r.state !== 'completed') ||
+        [...requests.values()].filter(r => r.request.phase === 'interactive').length > 8) throw Error('Incompatible allocation amendment');
+      amended = true; limits = { held_out: 8, repair_probe: 2, interactive: 8 }; continue;
+    }
     const prior = requests.get(e.requestId);
     if (e.kind === 'reserved') {
       if (prior || e.request.requestId !== e.requestId) throw Error('Duplicate or mismatched extension identity');
+      if ([...requests.values()].filter(r => r.request.phase === e.request.phase).length >= limits[e.request.phase]) throw Error('Journal exceeds phase allowance');
       requests.set(e.requestId, { request: e.request, state: 'reserved' });
     } else {
       if (!prior || prior.state !== 'reserved') throw Error('Invalid journal transition');
@@ -61,7 +71,7 @@ async function inspect(root: string, baselineHash: string) {
   if ([...requests.values()].some(r => r.state !== 'completed')) throw Error('Prior uncertain/failed attempt requires review');
   const totalReserved = baseReserved + requests.size * EXTENSION_RESERVATION_MICRO;
   if (totalReserved > CAP_MICRO) throw Error('Journal exceeds aggregate cap');
-  return { requests, totalReserved };
+  return { requests, totalReserved, limits, amended };
 }
 
 /** Trusted local caller supplies pinned metadata; never accept these controls from
@@ -82,7 +92,7 @@ export async function withExtensionReservation<T>(options: {
     const state = await inspect(options.root, baselineHash);
     if (state.requests.has(request.requestId)) throw Error('Request already reserved; no repeat dispatch');
     const phaseCount = [...state.requests.values()].filter(r => r.request.phase === request.phase).length;
-    if (phaseCount >= (request.phase === 'held_out' ? 8 : 10)) throw Error('Evaluation phase allowance exhausted');
+    if (phaseCount >= state.limits[request.phase]) throw Error('Evaluation phase allowance exhausted');
     if (state.totalReserved + EXTENSION_RESERVATION_MICRO > CAP_MICRO) throw Error('Aggregate benchmark cap exhausted');
     const base = { version: 1 as const, baselineHash, requestId: request.requestId };
     await append(options.root, { ...base, at: new Date().toISOString(), kind: 'reserved', request,
@@ -97,5 +107,20 @@ export async function withExtensionReservation<T>(options: {
       await append(options.root, { ...base, at: new Date().toISOString(), kind: 'failed', reason: 'dispatch_or_evidence_failure_review_required' });
       throw Error('Dispatch or evidence failure; reservation retained, review required');
     }
+  } finally { await rmdir(lock); }
+}
+
+/** Explicit compatible redistribution, never a reset. No provider dispatch.
+ * Existing events remain byte-for-byte intact and count against the same cap. */
+export async function amendRepairAllocation(root: string, baselineHash = BASELINE_SHA256) {
+  hex.parse(baselineHash);
+  const lock = path.join(root, 'publisher.lock');
+  await mkdir(lock, { mode: 0o700 });
+  try {
+    const state = await inspect(root, baselineHash);
+    if (state.amended) throw Error('Allocation already amended');
+    if ([...state.requests.values()].filter(r => r.request.phase === 'interactive').length > 8) throw Error('Existing reservations cannot be reduced');
+    await append(root, { version: 2, baselineHash, at: new Date().toISOString(), kind: 'allocation_amended', allocationId: 'conversation-repair-2-interactive-8/v1' });
+    return { totalReservedMicro: state.totalReserved, limits: { held_out: 8, repair_probe: 2, interactive: 8 } };
   } finally { await rmdir(lock); }
 }

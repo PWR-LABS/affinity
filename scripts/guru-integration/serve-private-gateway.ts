@@ -16,7 +16,7 @@ async function main(){
  const expected=Object.fromEntries(sourceFiles.map(f=>[f,createHash('sha256').update(execFileSync('git',['show',`${SOURCE_COMMIT}:${f}`],{cwd:sourceRoot})).digest('hex')]));
  const verifySource=async()=>{if(hash(await sourceHashes(sourceRoot))!==hash(expected))throw Error('Protocol changed');};
  await verifySource();
- const manifest={sourceCommit:SOURCE_COMMIT,sourceHashes:expected,phase:'interactive',maxRequests:10,reservationMicro:50000,resolver:'synthetic-unknown-plus-declared-premiums/1',allowedOrigin:'http://127.0.0.1:3013'};
+ const manifest={sourceCommit:SOURCE_COMMIT,sourceHashes:expected,phase:'interactive',maxRequests:8,reservationMicro:50000,resolver:'synthetic-unknown-plus-declared-premiums/1',allowedOrigin:'http://127.0.0.1:3013'};
  const manifestHash=hash(manifest),out=path.join(root,'conversation-v1');await mkdir(out,{recursive:true,mode:0o700});
  const target=path.join(out,`interactive-manifest-${manifestHash}.json`);
  try{if(hash(JSON.parse(await readFile(target,'utf8')))!==manifestHash)throw Error('Manifest changed');}
