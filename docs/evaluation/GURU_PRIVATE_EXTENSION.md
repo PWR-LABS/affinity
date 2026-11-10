@@ -90,3 +90,55 @@ reservation conservation and refusal to reduce already-consumed allocations.
 The repaired protocol and exact two-case manifest still require review before
 those probes. This is an explicit repair exercise, not an automatic retry or
 an interactive turn relabeled to evade a limit.
+
+## Explicit failed-attempt review
+
+`reviewFailedAttempt` adds a trusted local review operation. It does not inspect
+private response bodies, dispatch a model, change the protocol pin or restart a
+gateway. Before invoking it, the responsible reviewer must independently verify
+provider completion and valid model/usage evidence, establish a response-schema
+failure, and review the exact repaired source plus independent repair evidence.
+This operation is not available for uncertain transport or unverified usage.
+That classification is a caller obligation; the helper cannot establish it from
+hashes or the original generic failure code alone.
+
+The version-3 `failed_attempt_reviewed` event contains only the failed request
+UUID, SHA-256 of the original failed JSONL line **including its newline**, repaired
+source commit and SHA-256, review-evidence SHA-256, timestamp, baseline anchor,
+and fixed reason `validated_response_schema_mismatch_repaired`. It accepts no
+free-text reason, prompt, answer or other extra fields. Hashes bind the evidence
+supplied by the trusted caller; they do not authenticate that caller or prove a
+review was correct. Source and evidence hash definitions must be documented by
+the reviewer so the exact artifacts can be independently checked.
+
+The helper uses the original exclusive mutex and validates the whole journal
+before appending and fsyncing. It refuses a nonexistent, pending, completed or
+already-reviewed attempt, a mismatched failure hash, or an unchanged source
+commit. Partial/malformed journals and existing locks remain blocking. The
+original failed event is never rewritten or converted to success. Its $0.05
+reservation and phase slot remain spent. Review appends no refund, reservation
+or allocation amendment; a failure cannot be used to change phase ceilings.
+
+Future dispatch requires a **new request UUID** and the reviewed source commit.
+The old UUID remains unusable even with a different request/source. Journal
+replay enforces ordering: a later review cannot retroactively authorize a
+request reserved while a failure was unresolved. A later new failure blocks
+again until a separate evidence-linked review; this is not blanket permission
+to continue. Older readers fail closed on version-3 events.
+
+Four new synthetic filesystem tests verify retained failure/reservation and the
+seven-slot remainder after one failed interactive turn, exact review binding,
+same-ID refusal, reviewed-source restriction, phase exhaustion, lock exclusion,
+pending/completed refusal, and malformed/duplicate/late-review rejection. All
+eleven extension-ledger tests pass under the standard fixture clock, and
+TypeScript checking passes. These tests use invented records in temporary
+directories. **No actual failed-attempt review event has been recorded by this
+implementation slice**, and no real-user response has been read or replayed.
+Gateway restart and paid continuation still require their separate reviewed
+source and operational handoff.
+
+If stage diagnostics are added later, use a closed set of nonpersonal codes such
+as `response_schema_invalid`, `context_validation_failed`,
+`usage_evidence_invalid` and `evidence_write_failed`. Never use raw exception
+messages or rejected values as codes. This is a proposal only; the present
+terminal failure code and existing records remain unchanged.
