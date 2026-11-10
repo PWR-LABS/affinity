@@ -32,3 +32,7 @@ The private evaluation ledger now supports an explicit, evidence-bound review of
 Synthetic filesystem tests cover wrong bindings, duplicate reviews, pending/completed attempts, malformed journals, concurrency, source mismatch and retained phase limits. Supplied hashes bind evidence; they do not authenticate a reviewer or establish semantic/human acceptance by themselves.
 
 The private preview distinguishes potentially real authorized inputs from synthetic insurer/source evidence. Interactive inputs and provider receipts must remain private and must never become public benchmark fixtures or examples. The public AI gate remains off. The real workflow's review status and remaining allowance are reported privately; source tests and HTTP health alone do not establish successful operator verification or application completion.
+
+## Remaining presentation polish
+
+Two nonblocking display items remain outside this source-contract repair: `GURU-UI-01`, an empty household size needs an explicit unknown label in the context summary; and `GURU-UI-02`, model emphasis/paragraphs need readable formatting instead of literal markdown and collapsed spacing. These are presentation observations, not private interaction examples. They remain open; no additional provider calls are needed to reproduce or fix them.
