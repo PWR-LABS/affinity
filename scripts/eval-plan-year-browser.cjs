@@ -18,10 +18,11 @@ async function main() {
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
     const page = await context.newPage();
-    await page.goto(base);
+    await page.goto(new URL("/discover",base).href);
     await page.getByRole("button", { name: "Check my coverage" }).waitFor({ state: "visible" });
     await page.waitForFunction(() => !document.querySelector('button[type="submit"]').disabled);
     assert.equal(await page.getByLabel("Coverage year", { exact: true }).inputValue(), String(defaultYear));
+    await page.getByLabel("Employer insurance offer", { exact: true }).selectOption("none");
     await page.getByLabel("Coverage year", { exact: true }).selectOption("2027");
     await page.getByLabel("State", { exact: true }).selectOption("OR");
     await page.getByLabel("ZIP code", { exact: true }).fill("97201");

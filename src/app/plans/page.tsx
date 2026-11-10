@@ -14,7 +14,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function Plans({ searchParams }: { searchParams: Promise<{ year?: string | string[] }> }) {
-  const initialYear = parseMarketplacePlanYear((await searchParams).year) ?? DEFAULT_MARKETPLACE_PLAN_YEAR;
+  const requested=(await searchParams).year;
+  const initialYear = requested===undefined?undefined:parseMarketplacePlanYear(requested) ?? DEFAULT_MARKETPLACE_PLAN_YEAR;
   return (
     <div>
       <div className="page-header">

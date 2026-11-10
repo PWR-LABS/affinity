@@ -370,3 +370,13 @@ model TicRefreshPublication {
 
   @@index([stableKey, sourceDate], map: "TicRefreshPublication_stableKey")
 }
+
+// Durable guru allowance; each request reserves its upper cost before dispatch.
+// No household answers or conversation content are persisted.
+model GuruReservation {
+  id            String   @id
+  reservedMicro Int
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([createdAt])
+}

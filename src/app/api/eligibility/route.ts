@@ -35,6 +35,11 @@ export async function POST(req: Request) {
   if (missing(b.age) || !Number.isInteger(age) || age < 0 || age > 120) return NextResponse.json({ error: "Enter a valid age." }, { status: 400 });
   if (!Number.isInteger(householdSize) || householdSize < 1 || householdSize > 12)
     return NextResponse.json({ error: "Household size must be 1–12." }, { status: 400 });
+  if (b.employerOffer !== undefined && b.employerOffer !== 'none') return NextResponse.json({
+    ...officialStateHandoff(state,zip),year,
+    headline:'An employer offer needs an official affordability and minimum-value review.',
+    notes:['Working does not by itself establish an offer. No subsidized premium or eligibility verdict was calculated from this offer.'],
+  });
   if (marketplaceCatalogFreshness().status !== "current") return NextResponse.json({
     ...officialStateHandoff(state, zip), year, sourceFreshness: "stale",
     headline: "Our coverage sources are overdue for a check. Use the official services for current information.",

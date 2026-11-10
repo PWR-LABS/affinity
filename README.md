@@ -7,6 +7,8 @@
 **2027 support, live November 3, 2026:** explicit 2026/2027 selection, year-specific routing and quote context are deployed. The verified CMS catalog currently selects 2027 by default. [Activation evidence](docs/evaluation/2026-11-03-updater-activation.md) records the responding release and source-pair checks; the earlier [readiness audit](docs/PLAN_YEAR_2027_READINESS.md) and [candidate record](docs/evaluation/2026-11-03-plan-year-candidate.md) remain historical evidence.
 **Freshness updater:** the [updater](docs/FRESHNESS_UPDATER.md) derives accepted years/default/routing from validated CMS data, enforces expiry, and runs daily catalog and policy-source checks in GitHub Actions. The first manually dispatched cloud run passed, including deployed-release readback. Policy meaning requires review, and employer/Medicare indexes remain separate source contracts.
 
+**guru development checkpoint:** the guru-first guided workspace, shared household/medication context, source-backed tool actions and bounded optional model router are implemented for local review. Connected AI is off by default; public recurring spend, real-model adapter acceptance and deployment remain separate gates. [Workspace contract](docs/GURU_WORKSPACE.md) · [Three-model benchmark](docs/evaluation/2026-11-09-guru-model-benchmark.md).
+
 **Bucket:** green healthcare/biotech family. Brand accent green `#2d9c4a`.
 
 ## The wedge
