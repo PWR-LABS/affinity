@@ -8,7 +8,7 @@ import {type GuruContext} from '../../src/lib/guru/workspace';
 import {withExtensionReservation,type ExtensionRequest} from '../guru-benchmark/extension-ledger';
 import {usageMicro,type Response} from '../guru-benchmark/core';
 
-export const SOURCE_COMMIT='56e180a5ccd96308b74072937d1ef84666b754fd';
+export const SOURCE_COMMIT='8ed7bf5549703f3950fc7627b11ab7cb128d138f';
 export const MODEL='gpt-6.1-terra';
 export const sourceFiles=['src/lib/guru/conversation.ts','src/lib/guru/chat.ts','src/lib/guru/planner.ts','src/lib/guru/workspace.ts','src/lib/guru/proposal.ts','scripts/guru-integration/conversation-cases.ts'];
 export const hash=(x:unknown)=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
