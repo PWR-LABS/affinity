@@ -40,7 +40,9 @@ export async function planTurn(options:{model:string;message:string;context:Guru
  if(age<0||age>7*86400000)throw Error('Planner pricing requires review');
  await options.reserve();
  // No retries and no refund: a lost response can still be charged upstream.
- const response=await(options.fetcher??fetch)('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:`Bearer ${options.key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});
+ const response=await(options.fetcher??fetch)('https://api.openai.com/v1/responses',{method:'POST',redirect:'error',headers:{authorization:`Bearer ${options.key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});
  if(!response.ok)throw Error('Planner unavailable');
- return parseProposal(await response.json());
+ const data=await response.json();
+ if(typeof data.model!=='string'||!(data.model===options.model||data.model.startsWith(options.model+'-')))throw Error('Unexpected planner model');
+ return parseProposal(data);
 }

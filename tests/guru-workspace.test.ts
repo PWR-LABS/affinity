@@ -8,8 +8,9 @@ import { capMicro } from '../src/lib/guru/budget';
 import { POST as screen } from '../src/app/api/eligibility/route';
 import { POST as plans } from '../src/app/api/plans/route';
 import { POST as guru } from '../src/app/api/guru/route';
+import { integrationCases,checkIntegration } from '../scripts/guru-integration/cases';
 const base=()=>({...initialContext(DEFAULT_MARKETPLACE_PLAN_YEAR),state:'OH',zip:'44113',age:'35',income:'0',employerOffer:'none' as const});
-const wire=(value:unknown)=>({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(value)}]}]});
+const wire=(value:unknown)=>({model:'gpt-6.1-terra',status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(value)}]}]});
 
 test('employment and individual or household offers remain distinct from screening inputs',()=>{
  const c={...base(),employment:'working' as const};
@@ -57,12 +58,13 @@ test('planner serializes injection as data, requests no tools/storage, and reser
  assert.throws(()=>plannerBody('unreviewed',message,context));
  assert.throws(()=>plannerBody('gpt-6.1-terra','x'.repeat(13000),context));
  const calls:string[]=[];
- const fetcher=(async()=>{calls.push('dispatch');return Response.json(wire({step:'how',changes:{}}));}) as typeof fetch;
+ const fetcher=(async(_url,init)=>{assert.equal(init?.redirect,'error');calls.push('dispatch');return Response.json(wire({step:'how',changes:{}}));}) as typeof fetch;
  await planTurn({model:'gpt-6.1-terra',message,context,key:'synthetic',now:new Date('2026-11-10'),reserve:async()=>{calls.push('reserve');},fetcher});
  assert.deepEqual(calls,['reserve','dispatch']);
  calls.length=0;
  await assert.rejects(planTurn({model:'gpt-6.1-terra',message,context,key:'synthetic',now:new Date('2026-11-10'),reserve:async()=>{throw Error('cap');},fetcher}),/cap/);
  assert.deepEqual(calls,[]);
+ await assert.rejects(planTurn({model:'gpt-6.1-terra',message,context,key:'synthetic',now:new Date('2026-11-10'),reserve:async()=>{},fetcher:(async()=>Response.json({...wire({step:'how',changes:{}}),model:'unexpected-model'})) as typeof fetch}),/Unexpected planner model/);
 });
 test('timeouts do not release reservations or retry; stale pricing sends nothing',async()=>{
  let reserved=0,requests=0;
@@ -83,4 +85,13 @@ test('server routes do not issue subsidized quotes for a declared offer; disable
  const previous=process.env.AFFINITY_GURU_ENABLED;process.env.AFFINITY_GURU_ENABLED='0';
  try{const response=await guru(new Request('http://127.0.0.1/api/guru',{method:'POST',body:'synthetic'}));assert.equal(response.status,503);assert.equal((await response.json()).mode,'guided');}
  finally{if(previous===undefined)delete process.env.AFFINITY_GURU_ENABLED;else process.env.AFFINITY_GURU_ENABLED=previous;}
+});
+test('held-out adapter cases preserve exact changes and exclude local expectations from model inputs',()=>{
+ assert.equal(integrationCases.length,6);assert.equal(new Set(integrationCases.map(x=>x.id)).size,6);
+ for(const item of integrationCases){
+  assert.equal(checkIntegration(item,{step:item.steps[0],changes:item.expectedChanges}).passed,true);
+  const body=JSON.stringify(plannerBody('gpt-6.1-terra',item.message,item.context));
+  assert.ok(!body.includes('expectedChanges'));
+ }
+ assert.equal(checkIntegration(integrationCases[0],{step:'discover',changes:{employment:'working',employerOffer:'none'}}).passed,false);
 });
