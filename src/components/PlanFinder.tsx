@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useGuruField, useGuruMemory } from './GuruContext';
 
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
 import { DEFAULT_MARKETPLACE_PLAN_YEAR, parseMarketplacePlanYear, SUPPORTED_MARKETPLACE_PLAN_YEARS, type MarketplacePlanYear } from "@/lib/marketplace/states";
@@ -28,16 +29,18 @@ const covWord = (c: boolean | null, kind: "doctor" | "drug") => c === true
     ? kind === "doctor" ? "reported out-of-network by the Marketplace" : "reported not covered by the Marketplace"
     : "not answered by the Marketplace";
 
-export function PlanFinder({ initialYear = DEFAULT_MARKETPLACE_PLAN_YEAR }: { initialYear?: MarketplacePlanYear }) {
+export function PlanFinder({ initialYear }: { initialYear?: MarketplacePlanYear }) {
+  useEffect(()=>{if(initialYear!==undefined)setYear(initialYear);},[initialYear]);
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
-  const [zip, setZip] = useState("");
-  const [year, setYear] = useState<MarketplacePlanYear>(initialYear);
-  const [income, setIncome] = useState("");
-  const [age, setAge] = useState("");
-  const [householdSize, setHouseholdSize] = useState("1");
-  const [doctors, setDoctors] = useState<Array<{ npi: string; label: string }>>([]);
-  const [drugs, setDrugs] = useState<Array<{ rxcui: string; label: string }>>([]);
+  const [zip, setZip] = useGuruField('zip',"");
+  const [year, setYear] = useGuruField('year',initialYear??DEFAULT_MARKETPLACE_PLAN_YEAR);
+  const [employerOffer,setEmployerOffer]=useGuruField('employerOffer','unknown');
+  const [income, setIncome] = useGuruField('income',"");
+  const [age, setAge] = useGuruField('age',"");
+  const [householdSize, setHouseholdSize] = useGuruField('householdSize',"1");
+  const [doctors, setDoctors] = useGuruMemory<Array<{ npi: string; label: string }>>('plan-doctors',[]);
+  const [drugs, setDrugs] = useGuruMemory<Array<{ rxcui: string; label: string }>>('drugs',[]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [countyHandoff, setCountyHandoff] = useState(false);
@@ -47,6 +50,8 @@ export function PlanFinder({ initialYear = DEFAULT_MARKETPLACE_PLAN_YEAR }: { in
   const inFlight = useRef(false);
   const requestId = useRef(0);
   const errorRef = useRef<HTMLParagraphElement>(null);
+  const subjectKey=JSON.stringify([doctors,drugs]);
+  useEffect(()=>{requestId.current++;inFlight.current=false;setBoard(null);setError(null);setLoading(false);setShowAll(false);setCountyHandoff(false);setStaleHandoff(false);},[zip,year,income,age,householdSize,subjectKey,employerOffer]);
 
   useEffect(() => {
     if (error) errorRef.current?.scrollIntoView({ block: "center", behavior: "auto" });
@@ -94,6 +99,7 @@ export function PlanFinder({ initialYear = DEFAULT_MARKETPLACE_PLAN_YEAR }: { in
     e.preventDefault();
     if (inFlight.current) return;
     if (!e.currentTarget.reportValidity()) return;
+    if(employerOffer!=='none'){setError('An employer offer needs an affordability and minimum-value review. Confirm it with the official Marketplace before relying on savings.');return;}
     inFlight.current = true;
     const currentRequest = ++requestId.current;
     setError(null);
@@ -107,7 +113,7 @@ export function PlanFinder({ initialYear = DEFAULT_MARKETPLACE_PLAN_YEAR }: { in
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          zip: zip.trim(), income: Number(income), age: Number(age), householdSize: Number(householdSize), year,
+          employerOffer, zip: zip.trim(), income: Number(income), age: Number(age), householdSize: Number(householdSize), year,
           doctors: doctors.map((d) => ({ npi: d.npi, label: d.label })),
           drugs: drugs.map((d) => ({ rxcui: d.rxcui, label: d.label })),
         }),
@@ -135,6 +141,14 @@ export function PlanFinder({ initialYear = DEFAULT_MARKETPLACE_PLAN_YEAR }: { in
     <div className="finder">
       <form className="elig-form page-panel" method="post" onSubmit={onSubmit} aria-busy={loading}>
         <div className="elig-grid">
+          <div className="field">
+            <label htmlFor="shared-employer-offer">Employer insurance offer</label>
+            <select id="shared-employer-offer" value={employerOffer} onChange={e=>setEmployerOffer(e.target.value as typeof employerOffer)}>
+              <option value="unknown">Not sure yet</option><option value="none">No offer for anyone seeking coverage</option>
+              <option value="offered">Offered to me</option><option value="offered_household">Offered through a household member</option>
+            </select>
+            <p className="field-help">Working alone does not establish an offer. An actual offer needs an official affordability and minimum-value review.</p>
+          </div>
           <div className="field">
             <label htmlFor="f-year">Coverage year</label>
             <select id="f-year" name="year" value={year} onChange={(event) => changeYear(event.target.value)}>

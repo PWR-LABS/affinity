@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useGuruField } from './GuruContext';
 
 import { medicaidChangeUrl, medicaidResourceByCode, STATE_MEDICAID_RESOURCES } from "@/lib/medicaid/states";
 import { DEFAULT_MARKETPLACE_PLAN_YEAR, parseMarketplacePlanYear, stateBasedMarketplace, SUPPORTED_MARKETPLACE_PLAN_YEARS, type MarketplacePlanYear } from "@/lib/marketplace/states";
@@ -31,16 +32,18 @@ const VERDICT_LABEL: Record<Result["verdict"], string> = {
 export function EligibilityCheck() {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
-  const [state, setState] = useState("");
-  const [year, setYear] = useState<MarketplacePlanYear>(DEFAULT_MARKETPLACE_PLAN_YEAR);
-  const [zip, setZip] = useState("");
-  const [income, setIncome] = useState("");
-  const [householdSize, setHouseholdSize] = useState("1");
-  const [age, setAge] = useState("");
+  const [state, setState] = useGuruField('state',"");
+  const [year, setYear] = useGuruField('year',DEFAULT_MARKETPLACE_PLAN_YEAR);
+  const [zip, setZip] = useGuruField('zip',"");
+  const [employerOffer,setEmployerOffer]=useGuruField('employerOffer','unknown');
+  const [income, setIncome] = useGuruField('income',"");
+  const [householdSize, setHouseholdSize] = useGuruField('householdSize',"1");
+  const [age, setAge] = useGuruField('age',"");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const requestId = useRef(0);
+  useEffect(()=>{requestId.current++;setResult(null);setError(null);setLoading(false);},[state,zip,year,income,householdSize,age,employerOffer]);
 
   function changeYear(value: string) {
     const next = parseMarketplacePlanYear(value);
@@ -55,6 +58,7 @@ export function EligibilityCheck() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!e.currentTarget.reportValidity()) return;
+    if(employerOffer!=='none'){setError('An employer offer needs an affordability and minimum-value review. Use the official Marketplace before relying on savings.');return;}
     const currentRequest = ++requestId.current;
     setError(null);
     setResult(null);
@@ -64,7 +68,7 @@ export function EligibilityCheck() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          state,
+          state, employerOffer,
           zip: zip.trim(),
           income: Number(income),
           householdSize: Number(householdSize),
@@ -91,6 +95,14 @@ export function EligibilityCheck() {
     <div className="elig" id="coverage-check">
       <form className="elig-form page-panel" method="post" onSubmit={onSubmit} aria-busy={loading}>
         <div className="elig-grid">
+          <div className="field">
+            <label htmlFor="shared-employer-offer">Employer insurance offer</label>
+            <select id="shared-employer-offer" value={employerOffer} onChange={e=>setEmployerOffer(e.target.value as typeof employerOffer)}>
+              <option value="unknown">Not sure yet</option><option value="none">No offer for anyone seeking coverage</option>
+              <option value="offered">Offered to me</option><option value="offered_household">Offered through a household member</option>
+            </select>
+            <p className="field-help">Working alone does not establish an offer. An actual offer needs an official affordability and minimum-value review.</p>
+          </div>
           <div className="field">
             <label htmlFor="coverage-year">Coverage year</label>
             <select id="coverage-year" name="year" value={year} onChange={(event) => changeYear(event.target.value)}>

@@ -19,19 +19,19 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 const DESCRIPTION =
-  "Losing Medicaid? Get a nationwide, state-specific Medicaid handoff, find current official guidance, and check whether you may qualify for Medicaid or a subsidized Marketplace plan. Free and neutral.";
+  "Work through your coverage options with guru: discover Medicaid and Marketplace routes, check employer network evidence, compare declared premiums and find official next steps. Free and neutral.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://affinity.pwr-labs.ai"),
   title: {
-    default: "[affinity.] — Medicaid or Marketplace? Find your coverage",
+    default: "[affinity.] — Work out your coverage with guru",
     template: "%s · [affinity.]",
   },
   description: DESCRIPTION,
   applicationName: "[affinity.]",
   authors: [{ name: "[PWR] LABS" }],
   openGraph: {
-    title: "[affinity.] — Medicaid or Marketplace? Find your coverage",
+    title: "[affinity.] — Work out your coverage with guru",
     description: DESCRIPTION,
     url: "/",
     siteName: "[affinity.]",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "[affinity.] — Medicaid or Marketplace?",
+    title: "[affinity.] — Work out your coverage",
     description: DESCRIPTION,
   },
   robots: { index: true, follow: true },
