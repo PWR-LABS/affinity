@@ -1,0 +1,26 @@
+{
+  "version": "affinity.guru.conversation-repair/1",
+  "sourceCommit": "8ed7bf5549703f3950fc7627b11ab7cb128d138f",
+  "originalEvaluationCommit": "b8d985009cb3d3b57554b70caa36dddbda79e12b",
+  "baselineSha256": "72b1c403baaf9222616652d930a7aeef29f216460eaf7ddfd5f613cae413608e",
+  "allocationAmendment": "conversation-repair-2-interactive-8/v1",
+  "phase": "repair_probe",
+  "model": "gpt-6.1-terra",
+  "caseSource": "scripts/guru-integration/conversation-cases.ts",
+  "caseSourceVersion": "affinity.guru.conversation-heldout/1",
+  "caseIds": ["household-offer-official-path", "followup-natural-doctor-intake"],
+  "requests": 2,
+  "reservationMicroPerRequest": 50000,
+  "totalReservationMicro": 100000,
+  "aggregateCapMicro": 5000000,
+  "retries": 0,
+  "refunds": false,
+  "review": [
+    "Use the identical original frozen case inputs and expectations; never send local expectations to the model.",
+    "Pin actual source hashes, serialized body hashes and conservative upper cost before dispatch.",
+    "Propose explicitly supplied household offer or doctor query immediately; application confirmation follows the proposal.",
+    "No claim that a pending edit has already been applied; latest doctor follow-up belongs in Coverage.",
+    "Preserve original failures and new outcomes separately; structured checks do not replace semantic or human review.",
+    "Retain every reservation and leave eight interactive slots under the same immutable aggregate ledger."
+  ]
+}

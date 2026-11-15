@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useGuruField, useGuruMemory } from './GuruContext';
 
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
 import {
@@ -299,9 +300,9 @@ function ShortlistResults({
 
 export function VerifyPartD() {
   const [mode, setMode] = useState<PartDMode>("find");
-  const [state, setState] = useState("");
-  const [plan, setPlan] = useState<PartDPlanSelection | null>(null);
-  const [drugs, setDrugs] = useState<PartDDrugSelection[]>([]);
+  const [state, setState] = useGuruField('state',"");
+  const [plan, setPlan] = useGuruMemory<PartDPlanSelection | null>('partd-plan',null);
+  const [drugs, setDrugs] = useGuruMemory<PartDDrugSelection[]>('drugs',[]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultRows, setResultRows] = useState<PartDResultRow[]>([]);

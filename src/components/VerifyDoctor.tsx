@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useGuruField, useGuruMemory, useGuruStore } from './GuruContext';
 
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
 
@@ -23,10 +24,11 @@ const VERDICT: Record<VerifyResult["value"], { tag: string; key: string }> = {
 };
 
 export function VerifyDoctor() {
-  const [zip, setZip] = useState("");
+  const [zip, setZip] = useGuruField('zip',"");
+  const shared=useGuruStore();
   const [doctor, setDoctor] = useState<{ npi: string; label: string } | null>(null);
-  const [npiDirect, setNpiDirect] = useState("");
-  const [plan, setPlan] = useState<{ idType: string; id: string; label: string } | null>(null);
+  const [npiDirect, setNpiDirect] = useGuruField('npi','');
+  const [plan, setPlan] = useGuruMemory<{ idType: string; id: string; label: string } | null>('network-plan',shared?.context.planId?{idType:shared.context.planIdType,id:shared.context.planId,label:'Your selected identifier'}:null);
   const [einDirect, setEinDirect] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +86,7 @@ export function VerifyDoctor() {
 
   async function onVerify() {
     if (!npi || !planSel) return;
+    shared?.setContext(old=>({...old,npi,planId:planSel.id,planIdType:planSel.idType as 'ein'|'hios'}));
     const key = requestKey;
     const id = ++sequence.current;
     setError(null);
@@ -134,12 +137,12 @@ export function VerifyDoctor() {
             label="Your doctor"
             placeholder={/^\d{5}$/.test(zip) ? "Search by name, e.g. Smith" : "Enter your ZIP first, or paste an NPI"}
             fetchSuggestions={fetchDoctors}
-            onSelect={(s) => { setDoctor({ npi: s.key, label: s.label }); setNpiDirect(""); }}
+            onSelect={(s) => { setDoctor({ npi: s.key, label: s.label }); setNpiDirect(s.key); }}
           />
           {doctor && (
             <ul className="chips" aria-label="Selected doctor">
               <li className="chip"><span>{doctor.label}</span>
-                <button type="button" aria-label={`Remove ${doctor.label}`} onClick={() => setDoctor(null)}>×</button>
+                <button type="button" aria-label={`Remove ${doctor.label}`} onClick={() => { setDoctor(null);setNpiDirect(""); }}>×</button>
               </li>
             </ul>
           )}
@@ -153,6 +156,7 @@ export function VerifyDoctor() {
             onSelect={(s) => {
               const [idType, id] = s.key.split(":");
               setPlan({ idType, id, label: s.label });
+              shared?.setContext(old=>({...old,planId:id,planIdType:idType as "ein"|"hios"}));
               setEinDirect("");
             }}
           />
@@ -163,6 +167,7 @@ export function VerifyDoctor() {
               fetchSuggestions={fetchEmployers}
               onSelect={(s) => {
                 setPlan({ idType: "ein", id: s.key, label: s.label });
+                shared?.setContext(old=>({...old,planId:s.key,planIdType:"ein"}));
                 setEinDirect("");
               }}
             />
@@ -170,14 +175,14 @@ export function VerifyDoctor() {
           <div className="field verify-stack">
             <label htmlFor="v-ein">…or your employer&rsquo;s EIN (on your W-2, box b)</label>
             <input id="v-ein" name="ein" type="text" inputMode="numeric" autoComplete="off" maxLength={9} placeholder="9-digit EIN"
-              value={einDirect} onChange={(e) => { setEinDirect(e.target.value.replace(/\D/g, "")); setPlan(null); }}
+              value={einDirect} onChange={(e) => { setEinDirect(e.target.value.replace(/\D/g, "")); setPlan(null);shared?.setContext(old=>({...old,planId:e.target.value.replace(/\D/g,""),planIdType:"ein"})); }}
               aria-describedby="ein-help" />
             <p id="ein-help" className="field-help">Employer plans are keyed by the employer&rsquo;s tax ID. Used for lookup, not saved as a profile.</p>
           </div>
           {planSel && (
             <ul className="chips" aria-label="Selected plan">
               <li className="chip"><span>{planSel.label}</span>
-                <button type="button" aria-label={`Remove ${planSel.label}`} onClick={() => { setPlan(null); setEinDirect(""); }}>×</button>
+                <button type="button" aria-label={`Remove ${planSel.label}`} onClick={() => { setPlan(null); setEinDirect("");shared?.setContext(old=>({...old,planId:""})); }}>×</button>
               </li>
             </ul>
           )}

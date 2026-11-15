@@ -1,28 +1,5 @@
-import { EligibilityCheck } from "@/components/EligibilityCheck";
-import Link from "next/link";
+import { GuruWorkspace } from "@/components/GuruWorkspace";
 
 export const dynamic = "force-dynamic";
 
-export default function Home() {
-  return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Where should you start: Medicaid or a Marketplace plan?</h1>
-        <p className="page-subtitle">
-          Get a live screening estimate where the official feed supports it—and a safe route to the
-          right Medicaid decision in every state. Free and neutral; see how we handle your inputs.
-        </p>
-      </div>
-
-      <div className="medicaid-home-alert">
-        <div>
-          <strong>Medicaid requirements can change.</strong>
-          <span> Follow your state notice and check current official guidance.</span>
-        </div>
-        <Link href="/medicaid">See what changes for you →</Link>
-      </div>
-
-      <EligibilityCheck />
-    </div>
-  );
-}
+export default function Home(){ return <GuruWorkspace />; }

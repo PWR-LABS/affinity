@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { GuruContextProvider } from './GuruContext';
 
 const NAV = [
-  { href: "/", label: "Check", match: (p: string) => p === "/" },
-  { href: "/medicaid", label: "Medicaid", match: (p: string) => p.startsWith("/medicaid") },
-  { href: "/plans", label: "Plans", match: (p: string) => p.startsWith("/plans") },
-  { href: "/verify", label: "Verify", match: (p: string) => p.startsWith("/verify") },
+  { href: "/", label: "guru", match: (p: string) => p === "/" },
+  { href: "/discover", label: "Discover", match: (p: string) => p.startsWith("/discover") || p.startsWith("/medicaid") },
+  { href: "/verify", label: "Coverage", match: (p: string) => p.startsWith("/verify") },
+  { href: "/plans", label: "Compare", match: (p: string) => p.startsWith("/plans") },
   { href: "/how-it-works", label: "How", match: (p: string) => p.startsWith("/how-it-works") },
 ];
 
@@ -16,6 +17,7 @@ const NAV = [
 export function SiteShell({ children, freshness }: { children: ReactNode; freshness: { status: "current" | "stale"; checkedAt: string } }) {
   const pathname = usePathname() ?? "/";
   return (
+    <GuruContextProvider>
     <div className="site">
       <a href="#main" className="skip-link">Skip to content</a>
       <header className="site-header">
@@ -50,5 +52,6 @@ export function SiteShell({ children, freshness }: { children: ReactNode; freshn
         </p>
       </footer>
     </div>
+    </GuruContextProvider>
   );
 }

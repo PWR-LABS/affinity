@@ -20,6 +20,22 @@ export default function PrivacyPage() {
           coverage estimate or plan comparison. We process those values to return an answer; our application does
           not write the submitted household answers to its database or deliberately log request bodies.
         </p>
+        <h2>guru conversation</h2>
+        <p>
+          Guided mode organizes your next step in the browser. If you explicitly select connected AI,
+          your recent conversation, confirmed workspace fields and applicable tool evidence are sent
+          through our server to OpenAI for conversational guidance, explanations and proposed edits/checks. You review suggestions before applying them. The model does
+          not determine coverage or enroll you. Connected AI may be unavailable when its allowance or
+          service is unavailable; the structured tools remain usable.
+        </p>
+        <p>
+          We do not save guru transcripts or household fields in our database or application logs. The
+          AI request asks the provider not to store a response for conversation reuse; this is not a claim
+          of zero retention by the provider. Provider handling is governed by its own policies. A small
+          spending record stores a request ID, reserved amount, time, and keyed browser/network identifiers to enforce fair-use limits. We do not store raw IP addresses in that ledger. A secure, first-party cookie identifies your browser for up to 31 days; it contains no conversation or household answers. Network limits are shared by people using the same connection. Identifying ledger fields from earlier calendar months are cleared when the next AI reservation succeeds; accounting records remain. Shared fields and selected
+          doctors or medications remain in browser memory across site navigation until cleared, refreshed
+          or closed. No conversation is placed in a URL or browser persistent storage.
+        </p>
         <h2>Official data services</h2>
         <p>
           To calculate Marketplace estimates and check plans, our server sends the relevant request information
