@@ -34,5 +34,12 @@ services:
       # --- Runtime LLM explainer: flag OFF by default (ships in M5). Flip + add a key to enable. ---
       - key: AFFINITY_LLM_ENABLED
         value: "0"
+      # Public guru allocation approved Nov 12; activation and secret/ingress setup remain gated.
+      - key: AFFINITY_GURU_ENABLED
+        value: "0"
+      - key: AFFINITY_GURU_MONTHLY_USD
+        value: "100"
+      - key: AFFINITY_GURU_DAILY_USD
+        value: "5"
       - key: ANTHROPIC_API_KEY
         sync: false

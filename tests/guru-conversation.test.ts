@@ -1,3 +1,4 @@
+import { PRICING_DATE as reviewedPricingDate } from '../src/lib/guru/planner';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initialContext,comparePremiums,reconcileContext,offerHandoff,missingQuestion,requestKey} from '../src/lib/guru/workspace';
@@ -44,7 +45,7 @@ test('unknown and confirmed household offers retain Medicaid and official afford
 test('conversation receives prior turns, confirmed context and evidence; replies cannot invent references',async()=>{
  const c=context(),e=current();let calls=0,reservations=0;
  const history=modelHistory([{role:'you',text:'Why is that cheaper?'},{role:'guru',text:'Premiums are only one cost.',bindings:[bindEvidence(e)]},{role:'you',text:'Can I keep my doctor too?'}],c,[e]);
- const options={model:'gpt-6.1-terra',history,context:c,evidence:[e],key:'synthetic',now:new Date('2026-11-10'),reserve:async()=>{reservations++;},fetcher:(async(_url,init)=>{
+ const options={model:'gpt-6.1-terra',history,context:c,evidence:[e],key:'synthetic',now:new Date(reviewedPricingDate),reserve:async()=>{reservations++;},fetcher:(async(_url,init)=>{
   calls++;assert.equal(reservations,calls);const body=JSON.parse(String(init?.body));
   const input=JSON.parse(body.input[0].content);assert.equal(input.history.length,3);assert.equal(input.confirmedContext.zip,'44113');assert.equal(input.CURRENT_EVIDENCE[0].id,'current-premium');assert.equal(body.store,false);assert.equal(body.max_output_tokens,1000);assert.ok(!body.tools);
   return Response.json(wire({step:'coverage',changes:{doctorQuery:null},reply:'The premium difference does not establish doctor coverage. What is your doctor’s name?',proposedAction:'none',evidenceIds:['current-premium']}));
@@ -53,7 +54,7 @@ test('conversation receives prior turns, confirmed context and evidence; replies
  await assert.rejects(conversationTurn({...options,fetcher:(async()=>Response.json(wire({...reply,evidenceIds:['invented-source']}))) as typeof fetch}),/Invented evidence/);
 });
 test('conversation rejects oversize current evidence before reservation, and never retries a lost return',async()=>{
- let reservations=0,calls=0;const options={model:'gpt-6.1-terra',history:[{role:'you' as const,text:'Help me',superseded:false}],context:context(),evidence:[current()],key:'synthetic',now:new Date('2026-11-10'),reserve:async()=>{reservations++;},fetcher:(async()=>{calls++;throw Error('lost response');}) as typeof fetch};
+ let reservations=0,calls=0;const options={model:'gpt-6.1-terra',history:[{role:'you' as const,text:'Help me',superseded:false}],context:context(),evidence:[current()],key:'synthetic',now:new Date(reviewedPricingDate),reserve:async()=>{reservations++;},fetcher:(async()=>{calls++;throw Error('lost response');}) as typeof fetch};
  await assert.rejects(conversationTurn({...options,evidence:[{...current(),notes:['x'.repeat(15000)]}]}),/upper reservation/);assert.equal(reservations,0);assert.equal(calls,0);
  await assert.rejects(conversationTurn(options),/lost response/);assert.equal(reservations,1);assert.equal(calls,1);
 });

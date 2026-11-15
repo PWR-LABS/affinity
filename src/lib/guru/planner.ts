@@ -5,7 +5,7 @@ import { proposalSchema, type Proposal } from './proposal';
 export const MODEL_IDS=['gpt-6.1-sol','gpt-6.1-terra','gpt-6-luna'] as const;
 export const MAX_OUTPUT_TOKENS=800;
 export const RESERVATION_MICRO=50_000; // $0.05, retained even after timeout or a lower bill.
-export const PRICING_DATE='2026-11-09';
+export const PRICING_DATE='2026-11-15';
 
 export function plannerBody(model:string,message:string,context:GuruContext){
  if(!MODEL_IDS.includes(model as typeof MODEL_IDS[number]))throw Error('Unreviewed model');

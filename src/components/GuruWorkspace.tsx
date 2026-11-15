@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { allowanceMessage, VISITOR_LIMITS } from '@/lib/guru/allowance';
 import { STATE_MEDICAID_RESOURCES, medicaidResourceByCode } from '@/lib/medicaid/states';
 import { DEFAULT_MARKETPLACE_PLAN_YEAR, SUPPORTED_MARKETPLACE_PLAN_YEARS, stateBasedMarketplace } from '@/lib/marketplace/states';
 import { actionInput, comparePremiums, evidenceFrom, initialContext, requestKey, STEPS, suggestStep, guidedReply, missingQuestion, offerHandoff, CONTEXT_LABELS, contextValue, reconcileContext, type Action, type Evidence, type GuruContext, type Step } from '@/lib/guru/workspace';
@@ -17,7 +18,7 @@ const CITATION_LABEL:Record<Action,string>={screen:'coverage routes',plans:'plan
 function conversationText(message:ChatMessage,isOld:boolean){
  return message.text.split(/(\[(?:current|private)-(?:screen|plans|network|premium)\])/g).map((part,i)=>{
   const action=part.match(/^\[(?:current|private)-(screen|plans|network|premium)\]$/)?.[1] as Action|undefined;
-  if(!action)return part;
+  if(!action)return <span key={i}>{part.split(/(\*\*[^*\n]+\*\*)/g).map((text,j)=>text.startsWith('**')&&text.endsWith('**')?<strong key={j}>{text.slice(2,-2)}</strong>:text)}</span>;
   if(!message.bindings?.some(b=>b.action===action))return '[source unavailable]';
   return isOld?`[previous ${CITATION_LABEL[action]}]`:<a key={i} href={`#guru-evidence-${action}`} data-evidence-id={part.slice(1,-1)}>{CITATION_LABEL[action]}</a>;
  });
@@ -60,6 +61,13 @@ export function GuruWorkspace(){
   try{
    const actions=sourceEvidence.filter(e=>e.requestKey===requestKey(e.action,snapshot)).map(e=>e.action).slice(0,3);
    const response=await fetch('/api/guru',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:crypto.randomUUID(),history:modelHistory(history,snapshot,sourceEvidence),context:snapshot,evidenceActions:actions}),signal:abort.signal});
+   if(response.status===429){
+    const limited=await response.json();
+    if(limited.code==='guru_limit'&&['site','visitor','network'].includes(limited.scope)&&['minute','day','month'].includes(limited.window)){
+     if(id===chatSequence.current&&snapshotKey===JSON.stringify(current.current)){setAvailability('unavailable');say(allowanceMessage(limited.scope,limited.window));}
+     return;
+    }
+   }
    if(!response.ok)throw Error('unavailable');
    const data=await response.json(),next=conversationSchema.parse(data.reply);
    const fresh=referencedEvidenceSchema.array().parse(data.evidence??[]);
@@ -145,8 +153,8 @@ export function GuruWorkspace(){
     <div className="guru-section-heading"><h2 id="guru-conversation-title">Let’s start with you</h2><span className="guru-mode">{connected?(chatPending?'Thinking…':availability==='ready'?'Connected guru':availability==='unavailable'?'Guided fallback':'Connected guru requested'):'Guided mode'}</span></div>
     <p className="field-help">Tell guru what you are trying to work out. Connected mode carries the conversation and explains the evidence. Guided mode keeps the structured tools available without an AI service.</p>
     <label className="guru-ai-choice"><input type="checkbox" checked={connected} onChange={e=>{setConnected(e.target.checked);chatSequence.current++;chatController.current?.abort();setChatPending(false);setProposal(null);setActionProposal(null);}}/>Use connected guru</label>
-    <p className="field-help">When selected, your recent conversation, confirmed context and applicable tool evidence are sent to OpenAI through our server. Edits and checks need your confirmation; coverage labels stay source-derived. <Link href="/privacy">Data flow</Link>.</p>
-    <div ref={logRef} className="guru-messages" role="log" aria-live="polite" aria-label="Conversation with guru">{messages.map((m,i)=><div key={i} data-superseded={superseded(m,context,evidence)} className={`guru-message guru-message-${m.role}`}><strong>{m.role==='you'?'You':superseded(m,context,evidence)?'guru · superseded result':m.kind==='model'?'guru · AI explanation':'guru'}</strong><p>{conversationText(m,superseded(m,context,evidence))}</p>{superseded(m,context,evidence)&&<p className="field-help">Earlier context—this answer is superseded. The inputs or current source evidence changed. Review the latest result or run a new check.</p>}{m.bindings?.length&&!superseded(m,context,evidence)?<p className="field-help">Evidence: {m.bindings.map(b=><a key={b.action} href={`#guru-evidence-${b.action}`} data-evidence-id={`current-${b.action}`}>{LABEL[b.action==='network'?'coverage':b.action==='premium'?'compare':'discover']} · current result </a>)}</p>:null}</div>)}</div>
+    <p className="field-help">When selected, your recent conversation, confirmed context and applicable tool evidence are sent to OpenAI through our server. Edits and checks need your confirmation; coverage labels stay source-derived. <Link href="/privacy">Data flow</Link>. AI allowance: {VISITOR_LIMITS.day} replies per day and {VISITOR_LIMITS.month} per month per browser (UTC), with short burst and shared-network limits. Guided tools remain available.</p>
+    <div ref={logRef} className="guru-messages" role="log" aria-live="polite" aria-label="Conversation with guru">{messages.map((m,i)=><div key={i} data-superseded={superseded(m,context,evidence)} className={`guru-message guru-message-${m.role}`}><strong>{m.role==='you'?'You':superseded(m,context,evidence)?'guru · superseded result':m.kind==='model'?'guru · AI explanation':'guru'}</strong><p style={{whiteSpace:'pre-wrap'}}>{conversationText(m,superseded(m,context,evidence))}</p>{superseded(m,context,evidence)&&<p className="field-help">Earlier context—this answer is superseded. The inputs or current source evidence changed. Review the latest result or run a new check.</p>}{m.bindings?.length&&!superseded(m,context,evidence)?<p className="field-help">Evidence: {m.bindings.map(b=><a key={b.action} href={`#guru-evidence-${b.action}`} data-evidence-id={`current-${b.action}`}>{LABEL[b.action==='network'?'coverage':b.action==='premium'?'compare':'discover']} · current result </a>)}</p>:null}</div>)}</div>
     <div className="guru-suggestions">{[['I lost Medicaid','discover'],['Can I keep my doctor?','coverage'],['Compare my employer offer','compare']] .map(([text,s])=><button type="button" key={s} onClick={()=>ask(text)}>{text}</button>)}</div>
     <form onSubmit={e=>{e.preventDefault();ask(draft);}}><label htmlFor="guru-question">What would you like to work out?</label><textarea id="guru-question" value={draft} maxLength={1500} rows={3} onChange={e=>setDraft(e.target.value)} placeholder="For example: I work part time. What are my coverage options?"/><button className="primary" type="submit" disabled={!draft.trim()||chatPending}>{chatPending?'Thinking…':'Send to guru'}</button></form>
     {proposal&&<aside className="guru-note"><h3>Review suggested context edits</h3><p>Next step: {LABEL[proposal.step]}</p>{Object.entries(proposal.changes).length?<dl>{Object.entries(proposal.changes).map(([key,value])=><div key={key}><dt>{CONTEXT_LABELS[key as keyof GuruContext]}</dt><dd>{contextValue(key as keyof GuruContext,value)}</dd></div>)}</dl>:<p>No context edits proposed.</p>}<button type="button" onClick={confirmProposal}>Confirm suggested edits</button><button type="button" onClick={()=>setProposal(null)}>Dismiss</button></aside>}
@@ -156,7 +164,7 @@ export function GuruWorkspace(){
    <section className="guru-workbench page-panel" aria-labelledby="guru-workbench-title">
     <h2 id="guru-workbench-title">Your coverage workspace</h2>
     <nav className="guru-steps" aria-label="Coverage journey">{STEPS.map((s,i)=><button type="button" key={s} aria-pressed={step===s} onClick={()=>select(s)}><span>{i+1}</span>{LABEL[s]}</button>)}</nav>
-    <div className="guru-context-summary"><strong>Your context</strong><span>{context.state||'State needed'} · {context.zip||'ZIP needed'} · {context.year} · {context.householdSize} {context.householdSize==='1'?'person':'people'}</span><button type="button" onClick={()=>select('discover')}>Edit</button></div>
+    <div className="guru-context-summary"><strong>Your context</strong><span>{context.state||'State needed'} · {context.zip||'ZIP needed'} · {context.year} · {context.householdSize?`${context.householdSize} ${context.householdSize==='1'?'person':'people'}`:'Household size needed'}</span><button type="button" onClick={()=>select('discover')}>Edit</button></div>
     {step==='discover'&&<div className="guru-step-content">
      <h3>Discover your coverage routes</h3><p>Employment and an actual insurance offer are different. Confirm these details before running a check.</p>
      <div className="guru-fields">

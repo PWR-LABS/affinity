@@ -1,3 +1,4 @@
+import { PRICING_DATE as reviewedPricingDate } from '../src/lib/guru/planner';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {STATE_MEDICAID_RESOURCES} from '../src/lib/medicaid/states';
@@ -49,7 +50,7 @@ test('a new fictional employment transition has useful discovery fallback withou
 });
 test('synthetic full-name adapter response is accepted once, stays pending and preserves budget order',async()=>{
  const c=context(),history=modelHistory([{role:'you',text:synthetic}],c,[]),calls:string[]=[];
- const reply=await conversationTurn({model:'gpt-6.1-terra',context:c,history,evidence:[],key:'synthetic',now:new Date('2026-11-10'),reserve:async()=>{calls.push('reserve');},fetcher:(async()=>{calls.push('dispatch');return Response.json(wire({step:'discover',changes:{state:'Oregon',year:2026,zip:null},reply:'Please confirm the state and year. Has your benefits administrator confirmed whether this role change changes your insurance?',proposedAction:'none',evidenceIds:[]}));}) as typeof fetch});
+ const reply=await conversationTurn({model:'gpt-6.1-terra',context:c,history,evidence:[],key:'synthetic',now:new Date(reviewedPricingDate),reserve:async()=>{calls.push('reserve');},fetcher:(async()=>{calls.push('dispatch');return Response.json(wire({step:'discover',changes:{state:'Oregon',year:2026,zip:null},reply:'Please confirm the state and year. Has your benefits administrator confirmed whether this role change changes your insurance?',proposedAction:'none',evidenceIds:[]}));}) as typeof fetch});
  assert.deepEqual(calls,['reserve','dispatch']);assert.equal(reply.changes.state,'OR');assert.equal(reply.changes.year,2026);assert.equal(c.year,2027);assert.equal(c.employerOffer,'unknown');
  assert.deepEqual(Object.keys(reply.changes).sort(),['state','year']);
 });

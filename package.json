@@ -60,7 +60,8 @@
     "refresh:employers": "node --import tsx scripts/run-mini-refresh.ts",
     "refresh:volume": "node scripts/check-refresh-volume.cjs",
     "eval:refresh-recovery": "node --import tsx scripts/eval-managed-refresh.ts",
-    "prestart": "node scripts/ensure-compact-tic-schema.cjs"
+    "prestart": "node scripts/ensure-compact-tic-schema.cjs && node scripts/ensure-guru-schema.cjs",
+    "prebuild": "node scripts/refresh-release-catalog.cjs"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",

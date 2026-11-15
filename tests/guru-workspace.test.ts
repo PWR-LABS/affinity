@@ -1,3 +1,4 @@
+import { PRICING_DATE as reviewedPricingDate } from '../src/lib/guru/planner';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { actionInput,comparePremiums,evidenceFrom,initialContext,requestKey } from '../src/lib/guru/workspace';
@@ -59,18 +60,18 @@ test('planner serializes injection as data, requests no tools/storage, and reser
  assert.throws(()=>plannerBody('gpt-6.1-terra','x'.repeat(13000),context));
  const calls:string[]=[];
  const fetcher=(async(_url,init)=>{assert.equal(init?.redirect,'error');calls.push('dispatch');return Response.json(wire({step:'how',changes:{}}));}) as typeof fetch;
- await planTurn({model:'gpt-6.1-terra',message,context,key:'synthetic',now:new Date('2026-11-10'),reserve:async()=>{calls.push('reserve');},fetcher});
+ await planTurn({model:'gpt-6.1-terra',message,context,key:'synthetic',now:new Date(reviewedPricingDate),reserve:async()=>{calls.push('reserve');},fetcher});
  assert.deepEqual(calls,['reserve','dispatch']);
  calls.length=0;
- await assert.rejects(planTurn({model:'gpt-6.1-terra',message,context,key:'synthetic',now:new Date('2026-11-10'),reserve:async()=>{throw Error('cap');},fetcher}),/cap/);
+ await assert.rejects(planTurn({model:'gpt-6.1-terra',message,context,key:'synthetic',now:new Date(reviewedPricingDate),reserve:async()=>{throw Error('cap');},fetcher}),/cap/);
  assert.deepEqual(calls,[]);
- await assert.rejects(planTurn({model:'gpt-6.1-terra',message,context,key:'synthetic',now:new Date('2026-11-10'),reserve:async()=>{},fetcher:(async()=>Response.json({...wire({step:'how',changes:{}}),model:'unexpected-model'})) as typeof fetch}),/Unexpected planner model/);
+ await assert.rejects(planTurn({model:'gpt-6.1-terra',message,context,key:'synthetic',now:new Date(reviewedPricingDate),reserve:async()=>{},fetcher:(async()=>Response.json({...wire({step:'how',changes:{}}),model:'unexpected-model'})) as typeof fetch}),/Unexpected planner model/);
 });
 test('timeouts do not release reservations or retry; stale pricing sends nothing',async()=>{
  let reserved=0,requests=0;
- const options={model:'gpt-6.1-terra',message:'Help me compare',context:base(),key:'synthetic',now:new Date('2026-11-10'),reserve:async()=>{reserved+=RESERVATION_MICRO;},fetcher:(async()=>{requests++;throw Error('lost response');}) as typeof fetch};
+ const options={model:'gpt-6.1-terra',message:'Help me compare',context:base(),key:'synthetic',now:new Date(reviewedPricingDate),reserve:async()=>{reserved+=RESERVATION_MICRO;},fetcher:(async()=>{requests++;throw Error('lost response');}) as typeof fetch};
  await assert.rejects(planTurn(options),/lost response/);assert.equal(reserved,50000);assert.equal(requests,1);
- await assert.rejects(planTurn({...options,now:new Date('2026-11-20')}),/pricing/);assert.equal(reserved,50000);assert.equal(requests,1);
+ await assert.rejects(planTurn({...options,now:new Date(Date.parse(reviewedPricingDate) + 8 * 86400000)}),/pricing/);assert.equal(reserved,50000);assert.equal(requests,1);
 });
 test('public spending is disabled without explicit positive caps',()=>{
  for(const bad of [undefined,'','0','-1','NaN','Infinity','0.001','101'])assert.throws(()=>capMicro(bad));

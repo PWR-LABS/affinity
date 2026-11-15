@@ -374,6 +374,11 @@ model TicRefreshPublication {
 // Durable guru allowance; each request reserves its upper cost before dispatch.
 // No household answers or conversation content are persisted.
 model GuruReservation {
+  visitorHash   String?
+  networkHash   String?
+
+  @@index([visitorHash, createdAt])
+  @@index([networkHash, createdAt])
   id            String   @id
   reservedMicro Int
   createdAt     DateTime @default(now()) @db.Timestamptz(6)
