@@ -19,11 +19,19 @@ test('startup migration refuses wrong service, branch or database and preserves 
  assert.equal(allowed(env),true);assert.equal(allowed({}),false);
  for(const changes of [{RENDER_SERVICE_ID:'other'},{RENDER_GIT_BRANCH:'feature'},{DATABASE_URL:'postgresql://u:p@localhost/other'}])assert.throws(()=>allowed({...env,...changes}),/target rejected/);
  let ddl=0;
- const tx={$executeRawUnsafe:async(s:string)=>{if(/CREATE|ALTER/.test(s))ddl++;},$queryRawUnsafe:async()=>[{bytes:2500000000n}]};
+ const tx={$executeRawUnsafe:async(s:string)=>{if(/CREATE|ALTER/.test(s))ddl++;},$queryRawUnsafe:async()=>[{bytes:BigInt(2500000000)}]};
  await assert.rejects(ensure({$transaction:async(f:(tx:unknown)=>unknown)=>f(tx)}),/budget exceeded/);assert.equal(ddl,0);
 });
 test('unauthenticated readiness requests reveal no ledger or deployment details',async()=>{
  const {POST}=await import('../src/app/api/guru/readiness/route');
  const r=await POST(new Request('https://affinity.example/api/guru/readiness',{method:'POST'}));
  assert.equal(r.status,404);assert.equal(await r.text(),'');
+});
+
+import {guruOriginAllowed} from '../src/lib/guru/origin';
+test('public origin is exact on Render despite its internal URL, without trusting forwarded hosts',()=>{
+ const request=(origin?:string)=>new Request('http://localhost:10000/api/guru',{headers:{...(origin?{origin}:{}),'x-forwarded-host':'attacker.example'}});
+ assert.equal(guruOriginAllowed(request('https://affinity.pwr-labs.ai'),{RENDER:'true'}),true);
+ for(const origin of [undefined,'https://attacker.example','https://affinity.pwr-labs.ai.attacker.example','null','http://affinity.pwr-labs.ai'])assert.equal(guruOriginAllowed(request(origin),{RENDER:'true'}),false);
+ assert.equal(guruOriginAllowed(new Request('http://127.0.0.1:3012/api/guru',{headers:{origin:'http://127.0.0.1:3012'}}),{}),true);
 });
