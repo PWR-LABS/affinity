@@ -10,6 +10,7 @@ import { publicCaps, reserveTurn, GuruLimitError } from '@/lib/guru/budget';
 
 import { visitorIdentity } from '@/lib/guru/visitor';
 import { allowanceMessage } from '@/lib/guru/allowance';
+import { guruOriginAllowed } from '@/lib/guru/origin';
 
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
@@ -18,7 +19,7 @@ const unavailable=()=>NextResponse.json({mode:'guided',error:'Connected AI is un
 export async function POST(req:Request){
  // Explicit deployment configuration is separate from implementing the feature.
  if(process.env.AFFINITY_GURU_ENABLED!=='1'||!process.env.AFFINITY_OPENAI_API_KEY)return unavailable();
- const origin=req.headers.get('origin');if(!origin||origin!==new URL(req.url).origin)return NextResponse.json({error:'Use guru from this site.'},{status:403});
+ if(!guruOriginAllowed(req,process.env))return NextResponse.json({error:'Use guru from this site.'},{status:403});
  let cookie:string|undefined;
  const withCookie=(response:NextResponse)=>{if(cookie)response.headers.set('Set-Cookie',cookie);return response;};
  try{

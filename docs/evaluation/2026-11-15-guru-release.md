@@ -13,3 +13,9 @@ The dedicated model key and new visitor secret were transferred to the existing 
 Notion sync: not applicable; this is the repo-owned implementation and operational release record. The keeper product doctrine is unchanged. SIDE working convention applied; explicit SIDE caller not invoked.
 
 The pre-release health check also found expired Marketplace year/platform metadata (November 3 observation, November 11 expiry). Production builds now run the existing bounded official catalog verifier before compilation, using the existing CMS credential. A failed verification fails the new build and preserves the old deployment; freshness is never extended without successful source/probe checks. This is release-time metadata verification, not an issuer backfill or a new schedule. Local builds remain model-free and skip this production-only step.
+
+## Hosted verification and origin correction
+
+Initial release `8cf47600d7f2c237e91d9165e4a2dcdc592a20d3` became live with the ledger installed and metadata freshly verified. Spoofed Cloudflare address headers received edge HTTP403; other forwarding-header substitutions retained the same keyed network identity. The direct Render hostname remained disabled (404 without forged headers, 403 with them).
+
+Finding `GURU-RELEASE-ORIGIN-01`: the first real hosted conversation request received HTTP403 because Next saw Render’s internal URL while the browser supplied the correct public HTTPS origin. It did not reserve or dispatch a model request. The repair pins the expected origin to the public [affinity.] HTTPS origin on Render and preserves exact same-origin checks locally. Forged forwarded-host headers are never used to choose the allowed origin. Source tests cover internal URL, missing/hostile/null origins and local preview. Fresh hosted acceptance remains required after the repair deployment.
