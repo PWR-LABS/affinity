@@ -63,7 +63,7 @@ type SearchDb=Pick<Prisma.TransactionClient,'$queryRaw'>&{
  $transaction?:<T>(fn:(tx:Prisma.TransactionClient)=>Promise<T>)=>Promise<T>;
 };
 export function escapeIlikePattern(value:string){return value.replace(/[\\%_]/g,'\\$&');}
-/** Bounded SQL plan search: resolve fresh eligible files first, deduplicate and cap to 12 inside Postgres. */
+/** Bounded SQL plan search: resolve fresh eligible files first, use indexed LATERAL early-exit on legacy links, deduplicate and cap to 12 inside Postgres. */
 export async function searchTicPlans(db:SearchDb,q:string,now=new Date()):Promise<PlanSearchResult[]>{
  const trimmed=q.trim().slice(0,120);
  if(trimmed.length<2)return [];
@@ -73,22 +73,23 @@ export async function searchTicPlans(db:SearchDb,q:string,now=new Date()):Promis
   WITH eligible_files AS MATERIALIZED (
    SELECT f."id", f."reportingEntity"
    FROM "TicFile" f
+   JOIN "TicNpiIndex" idx ON idx."fileId" = f."id"
    WHERE f."active" = true
      AND f."sourceLastUpdated" >= ${window.gte}
      AND f."sourceLastUpdated" <= ${window.lte}
-     AND (
-       EXISTS (
-         SELECT 1
-         FROM "TicNpiIndex" idx
-         WHERE idx."fileId" = f."id"
-           AND idx."format" = 'npi-prefix-v1'
-           AND idx."npiCount" > 0
-       )
-       OR EXISTS (
-         SELECT 1
-         FROM "TicMembership" m
-         WHERE m."fileId" = f."id"
-       )
+     AND idx."format" = 'npi-prefix-v1'
+     AND idx."npiCount" > 0
+   UNION
+   SELECT f."id", f."reportingEntity"
+   FROM "TicFile" f
+   WHERE f."active" = true
+     AND f."sourceLastUpdated" >= ${window.gte}
+     AND f."sourceLastUpdated" <= ${window.lte}
+     AND NOT EXISTS (
+       SELECT 1 FROM "TicNpiIndex" idx WHERE idx."fileId" = f."id"
+     )
+     AND EXISTS (
+       SELECT 1 FROM "TicMembership" m WHERE m."fileId" = f."id"
      )
   ),
   eligible_sets AS MATERIALIZED (
@@ -99,17 +100,42 @@ export async function searchTicPlans(db:SearchDb,q:string,now=new Date()):Promis
    JOIN eligible_files ef ON ef."id" = fps."fileId"
    ORDER BY fps."setId", fps."fileId" ASC
   ),
-  candidates AS (
+  eligible_legacy_files AS MATERIALIZED (
+   SELECT
+     ef."id",
+     ef."reportingEntity",
+     ROW_NUMBER() OVER (PARTITION BY ef."reportingEntity" ORDER BY ef."id" ASC) AS rn
+   FROM eligible_files ef
+   WHERE NOT EXISTS (
+     SELECT 1 FROM "TicFilePlanSet" fps WHERE fps."fileId" = ef."id"
+   )
+  ),
+  legacy_candidates AS (
    SELECT
      l."planIdType",
      l."planId",
      l."planName",
      l."planMarketType" AS "marketType",
      ef."reportingEntity" AS "issuer"
-   FROM "TicPlanLink" l
-   JOIN eligible_files ef ON ef."id" = l."fileId"
-   WHERE l."planName" ILIKE ${pattern} ESCAPE '\\'
-   UNION ALL
+   FROM (
+     SELECT "id", "reportingEntity"
+     FROM eligible_legacy_files
+     ORDER BY rn ASC, "reportingEntity" ASC, "id" ASC
+   ) ef
+   JOIN LATERAL (
+     SELECT
+       pl."planIdType",
+       pl."planId",
+       pl."planName",
+       pl."planMarketType"
+     FROM "TicPlanLink" pl
+     WHERE pl."fileId" = ef."id"
+       AND pl."planName" ILIKE ${pattern} ESCAPE '\\'
+     LIMIT 24
+   ) l ON true
+   LIMIT 120
+  ),
+  shared_candidates AS (
    SELECT
      e."planIdType",
      e."planId",
@@ -119,6 +145,12 @@ export async function searchTicPlans(db:SearchDb,q:string,now=new Date()):Promis
    FROM "TicPlanSetEntry" e
    JOIN eligible_sets es ON es."setId" = e."setId"
    WHERE e."planName" ILIKE ${pattern} ESCAPE '\\'
+   LIMIT 120
+  ),
+  candidates AS (
+   SELECT * FROM legacy_candidates
+   UNION ALL
+   SELECT * FROM shared_candidates
   )
   SELECT
    "planIdType",
@@ -132,7 +164,7 @@ export async function searchTicPlans(db:SearchDb,q:string,now=new Date()):Promis
   LIMIT 12`;
  if(typeof db.$transaction==='function'){
   return db.$transaction(async tx=>{
-   await tx.$executeRawUnsafe("SET LOCAL statement_timeout = '4000'");
+   await tx.$executeRawUnsafe("SET LOCAL statement_timeout = '8000'");
    return run(tx);
   });
  }

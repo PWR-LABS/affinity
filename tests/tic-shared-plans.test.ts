@@ -36,16 +36,19 @@ test('searchTicPlans bounds deduplication, limit, ILIKE wildcards and statement 
  assert.equal(executedSql,'');
  const rows=await searchTicPlans(mockDb,'  Anthem_100%  ',now);
  assert.deepEqual(rows,expected);
- assert.match(executedSql,/SET LOCAL statement_timeout = '4000'/);
+ assert.match(executedSql,/SET LOCAL statement_timeout = '8000'/);
  assert.match(queriedSql,/WITH eligible_files AS MATERIALIZED/);
+ assert.match(queriedSql,/JOIN LATERAL/);
  assert.match(queriedSql,/GROUP BY "planIdType", "planId", "planName"/);
  assert.match(queriedSql,/LIMIT 12/);
  assert.match(queriedSql,/ESCAPE '\\'/);
- assert.equal(queriedValues.length,4);
+ assert.equal(queriedValues.length,6);
  assert.deepEqual(queriedValues[0],new Date('2026-09-20T17:00:00.000Z'));
  assert.deepEqual(queriedValues[1],now);
- assert.equal(queriedValues[2],'%Anthem\\_100\\%%');
- assert.equal(queriedValues[3],'%Anthem\\_100\\%%');
+ assert.deepEqual(queriedValues[2],new Date('2026-09-20T17:00:00.000Z'));
+ assert.deepEqual(queriedValues[3],now);
+ assert.equal(queriedValues[4],'%Anthem\\_100\\%%');
+ assert.equal(queriedValues[5],'%Anthem\\_100\\%%');
 });
 
 test('employerIndexReady checks both legacy and shared plans with EXISTS and LIMIT 1',async()=>{
