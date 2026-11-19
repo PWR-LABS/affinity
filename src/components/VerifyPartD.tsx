@@ -309,10 +309,10 @@ export function VerifyPartD() {
   const [shortlist, setShortlist] = useState<PartDShortlist | null>(null);
 
   const fetchPlans = useCallback(
-    async (q: string): Promise<Suggestion[]> => {
+    async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
       const params = new URLSearchParams({ q, year: "2026" });
       if (/^[A-Z]{2}$/.test(state)) params.set("state", state);
-      const response = await fetch(`/api/partd/plans?${params}`);
+      const response = await fetch(`/api/partd/plans?${params}`, { signal });
       const data = await response.json().catch(() => ({ items: [] }));
       if (!response.ok) return [];
       return (data.items ?? []).map((item: PartDPlanSelection) => ({
@@ -330,9 +330,9 @@ export function VerifyPartD() {
     [state],
   );
 
-  const fetchDrugs = useCallback(async (q: string): Promise<Suggestion[]> => {
+  const fetchDrugs = useCallback(async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
     const response = await fetch("/api/drugs/autocomplete", {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q }),
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q }), signal,
     });
     const data = await response.json().catch(() => ({ items: [] }));
     if (!response.ok) return [];

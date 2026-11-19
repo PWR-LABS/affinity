@@ -57,11 +57,84 @@ export async function fileLinksForPlan(db:Db,planIdType:string,planId:string){
  const shared=await db.ticFilePlanSet.findMany({where:{file:{active:true},set:{entries:{some:{planIdType,planId}}}},select});
  return [...new Map([...legacy,...shared].map(link=>[link.fileId,link])).values()];
 }
-export async function searchTicPlans(db:Db,q:string,now=new Date()){
- const file={active:true,sourceLastUpdated:ticSourceWindow(now),OR:[{memberships:{some:{}}},{compactIndex:{is:{format:'npi-prefix-v1',npiCount:{gt:0}}}}]} satisfies Prisma.TicFileWhereInput;
- const fields={planName:true,planIdType:true,planId:true,planMarketType:true} as const;
- const legacy=await db.ticPlanLink.findMany({where:{planName:{contains:q,mode:'insensitive'},file},distinct:['planIdType','planId','planName'],take:12,select:{...fields,file:{select:{reportingEntity:true}}},orderBy:{planName:'asc'}});
- const shared=await db.ticPlanSetEntry.findMany({where:{planName:{contains:q,mode:'insensitive'},set:{files:{some:{file}}}},distinct:['planIdType','planId','planName'],take:12,select:{...fields,set:{select:{files:{where:{file},take:1,orderBy:{fileId:'asc'},select:{file:{select:{reportingEntity:true}}}}}}},orderBy:{planName:'asc'}});
- const rows=[...legacy,...shared.filter(x=>x.set.files.length).map(x=>({...x,file:x.set.files[0].file}))];
- return [...new Map(rows.map(row=>[JSON.stringify([row.planIdType,row.planId,row.planName]),row])).values()].sort((a,b)=>a.planName.localeCompare(b.planName)).slice(0,12).map(row=>({planIdType:row.planIdType,planId:row.planId,planName:row.planName,marketType:row.planMarketType,issuer:row.file.reportingEntity}));
+export type PlanSearchResult={planIdType:string;planId:string;planName:string;marketType:string|null;issuer:string};
+type SearchDb=Pick<Prisma.TransactionClient,'$queryRaw'>&{
+ $executeRawUnsafe?:Prisma.TransactionClient['$executeRawUnsafe'];
+ $transaction?:<T>(fn:(tx:Prisma.TransactionClient)=>Promise<T>)=>Promise<T>;
+};
+export function escapeIlikePattern(value:string){return value.replace(/[\\%_]/g,'\\$&');}
+/** Bounded SQL plan search: resolve fresh eligible files first, deduplicate and cap to 12 inside Postgres. */
+export async function searchTicPlans(db:SearchDb,q:string,now=new Date()):Promise<PlanSearchResult[]>{
+ const trimmed=q.trim().slice(0,120);
+ if(trimmed.length<2)return [];
+ const window=ticSourceWindow(now);
+ const pattern=`%${escapeIlikePattern(trimmed)}%`;
+ const run=(conn:Pick<Prisma.TransactionClient,'$queryRaw'>)=>conn.$queryRaw<PlanSearchResult[]>`
+  WITH eligible_files AS MATERIALIZED (
+   SELECT f."id", f."reportingEntity"
+   FROM "TicFile" f
+   WHERE f."active" = true
+     AND f."sourceLastUpdated" >= ${window.gte}
+     AND f."sourceLastUpdated" <= ${window.lte}
+     AND (
+       EXISTS (
+         SELECT 1
+         FROM "TicNpiIndex" idx
+         WHERE idx."fileId" = f."id"
+           AND idx."format" = 'npi-prefix-v1'
+           AND idx."npiCount" > 0
+       )
+       OR EXISTS (
+         SELECT 1
+         FROM "TicMembership" m
+         WHERE m."fileId" = f."id"
+       )
+     )
+  ),
+  eligible_sets AS MATERIALIZED (
+   SELECT DISTINCT ON (fps."setId")
+     fps."setId",
+     ef."reportingEntity"
+   FROM "TicFilePlanSet" fps
+   JOIN eligible_files ef ON ef."id" = fps."fileId"
+   ORDER BY fps."setId", fps."fileId" ASC
+  ),
+  candidates AS (
+   SELECT
+     l."planIdType",
+     l."planId",
+     l."planName",
+     l."planMarketType" AS "marketType",
+     ef."reportingEntity" AS "issuer"
+   FROM "TicPlanLink" l
+   JOIN eligible_files ef ON ef."id" = l."fileId"
+   WHERE l."planName" ILIKE ${pattern} ESCAPE '\\'
+   UNION ALL
+   SELECT
+     e."planIdType",
+     e."planId",
+     e."planName",
+     e."planMarketType" AS "marketType",
+     es."reportingEntity" AS "issuer"
+   FROM "TicPlanSetEntry" e
+   JOIN eligible_sets es ON es."setId" = e."setId"
+   WHERE e."planName" ILIKE ${pattern} ESCAPE '\\'
+  )
+  SELECT
+   "planIdType",
+   "planId",
+   "planName",
+   MIN("marketType") AS "marketType",
+   MIN("issuer") AS "issuer"
+  FROM candidates
+  GROUP BY "planIdType", "planId", "planName"
+  ORDER BY "planName" ASC, "planIdType" ASC, "planId" ASC
+  LIMIT 12`;
+ if(typeof db.$transaction==='function'){
+  return db.$transaction(async tx=>{
+   await tx.$executeRawUnsafe("SET LOCAL statement_timeout = '4000'");
+   return run(tx);
+  });
+ }
+ return run(db);
 }

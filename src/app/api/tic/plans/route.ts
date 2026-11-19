@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
  * environment. No user data is stored or logged.
  */
 export async function GET(req: Request) {
-  const q = new URL(req.url).searchParams.get("q")?.trim() ?? "";
+  const q = (new URL(req.url).searchParams.get("q")?.trim() ?? "").slice(0, 120);
   if (q.length < 2) return NextResponse.json({ items: [] });
   try {
-    return NextResponse.json({items: await searchTicPlans(prisma,q)});
+    return NextResponse.json({ items: await searchTicPlans(prisma, q) });
   } catch {
     return NextResponse.json(
       { items: [], error: "The commercial plan index isn't available in this environment yet." },

@@ -41,10 +41,10 @@ export function VerifyDoctor() {
   useEffect(() => { setResult(null); setError(null); setLoading(false); sequence.current++; }, [requestKey]);
 
   const fetchDoctors = useCallback(
-    async (q: string): Promise<Suggestion[]> => {
+    async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
       if (!/^\d{5}$/.test(zip)) return [];
       const r = await fetch("/api/providers/autocomplete", {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, zip }),
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, zip }), signal,
       });
       const d = await r.json();
       return (d.items ?? []).map((p: { npi: string; name?: string; specialty?: string }) => ({
@@ -56,8 +56,8 @@ export function VerifyDoctor() {
     [zip],
   );
 
-  const fetchPlans = useCallback(async (q: string): Promise<Suggestion[]> => {
-    const r = await fetch(`/api/tic/plans?q=${encodeURIComponent(q)}`);
+  const fetchPlans = useCallback(async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
+    const r = await fetch(`/api/tic/plans?q=${encodeURIComponent(q)}`, { signal });
     const d = await r.json().catch(() => ({ items: [] }));
     if (!r.ok) return []; // index absent in this environment — verify via EIN still explains it clearly
     return (d.items ?? []).map((p: { planIdType: string; planId: string; planName: string; issuer: string }) => ({
@@ -67,8 +67,8 @@ export function VerifyDoctor() {
     }));
   }, []);
 
-  const fetchEmployers = useCallback(async (q: string): Promise<Suggestion[]> => {
-    const r = await fetch(`/api/employers/search?q=${encodeURIComponent(q)}`);
+  const fetchEmployers = useCallback(async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
+    const r = await fetch(`/api/employers/search?q=${encodeURIComponent(q)}`, { signal });
     const d = await r.json().catch(() => ({ items: [] }));
     if (!r.ok) return [];
     return (d.items ?? []).map((e: { ein: string; name: string; state?: string | null; planName?: string | null }) => {

@@ -125,18 +125,18 @@ export function GuruWorkspace(){
   <label htmlFor={`guru-${key}`}>{label}</label><input id={`guru-${key}`} value={context[key]} inputMode={key==='planId'?'text':'decimal'} maxLength={{zip:5,age:3,income:12,householdSize:2,npi:10,planId:30,employerPremium:12,marketplacePremium:12}[key]} onChange={e=>update(key,e.target.value)} />
   {hint&&<p className="field-help">{hint}</p>}
  </div>;
- const fetchDoctorChoices=useCallback(async(q:string):Promise<Suggestion[]>=>{
+ const fetchDoctorChoices=useCallback(async(q:string,signal?:AbortSignal):Promise<Suggestion[]>=>{
   if(!/^\d{5}$/.test(context.zip))return [];
-  const r=await fetch('/api/providers/autocomplete',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({q,zip:context.zip,year:context.year})});
+  const r=await fetch('/api/providers/autocomplete',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({q,zip:context.zip,year:context.year}),signal});
   if(!r.ok)return [];const data=await r.json();
   return (data.items??[]).map((p:{npi:string;name?:string;specialty?:string})=>({key:p.npi,label:p.name??p.npi,sub:p.specialty}));
  },[context.zip,context.year]);
- const fetchEmployerChoices=useCallback(async(q:string):Promise<Suggestion[]>=>{
-  const r=await fetch('/api/employers/search?q='+encodeURIComponent(q));if(!r.ok)return [];
+ const fetchEmployerChoices=useCallback(async(q:string,signal?:AbortSignal):Promise<Suggestion[]>=>{
+  const r=await fetch('/api/employers/search?q='+encodeURIComponent(q),{signal});if(!r.ok)return [];
   const data=await r.json();return(data.items??[]).map((e:{ein:string;name:string;state?:string})=>({key:e.ein,label:e.name,sub:[e.state,'Employer identity—not an exact benefit option'].filter(Boolean).join(' · ')}));
  },[]);
- const fetchPlanChoices=useCallback(async(q:string):Promise<Suggestion[]>=>{
-  const r=await fetch('/api/tic/plans?q='+encodeURIComponent(q));if(!r.ok)return [];
+ const fetchPlanChoices=useCallback(async(q:string,signal?:AbortSignal):Promise<Suggestion[]>=>{
+  const r=await fetch('/api/tic/plans?q='+encodeURIComponent(q),{signal});if(!r.ok)return [];
   const data=await r.json();return(data.items??[]).map((p:{planIdType:string;planId:string;planName:string;issuer:string})=>({key:JSON.stringify([p.planIdType,p.planId]),label:p.planName||'Plan name not supplied',sub:p.issuer}));
  },[]);
  function selected(text:string){

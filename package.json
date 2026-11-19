@@ -19,7 +19,7 @@
     "dev:webpack": "next dev",
     "build": "prisma generate && next build",
     "postbuild": "node -e \"const fs=require('fs');for(const p of['.next/standalone/.env','.next/standalone/.env.local','.next/standalone/data/cache']){try{fs.rmSync(p,{recursive:true,force:true})}catch{}}\"",
-    "start": "next start",
+    "start": "next start --keepAliveTimeout 120000",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --import ./tests/fixture-catalog.mjs --import ./tests/fixture-clock.ts --test tests/*.test.ts",

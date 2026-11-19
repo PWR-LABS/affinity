@@ -11,7 +11,7 @@ export interface Suggestion {
 interface TypeaheadProps {
   label: string;
   placeholder?: string;
-  fetchSuggestions: (q: string) => Promise<Suggestion[]>;
+  fetchSuggestions: (q: string, signal?: AbortSignal) => Promise<Suggestion[]>;
   onSelect: (s: Suggestion) => void;
   describedBy?: string;
   initialQuery?:string;
@@ -27,11 +27,14 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(-1);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const controller = useRef<AbortController | null>(null);
   const reqId = useRef(0);
 
   useEffect(() => {
     const myReq=++reqId.current;
     if (timer.current) clearTimeout(timer.current);
+    controller.current?.abort();
+    controller.current = null;
     setItems([]);setOpen(false);setActive(-1);
     if (q.trim().length < 2) {
       setLoading(false);
@@ -39,12 +42,21 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
     }
     setLoading(true);
     timer.current = setTimeout(async () => {
+      const ac = new AbortController();
+      controller.current = ac;
       try {
-        const res = await fetchSuggestions(q.trim());
-        if (myReq === reqId.current) {
+        const res = await fetchSuggestions(q.trim(), ac.signal);
+        if (myReq === reqId.current && !ac.signal.aborted) {
           setItems(res);
           setOpen(true);
           setActive(res.length ? 0 : -1);
+        }
+      } catch (err) {
+        if ((err as { name?: string })?.name === "AbortError" || ac.signal.aborted) return;
+        if (myReq === reqId.current) {
+          setItems([]);
+          setOpen(false);
+          setActive(-1);
         }
       } finally {
         if (myReq === reqId.current) setLoading(false);
@@ -52,6 +64,8 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
     }, 300);
     return () => {
       if (timer.current) clearTimeout(timer.current);
+      controller.current?.abort();
+      controller.current = null;
       if(myReq===reqId.current)reqId.current++;
     };
   }, [q, fetchSuggestions]);

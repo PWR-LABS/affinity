@@ -75,10 +75,10 @@ export function PlanFinder({ initialYear }: { initialYear?: MarketplacePlanYear 
   }
 
   const fetchDoctors = useCallback(
-    async (q: string): Promise<Suggestion[]> => {
+    async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
       if (!/^\d{5}$/.test(zip)) return [];
       const r = await fetch("/api/providers/autocomplete", {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, zip, year }),
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, zip, year }), signal,
       });
       const d = await r.json();
       return (d.items ?? []).map((p: { npi: string; name?: string; specialty?: string }) => ({
@@ -87,9 +87,9 @@ export function PlanFinder({ initialYear }: { initialYear?: MarketplacePlanYear 
     },
     [zip, year],
   );
-  const fetchDrugs = useCallback(async (q: string): Promise<Suggestion[]> => {
+  const fetchDrugs = useCallback(async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
     const r = await fetch("/api/drugs/autocomplete", {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q }),
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q }), signal,
     });
     const d = await r.json();
     return (d.items ?? []).map((x: { rxcui: string; label: string }) => ({ key: x.rxcui, label: x.label }));
