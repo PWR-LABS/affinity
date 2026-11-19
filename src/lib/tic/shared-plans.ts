@@ -60,7 +60,7 @@ export async function fileLinksForPlan(db:Db,planIdType:string,planId:string){
 export type PlanSearchResult={planIdType:string;planId:string;planName:string;marketType:string|null;issuer:string};
 type SearchDb=Pick<Prisma.TransactionClient,'$queryRaw'>&{
  $executeRawUnsafe?:Prisma.TransactionClient['$executeRawUnsafe'];
- $transaction?:<T>(fn:(tx:Prisma.TransactionClient)=>Promise<T>)=>Promise<T>;
+ $transaction?:<T>(fn:(tx:Prisma.TransactionClient)=>Promise<T>,options?:{timeout?:number;maxWait?:number})=>Promise<T>;
 };
 export function escapeIlikePattern(value:string){return value.replace(/[\\%_]/g,'\\$&');}
 /** Bounded SQL plan search: resolve fresh eligible files first, use indexed LATERAL early-exit on legacy links, deduplicate and cap to 12 inside Postgres. */
@@ -133,7 +133,7 @@ export async function searchTicPlans(db:SearchDb,q:string,now=new Date()):Promis
        AND pl."planName" ILIKE ${pattern} ESCAPE '\\'
      LIMIT 24
    ) l ON true
-   LIMIT 120
+   LIMIT 24
   ),
   shared_candidates AS (
    SELECT
@@ -145,7 +145,7 @@ export async function searchTicPlans(db:SearchDb,q:string,now=new Date()):Promis
    FROM "TicPlanSetEntry" e
    JOIN eligible_sets es ON es."setId" = e."setId"
    WHERE e."planName" ILIKE ${pattern} ESCAPE '\\'
-   LIMIT 120
+   LIMIT 24
   ),
   candidates AS (
    SELECT * FROM legacy_candidates
@@ -166,7 +166,7 @@ export async function searchTicPlans(db:SearchDb,q:string,now=new Date()):Promis
   return db.$transaction(async tx=>{
    await tx.$executeRawUnsafe("SET LOCAL statement_timeout = '8000'");
    return run(tx);
-  });
+  },{timeout:10000,maxWait:5000});
  }
  return run(db);
 }
