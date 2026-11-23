@@ -94,6 +94,15 @@ async function main() {
       await option('Synthetic tablet 500 mg RxCUI 860975').click();
     }
     await selectDrug();
+    const shortlistState = label('State code for standalone Part D plans');
+    await shortlistState.fill('ZZ');
+    const stateError = page.getByRole('alert').filter({hasText: 'a valid two-letter U.S. state or territory code'});
+    await stateError.waitFor();
+    assert.equal(await shortlistState.getAttribute('aria-invalid'), 'true');
+    assert.equal(await submit.isDisabled(), true);
+    await shortlistState.fill('OH');
+    assert.equal(await stateError.count(), 0);
+    assert.equal(await submit.isEnabled(), true);
     const shortlist = page.getByRole('status', {name: 'Part D plan shortlist'});
     const exact = page.getByRole('status', {name: 'Medication coverage results'});
     let started, release, done;
@@ -128,6 +137,14 @@ async function main() {
     passed.push('Part D ignores the canceled Ohio reply after a state edit and only ranks plans with indexed formularies.');
 
     await button('Check a plan I know').click();
+    const exactState = label('State code (optional)');
+    await exactState.fill('ZZ');
+    await stateError.waitFor();
+    assert.equal(await combo('Your Medicare drug plan').isDisabled(), true);
+    await exactState.fill('');
+    assert.equal(await stateError.count(), 0);
+    assert.equal(await combo('Your Medicare drug plan').isEnabled(), true);
+    passed.push('Part D rejects invalid state codes in both modes, and exact-plan search works with the optional state blank.');
     async function selectPlan(query, name) {
       await combo('Your Medicare drug plan').fill(query);
       await page.getByRole('option', {name: new RegExp(name)}).click();

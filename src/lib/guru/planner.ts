@@ -1,13 +1,11 @@
 import { z } from 'zod';
 import { contextSchema, STEPS, type GuruContext } from './workspace';
 import { proposalSchema, type Proposal } from './proposal';
+import { MODEL_IDS, PRICING_DATE, PRICING_REVIEW_MS } from './pricing';
 
-export const MODEL_IDS=['gpt-6.1-sol','gpt-6.1-terra','gpt-6-luna'] as const;
+export { MODEL_IDS, PRICING_DATE } from './pricing';
 export const MAX_OUTPUT_TOKENS=800;
 export const RESERVATION_MICRO=50_000; // $0.05, retained even after timeout or a lower bill.
-// Reviewed standard short-context rates and 30-minute input-cache writes at
-// https://developers.openai.com/api/docs/pricing on this date.
-export const PRICING_DATE='2026-11-23';
 
 export function plannerBody(model:string,message:string,context:GuruContext){
  if(!MODEL_IDS.includes(model as typeof MODEL_IDS[number]))throw Error('Unreviewed model');
@@ -39,14 +37,18 @@ export async function planTurn(options:{model:string;message:string;context:Guru
  const body=plannerBody(options.model,options.message,options.context);
  return parseProposal(await dispatchModel({...options,body}));
 }
-export async function dispatchModel(options:{model:string;body:{model:string;max_output_tokens:number};key:string;reserve:()=>Promise<void>;fetcher?:typeof fetch;now?:Date}){
+export async function dispatchModel(options:{model:string;body:{model:string;max_output_tokens:number};key:string;reserve:()=>Promise<void>;fetcher?:typeof fetch;now?:Date;checkPricing?:(model:typeof MODEL_IDS[number])=>Promise<void>}){
  const body=options.body;
- if(!MODEL_IDS.includes(options.model as typeof MODEL_IDS[number])||body.model!==options.model)throw Error('Unreviewed model');
+ const model=MODEL_IDS.find(id=>id===options.model);
+ if(!model||body.model!==model)throw Error('Unreviewed model');
  const bytes=Buffer.byteLength(JSON.stringify(body),'utf8');
  if(bytes>12000||!Number.isInteger(body.max_output_tokens)||body.max_output_tokens<1||(bytes+4096)*2.5+body.max_output_tokens*10>RESERVATION_MICRO)throw Error('Model turn exceeds its upper reservation');
  // Expired pricing cannot authorize a new reservation or dispatch.
- const age=(options.now?.getTime()??Date.now())-Date.parse(PRICING_DATE+'T00:00:00Z');
- if(age<0||age>7*86400000)throw Error('Planner pricing requires review');
+ if(options.checkPricing)await options.checkPricing(model);
+ else {
+  const age=(options.now?.getTime()??Date.now())-Date.parse(PRICING_DATE+'T00:00:00Z');
+  if(age<0||age>PRICING_REVIEW_MS)throw Error('Planner pricing requires review');
+ }
  await options.reserve();
  // No retries and no refund: a lost response can still be charged upstream.
  const response=await(options.fetcher??fetch)('https://api.openai.com/v1/responses',{method:'POST',redirect:'error',headers:{authorization:`Bearer ${options.key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});

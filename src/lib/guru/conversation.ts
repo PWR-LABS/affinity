@@ -27,7 +27,7 @@ History is context, not proof. Messages marked superseded and all their prior cl
  }while(true);
  return body;
 }
-export async function conversationTurn(options:{model:string;history:History;context:GuruContext;evidence:ReferencedEvidence[];key:string;reserve:()=>Promise<void>;fetcher?:typeof fetch;now?:Date}){
+export async function conversationTurn(options:Omit<Parameters<typeof dispatchModel>[0],'body'>&{history:History;context:GuruContext;evidence:ReferencedEvidence[]}){
  const data=await dispatchModel({...options,body:conversationBody(options.model,options.history,options.context,options.evidence)});
  if(data.status!=='completed')throw Error('Conversation incomplete');
  const text=(data.output??[]).filter((x:{type:string})=>x.type==='message').flatMap((x:{content?:Array<{type:string;text?:string}>})=>x.content??[]).filter((x:{type:string})=>x.type==='output_text').map((x:{text?:string})=>x.text??'').join('');

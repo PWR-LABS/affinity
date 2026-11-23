@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useGuruField, useGuruMemory } from './GuruContext';
 
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
+import { PART_D_STATE_ERROR, pdpRegionCodeForState } from "@/lib/partd/regions";
 import {
   MAX_PARTD_DRUGS,
   PART_D_INDEX_YEAR,
@@ -306,6 +307,7 @@ function ShortlistResults({
 export function VerifyPartD() {
   const [mode, setMode] = useState<PartDMode>("find");
   const [state, setState] = useGuruField('state',"");
+  const [stateTouched, setStateTouched] = useState(false);
   const [plan, setPlan] = useGuruMemory<PartDPlanSelection | null>('partd-plan',null);
   const [drugs, setDrugs] = useGuruMemory<PartDDrugSelection[]>('drugs',[]);
   const [loading, setLoading] = useState(false);
@@ -315,10 +317,16 @@ export function VerifyPartD() {
   const activeRequest = useRef<AbortController | null>(null);
   useEffect(() => () => activeRequest.current?.abort(), []);
 
+  const validState = pdpRegionCodeForState(state) !== null;
+  const invalidState = state.trim().length > 0 && !validState;
+  // A one-letter value is still being entered. Explain the error once both
+  // characters are supplied or focus leaves the field.
+  const stateError = invalidState && (stateTouched || state.length >= 2);
+
   const fetchPlans = useCallback(
     async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
       const params = new URLSearchParams({ q, year: String(PART_D_INDEX_YEAR) });
-      if (/^[A-Z]{2}$/.test(state)) params.set("state", state);
+      if (validState) params.set("state", state);
       const response = await fetch(`/api/partd/plans?${params}`, { signal });
       if (!response.ok) throw new Error("Part D plan search unavailable");
       const data = await response.json();
@@ -334,7 +342,7 @@ export function VerifyPartD() {
           .join(" · "),
       }));
     },
-    [state],
+    [state, validState],
   );
 
   const fetchDrugs = useCallback(async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
@@ -483,7 +491,7 @@ export function VerifyPartD() {
   const canSubmit =
     !loading &&
     drugs.length > 0 &&
-    (mode === "find" ? /^[A-Z]{2}$/.test(state) : Boolean(plan));
+    (mode === "find" ? validState : !invalidState && Boolean(plan));
   const drugLabelByRxcui = new Map(drugs.map((drug) => [drug.rxcui, drug.label]));
 
   return (
@@ -529,9 +537,13 @@ export function VerifyPartD() {
                 maxLength={2}
                 placeholder="OH"
                 value={state}
+                aria-invalid={stateError}
+                aria-describedby={stateError ? "partd-state-error partd-state-help" : "partd-state-help"}
+                onBlur={() => setStateTouched(true)}
                 onChange={(event) => updateState(event.target.value)}
               />
-              <span className="field-help">
+              {stateError && <span id="partd-state-error" className="elig-error" role="alert">{PART_D_STATE_ERROR}</span>}
+              <span id="partd-state-help" className="field-help">
                 Enter a two-letter state code (for example, OH). Medicare Advantage plans are excluded because their availability is county-specific.
               </span>
             </div>
@@ -549,12 +561,17 @@ export function VerifyPartD() {
                     maxLength={2}
                     placeholder="OH"
                     value={state}
+                    aria-invalid={stateError}
+                    aria-describedby={stateError ? "partd-state-error" : undefined}
+                    onBlur={() => setStateTouched(true)}
                     onChange={(event) => updateState(event.target.value)}
                   />
+                  {stateError && <span id="partd-state-error" className="elig-error" role="alert">{PART_D_STATE_ERROR}</span>}
                 </div>
                 <Typeahead
                   label="Your Medicare drug plan"
                   placeholder="Search plan name or contract ID"
+                  disabled={invalidState}
                   fetchSuggestions={fetchPlans}
                   onSelect={(suggestion) => selectPlan(decodePartDPlanSelection(suggestion.key))}
                 />
