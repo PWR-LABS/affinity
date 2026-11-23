@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { visitorIdentity, networkAddress, VISITOR_COOKIE } from '../src/lib/guru/visitor';
 import { publicCaps, capMicro, reserveTurn } from '../src/lib/guru/budget';
+import { VISITOR_LIMITS } from '../src/lib/guru/allowance';
 
 const secret='ab'.repeat(32),now=Date.parse(reviewedPricingDate+'T12:00:00Z');
 const request=(ip='203.0.113.12',cookie='')=>new Request('https://affinity.example/api/guru',{headers:{'cf-connecting-ip':ip,cookie}});
@@ -63,7 +64,8 @@ test('public route returns 429 and a signed cookie without provider dispatch; un
     if(sql.includes('SELECT id'))return [];
     if(sql.includes('clock_timestamp'))return [{now:new Date(now)}];
     if(sql.includes('sum('))return [{month:BigInt(0),day:BigInt(0)}];
-    return [{scope:'visitor',month:BigInt(10),day:BigInt(10),minute:BigInt(0)},{scope:'network',month:BigInt(10),day:BigInt(10),minute:BigInt(0)}];
+    const day=BigInt(VISITOR_LIMITS.day);
+    return [{scope:'visitor',month:day,day,minute:BigInt(0)},{scope:'network',month:day,day,minute:BigInt(0)}];
    },
   })) as typeof transaction;
   const req=()=>new Request('https://affinity.example/api/guru',{method:'POST',headers:{origin:'https://affinity.example','content-type':'application/json','cf-connecting-ip':'203.0.113.12'},body:JSON.stringify({id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',history:[{role:'you',text:'Help me compare',superseded:false}],context:initialContext(2027),evidenceActions:[]})});

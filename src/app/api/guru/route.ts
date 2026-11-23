@@ -38,7 +38,7 @@ export async function POST(req:Request){
   const reply=await conversationTurn({
    model,history:body.history,context:body.context,evidence,key:process.env.AFFINITY_OPENAI_API_KEY,
    checkPricing:assertPublicPricing,
-   reserve:()=>reserveTurn(prisma,body.id,monthly,daily,visitor.identity),
+   reserve:(reservedMicro)=>reserveTurn(prisma,body.id,monthly,daily,visitor.identity,reservedMicro),
    recordUsage:(usage)=>recordTurnUsage(prisma,body.id,usage),
   });
   return withCookie(NextResponse.json({mode:'connected',reply,evidence},{headers:{'Cache-Control':'no-store'}}));

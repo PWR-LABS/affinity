@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
-import { RESERVATION_MICRO } from './planner';
+import { RESERVATION_MICRO, TERRA_RESERVATION_MICRO, type ReservationMicro } from './planner';
 import { PUBLIC_MONTHLY_USD, PUBLIC_DAILY_USD, VISITOR_LIMITS, NETWORK_LIMITS } from './allowance';
 import type { GuruIdentity } from './visitor';
 import type { AttemptUsage } from './usage';
@@ -22,10 +22,11 @@ export class GuruLimitError extends Error {
  }
 }
 /** All checks and insertion share one durable lock across workers and restarts. */
-export async function reserveTurn(db:PrismaClient,id:string,monthly:number,daily:number,identity:GuruIdentity){
+export async function reserveTurn(db:PrismaClient,id:string,monthly:number,daily:number,identity:GuruIdentity,reservedMicro:ReservationMicro=RESERVATION_MICRO){
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw Error('Invalid request identity');
  id=id.toLowerCase();
- if(![monthly,daily].every(n=>Number.isSafeInteger(n)&&n>=RESERVATION_MICRO&&n<=100e6))throw Error('Invalid guru cap');
+ if(reservedMicro!==RESERVATION_MICRO&&reservedMicro!==TERRA_RESERVATION_MICRO)throw Error('Invalid guru reservation');
+ if(![monthly,daily].every(n=>Number.isSafeInteger(n)&&n>=reservedMicro&&n<=100e6))throw Error('Invalid guru cap');
  if(!identity||![identity.visitorHash,identity.networkHash].every(x=>/^[0-9a-f]{64}$/.test(x)))throw Error('Visitor identity required');
  return db.$transaction(async tx=>{
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(184937023)`;
@@ -39,8 +40,8 @@ export async function reserveTurn(db:PrismaClient,id:string,monthly:number,daily
   await tx.$executeRaw`UPDATE "GuruReservation" SET "visitorHash"=NULL,"networkHash"=NULL WHERE "createdAt"<LEAST(${month},${minute}) AND ("visitorHash" IS NOT NULL OR "networkHash" IS NOT NULL)`;
   const [totals]=await tx.$queryRaw<Array<{month:bigint;day:bigint}>>`SELECT COALESCE(sum("reservedMicro"),0) AS month, COALESCE(sum("reservedMicro") FILTER (WHERE "createdAt">=${day}),0) AS day FROM "GuruReservation" WHERE "createdAt">=${month}`;
   const retry = (window:'minute'|'day'|'month') => window === 'minute' ? 60 : Math.max(1, Math.ceil(((window === 'day' ? day.getTime()+86400000 : Date.UTC(now.getUTCFullYear(),now.getUTCMonth()+1,1)) - now.getTime()) / 1000));
-  if(Number(totals.month)+RESERVATION_MICRO>monthly)throw new GuruLimitError('site','month',retry('month'));
-  if(Number(totals.day)+RESERVATION_MICRO>daily)throw new GuruLimitError('site','day',retry('day'));
+  if(Number(totals.month)+reservedMicro>monthly)throw new GuruLimitError('site','month',retry('month'));
+  if(Number(totals.day)+reservedMicro>daily)throw new GuruLimitError('site','day',retry('day'));
   const counts=await tx.$queryRaw<Array<{scope:string;month:bigint;day:bigint;minute:bigint}>>`
    SELECT 'visitor' AS scope,count(*) FILTER (WHERE "createdAt">=${month}) AS month,count(*) FILTER (WHERE "createdAt">=${day}) AS day,count(*) FILTER (WHERE "createdAt">=${minute}) AS minute
    FROM "GuruReservation" WHERE "visitorHash"=${identity.visitorHash} AND "createdAt">=LEAST(${month},${minute})
@@ -51,7 +52,7 @@ export async function reserveTurn(db:PrismaClient,id:string,monthly:number,daily
    const scope=row.scope as 'visitor'|'network',limits=scope==='visitor'?VISITOR_LIMITS:NETWORK_LIMITS;
    for(const window of ['month','day','minute'] as const)if(Number(row[window])>=limits[window])throw new GuruLimitError(scope,window,retry(window));
   }
-  await tx.$executeRaw`INSERT INTO "GuruReservation" (id,"reservedMicro","createdAt","visitorHash","networkHash") VALUES (${id},${RESERVATION_MICRO},${now},${identity.visitorHash},${identity.networkHash})`;
+  await tx.$executeRaw`INSERT INTO "GuruReservation" (id,"reservedMicro","createdAt","visitorHash","networkHash") VALUES (${id},${reservedMicro},${now},${identity.visitorHash},${identity.networkHash})`;
  },{timeout:5000,maxWait:2000});
 }
 

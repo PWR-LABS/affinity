@@ -7,6 +7,8 @@ import { meteredUsage, type AttemptUsage } from './usage';
 export { MODEL_IDS, PRICING_DATE } from './pricing';
 export const MAX_OUTPUT_TOKENS=800;
 export const RESERVATION_MICRO=50_000; // $0.05, retained even after timeout or a lower bill.
+export const TERRA_RESERVATION_MICRO=30_000;
+export type ReservationMicro=typeof RESERVATION_MICRO|typeof TERRA_RESERVATION_MICRO;
 
 export function plannerBody(model:string,message:string,context:GuruContext){
  if(!MODEL_IDS.includes(model as typeof MODEL_IDS[number]))throw Error('Unreviewed model');
@@ -42,7 +44,7 @@ export async function dispatchModel(options:{
  model:string;
  body:{model:string;max_output_tokens:number};
  key:string;
- reserve:()=>Promise<void>;
+ reserve:(reservedMicro:ReservationMicro)=>Promise<void>;
  fetcher?:typeof fetch;
  now?:Date;
  checkPricing?:(model:typeof MODEL_IDS[number])=>Promise<PricingReceipt>;
@@ -60,7 +62,13 @@ export async function dispatchModel(options:{
   const age=(options.now?.getTime()??Date.now())-Date.parse(PRICING_DATE+'T00:00:00Z');
   if(age<0||age>PRICING_REVIEW_MS)throw Error('Planner pricing requires review');
  }
- await options.reserve();
+ const reservedMicro=pricing&&model==='gpt-6.1-terra'?TERRA_RESERVATION_MICRO:RESERVATION_MICRO;
+ if(pricing){
+  const {input,cached,write,output}=pricing.rates;
+  const upperMicro=(bytes+4096)*Math.max(input,cached,write)+body.max_output_tokens*output;
+  if(!(upperMicro<=reservedMicro))throw Error('Model turn exceeds its upper reservation');
+ }
+ await options.reserve(reservedMicro);
  // No retries and no refund: a lost response can still be charged upstream.
  const response=await(options.fetcher??fetch)('https://api.openai.com/v1/responses',{method:'POST',redirect:'error',headers:{authorization:`Bearer ${options.key}`,'content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});
  if(!response.ok)throw Error('Planner unavailable');
