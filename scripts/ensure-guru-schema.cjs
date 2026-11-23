@@ -2,7 +2,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
-const migrations = ['20261110000000_guru_budget', '20261112000000_guru_fair_use'];
+const migrations = ['20261110000000_guru_budget', '20261112000000_guru_fair_use', '20261123213000_guru_attempt_usage'];
 function allowed(env) {
  if (!env.DATABASE_URL || env.RENDER !== 'true') return false;
  const u = new URL(env.DATABASE_URL);
@@ -21,10 +21,10 @@ async function ensure(db) {
     .replace(/^--.*$/gm,'')
     .replace(/CREATE TABLE /g,'CREATE TABLE IF NOT EXISTS ')
     .replace(/CREATE INDEX /g,'CREATE INDEX IF NOT EXISTS ')
-    .replace(/ADD COLUMN /g,'ADD COLUMN IF NOT EXISTS ');
+    .replace(/ADD COLUMN (?!IF NOT EXISTS )/g,'ADD COLUMN IF NOT EXISTS ');
    for (const statement of sql.split(';').map(x=>x.trim()).filter(Boolean)) await tx.$executeRawUnsafe(statement);
   }
-  await tx.$queryRawUnsafe('SELECT id,"reservedMicro","createdAt","visitorHash","networkHash" FROM "GuruReservation" LIMIT 0');
+  await tx.$queryRawUnsafe('SELECT id,"reservedMicro","createdAt","visitorHash","networkHash","usageModel","usageInputTokens","usageCachedInputTokens","usageCacheWriteInputTokens","usageOutputTokens","usageReasoningTokens","usageEstimatedCostPicoUsd" FROM "GuruReservation" LIMIT 0');
  }, {timeout:30000,maxWait:5000});
 }
 module.exports = { allowed, ensure };

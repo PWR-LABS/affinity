@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { contextSchema, STEPS, type GuruContext } from './workspace';
 import { proposalSchema, type Proposal } from './proposal';
-import { MODEL_IDS, PRICING_DATE, PRICING_REVIEW_MS } from './pricing';
+import { MODEL_IDS, PRICING_DATE, PRICING_REVIEW_MS, type PricingReceipt } from './pricing';
+import { meteredUsage, type AttemptUsage } from './usage';
 
 export { MODEL_IDS, PRICING_DATE } from './pricing';
 export const MAX_OUTPUT_TOKENS=800;
@@ -37,14 +38,24 @@ export async function planTurn(options:{model:string;message:string;context:Guru
  const body=plannerBody(options.model,options.message,options.context);
  return parseProposal(await dispatchModel({...options,body}));
 }
-export async function dispatchModel(options:{model:string;body:{model:string;max_output_tokens:number};key:string;reserve:()=>Promise<void>;fetcher?:typeof fetch;now?:Date;checkPricing?:(model:typeof MODEL_IDS[number])=>Promise<void>}){
+export async function dispatchModel(options:{
+ model:string;
+ body:{model:string;max_output_tokens:number};
+ key:string;
+ reserve:()=>Promise<void>;
+ fetcher?:typeof fetch;
+ now?:Date;
+ checkPricing?:(model:typeof MODEL_IDS[number])=>Promise<PricingReceipt>;
+ recordUsage?:(usage:AttemptUsage)=>Promise<void>;
+}){
  const body=options.body;
  const model=MODEL_IDS.find(id=>id===options.model);
  if(!model||body.model!==model)throw Error('Unreviewed model');
  const bytes=Buffer.byteLength(JSON.stringify(body),'utf8');
  if(bytes>12000||!Number.isInteger(body.max_output_tokens)||body.max_output_tokens<1||(bytes+4096)*2.5+body.max_output_tokens*10>RESERVATION_MICRO)throw Error('Model turn exceeds its upper reservation');
  // Expired pricing cannot authorize a new reservation or dispatch.
- if(options.checkPricing)await options.checkPricing(model);
+ let pricing:PricingReceipt|undefined;
+ if(options.checkPricing)pricing=await options.checkPricing(model);
  else {
   const age=(options.now?.getTime()??Date.now())-Date.parse(PRICING_DATE+'T00:00:00Z');
   if(age<0||age>PRICING_REVIEW_MS)throw Error('Planner pricing requires review');
@@ -55,5 +66,12 @@ export async function dispatchModel(options:{model:string;body:{model:string;max
  if(!response.ok)throw Error('Planner unavailable');
  const data=await response.json();
  if(typeof data.model!=='string'||!(data.model===options.model||data.model.startsWith(options.model+'-')))throw Error('Unexpected planner model');
+ if(options.recordUsage&&pricing){
+  const usage=meteredUsage(model,data.usage,pricing.rates,data.service_tier);
+  if(usage){
+   try{await options.recordUsage(usage);}
+   catch{console.warn('guru usage accounting write failed');}
+  }
+ }
  return data;
 }

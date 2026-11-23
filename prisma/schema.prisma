@@ -382,6 +382,13 @@ model GuruReservation {
   id            String   @id
   reservedMicro Int
   createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  usageModel                String?
+  usageInputTokens          Int?
+  usageCachedInputTokens    Int?
+  usageCacheWriteInputTokens Int?
+  usageOutputTokens         Int?
+  usageReasoningTokens      Int?
+  usageEstimatedCostPicoUsd BigInt?
 
   @@index([createdAt])
 }

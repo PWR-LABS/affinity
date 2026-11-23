@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client';
 import { RESERVATION_MICRO } from './planner';
 import { PUBLIC_MONTHLY_USD, PUBLIC_DAILY_USD, VISITOR_LIMITS, NETWORK_LIMITS } from './allowance';
 import type { GuruIdentity } from './visitor';
+import type { AttemptUsage } from './usage';
 
 export function capMicro(value:string|undefined){
  if(!value||!/^\d+(?:\.\d{1,2})?$/.test(value))throw Error('A positive owner-configured cap is required');
@@ -52,4 +53,20 @@ export async function reserveTurn(db:PrismaClient,id:string,monthly:number,daily
   }
   await tx.$executeRaw`INSERT INTO "GuruReservation" (id,"reservedMicro","createdAt","visitorHash","networkHash") VALUES (${id},${RESERVATION_MICRO},${now},${identity.visitorHash},${identity.networkHash})`;
  },{timeout:5000,maxWait:2000});
+}
+
+export async function recordTurnUsage(db: PrismaClient, id: string, usage: AttemptUsage): Promise<void> {
+ const result = await db.guruReservation.updateMany({
+  where: { id: id.toLowerCase(), usageModel: null },
+  data: {
+   usageModel: usage.model,
+   usageInputTokens: usage.inputTokens,
+   usageCachedInputTokens: usage.cachedInputTokens,
+   usageCacheWriteInputTokens: usage.cacheWriteInputTokens,
+   usageOutputTokens: usage.outputTokens,
+   usageReasoningTokens: usage.reasoningTokens,
+   usageEstimatedCostPicoUsd: usage.estimatedCostPicoUsd,
+  },
+ });
+ if (result.count !== 1) throw Error('Guru usage receipt could not be recorded');
 }

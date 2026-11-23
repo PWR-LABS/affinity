@@ -25,12 +25,13 @@ function published(markdown = standardTable) {
 test('public guru renews past the original cutoff using one credential-free Standard pricing request', async () => {
   let requests = 0;
   let time = PIN + 8 * DAY;
+  let document = standardTable;
   const assertPricing = createPublicPricingCheck(async (url, options) => {
     requests++;
     assert.equal(url, 'https://developers.openai.com/api/docs/pricing.md');
     assert.equal(options?.redirect, 'error');
     assert.equal(new Headers(options?.headers).get('authorization'), null);
-    return published();
+    return published(document);
   }, () => time);
 
   const receipts = await Promise.all(MODEL_IDS.map(assertPricing));
@@ -39,7 +40,8 @@ test('public guru renews past the original cutoff using one credential-free Stan
   await assertPricing('gpt-6.1-terra');
   assert.equal(requests, 1);
   time += 1;
-  await assertPricing('gpt-6.1-terra');
+  document = standardTable.replace('| gpt-6.1-terra | $1.00', '| gpt-6.1-terra | $0.75');
+  assert.equal((await assertPricing('gpt-6.1-terra')).rates.input, 0.75);
   assert.equal(requests, 2);
 });
 
@@ -79,7 +81,7 @@ test('an increased or removed Standard rate prevents dispatch before reservation
       key: 'test-key',
       reserve: async () => { reservations++; },
       fetcher: async () => { dispatches++; return new Response('{}'); },
-      checkPricing: async (id) => { await assertPricing(id); },
+      checkPricing: assertPricing,
     }), /pricing requires review/);
   }
   assert.equal(reservations, 0);

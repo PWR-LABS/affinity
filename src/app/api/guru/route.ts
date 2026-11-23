@@ -7,7 +7,7 @@ import { assertPublicPricing } from '@/lib/guru/pricing';
 import { historySchema } from '@/lib/guru/chat';
 import { conversationTurn } from '@/lib/guru/conversation';
 import { currentEvidence } from '@/lib/guru/tools';
-import { publicCaps, reserveTurn, GuruLimitError } from '@/lib/guru/budget';
+import { publicCaps, recordTurnUsage, reserveTurn, GuruLimitError } from '@/lib/guru/budget';
 
 import { visitorIdentity } from '@/lib/guru/visitor';
 import { allowanceMessage } from '@/lib/guru/allowance';
@@ -35,7 +35,12 @@ export async function POST(req:Request){
   // History is not source authority. Re-read applicable evidence through the
   // actual allowlisted tools; never accept client- or model-supplied coverage.
   const evidence=await currentEvidence(body.evidenceActions,body.context);
-  const reply=await conversationTurn({model,history:body.history,context:body.context,evidence,key:process.env.AFFINITY_OPENAI_API_KEY,checkPricing:assertPublicPricing,reserve:()=>reserveTurn(prisma,body.id,monthly,daily,visitor.identity)});
+  const reply=await conversationTurn({
+   model,history:body.history,context:body.context,evidence,key:process.env.AFFINITY_OPENAI_API_KEY,
+   checkPricing:assertPublicPricing,
+   reserve:()=>reserveTurn(prisma,body.id,monthly,daily,visitor.identity),
+   recordUsage:(usage)=>recordTurnUsage(prisma,body.id,usage),
+  });
   return withCookie(NextResponse.json({mode:'connected',reply,evidence},{headers:{'Cache-Control':'no-store'}}));
  }catch(error){
   if(error instanceof GuruLimitError)return withCookie(NextResponse.json({mode:'guided',code:'guru_limit',scope:error.scope,window:error.window,error:allowanceMessage(error.scope,error.window)},{status:429,headers:{'Cache-Control':'no-store','Retry-After':String(error.retryAfter)}}));

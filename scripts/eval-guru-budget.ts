@@ -2,10 +2,10 @@ import { createRequire } from 'node:module';
 import { PRICING_DATE as reviewedPricingDate } from '../src/lib/guru/planner';
 /** Disposable, synthetic, loopback-only gate. Never reads DATABASE_URL. */
 import assert from 'node:assert/strict';
-import { randomUUID, createHash } from 'node:crypto';
+import { randomUUID, createHash, createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { PrismaClient } from '@prisma/client';
-import { reserveTurn as reserveWithIdentity, GuruLimitError } from '../src/lib/guru/budget';
+import { reserveTurn as reserveWithIdentity, recordTurnUsage, GuruLimitError } from '../src/lib/guru/budget';
 import { planTurn } from '../src/lib/guru/planner';
 import { initialContext } from '../src/lib/guru/workspace';
 
@@ -43,12 +43,50 @@ try{
   assert.equal(Number(spent[0].micro),150000);
   await assert.rejects(reserveTurn(reconnected,id,200000,200000),/already reserved/);
   await fairUse(reconnected,second);
-  console.log(JSON.stringify({state:'passed',checks:['two independent clients share the hard cap','concurrent reservations serialize','duplicate request identity is never redispatched','reservations survive disconnect/reconnect','ambiguous provider failure retains its reservation with no retry','concurrent visitor and network quotas','daily and monthly quotas','cookie reset backstop','historical accounting and pseudonym cleanup'],externalModelCalls:0}));
+  await verifyUsageExport(reconnected,url);
+  console.log(JSON.stringify({state:'passed',checks:['two independent clients share the hard cap','concurrent reservations serialize','duplicate request identity is never redispatched','reservations survive disconnect/reconnect','ambiguous provider failure retains its reservation with no retry','concurrent visitor and network quotas','daily and monthly quotas','cookie reset backstop','historical accounting and pseudonym cleanup','numeric usage survives replay and exports through month-scoped authentication'],externalModelCalls:0}));
  }finally{await reconnected.$disconnect();}
 }finally{await db.$disconnect();await second.$disconnect();}
 
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
+
+async function verifyUsageExport(db:PrismaClient,url:URL) {
+ const id=randomUUID();
+ await reserveWithIdentity(db,id,100e6,100e6,identity('usage-fixture'));
+ const usage={
+  model:'gpt-6.1-terra' as const,inputTokens:1200,cachedInputTokens:1000,
+  cacheWriteInputTokens:0,outputTokens:100,reasoningTokens:50,estimatedCostPicoUsd:BigInt(750_000_000),
+ };
+ await recordTurnUsage(db,id.toUpperCase(),usage);
+ await assert.rejects(recordTurnUsage(db,id,{...usage,estimatedCostPicoUsd:BigInt(1)}),/could not be recorded/);
+
+ // The actual readback route uses only this script's already validated loopback fixture.
+ process.env.DATABASE_URL=url.href;
+ const secret='aa'.repeat(32);
+ process.env.AFFINITY_GURU_VISITOR_SECRET=secret;
+ const {GET}=await import('../src/app/api/guru/usage/route');
+ const {prisma:exportDb}=await import('../src/lib/prisma');
+ try {
+  const now=Date.now(),month=new Date(now).toISOString().slice(0,7);
+  const proof=(domain:string)=>now+'.'+createHmac('sha256',Buffer.from(secret,'hex')).update(domain+':'+now).digest('hex');
+  const exportUrl='https://affinity.example/api/guru/usage?month='+month;
+  const rejected=await GET(new Request(exportUrl,{headers:{'x-affinity-usage-proof':proof('guru-readiness')}}));
+  assert.equal(rejected.status,404);
+  const response=await GET(new Request(exportUrl,{headers:{'x-affinity-usage-proof':proof('guru-usage:'+month)}}));
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get('cache-control'),'private, no-store');
+  const csv=await response.text();
+  assert.match(csv,/^attempted_at_utc,model,input_tokens,cached_input_tokens,cache_write_input_tokens,output_tokens,reasoning_tokens,estimated_cost_usd/);
+  assert.match(csv,/,gpt-6.1-terra,1200,1000,0,100,50,0\.000750000000\r\n/);
+  assert.match(csv,/Z,{7}\r\n/); // A prior reservation has unknown cost and usage.
+  assert.ok(!csv.includes(id));
+  assert.ok(!csv.includes(identity('usage-fixture').visitorHash));
+  assert.ok(!csv.includes('reservedMicro'));
+ } finally {
+  await exportDb.$disconnect();
+ }
+}
 
 async function fairUse(db:PrismaClient,second:PrismaClient){
  const reserve=(who:ReturnType<typeof identity>,client=db)=>reserveWithIdentity(client,randomUUID(),100e6,100e6,who);
