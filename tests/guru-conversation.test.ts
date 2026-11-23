@@ -81,6 +81,23 @@ test('the full accepted current user message survives history limits, including 
  assert.equal(input.currentUserMessage,text);assert.match(input.currentUserMessage,/household size is 2/);
 });
 
+test('coverage intake carries stated details into the next conversational question',()=>{
+ const context=initialContext(2027);
+ const history=modelHistory([
+  {role:'you',text:'I work part time.'},
+  {role:'guru',text:'Does your job offer coverage?'},
+  {role:'you',text:"My job doesn't offer insurance."},
+ ],context,[]);
+ const body=conversationBody('gpt-6.1-terra',history,context,[]);
+ const input=JSON.parse(body.input[0].content);
+ assert.equal(input.history[0].text,'I work part time.');
+ assert.equal(input.currentUserMessage,"My job doesn't offer insurance.");
+ assert.match(body.instructions,/Treat details the user clearly states.*as given in the conversation/);
+ assert.match(body.instructions,/Do not repeat a stated fact as a confirmation question/);
+ assert.match(body.instructions,/What state do you need coverage in\?/);
+ assert.match(body.instructions,/No tool has run merely because you propose it/);
+});
+
 test('pending model suggestions cannot masquerade as completed context edit receipts',async()=>{
  const {validateConversationReply}=await import('../src/lib/guru/conversation');
  const reply={step:'discover',changes:{householdSize:'2'},reply:'Updated your household size to 2; nothing else changed.',proposedAction:'none',evidenceIds:[]};
