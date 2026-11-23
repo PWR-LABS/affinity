@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { flattenRxTerms } from "@/lib/drugs/rxterms";
+import { flattenRxTerms, searchDrugs } from "@/lib/drugs/rxterms";
 
 // Real-shape RxTerms response for a drug that comes as both oral pills and injectables. The plain oral
 // generic tablet is exactly what the Marketplace picker buries; RxTerms surfaces it. RXCUIS run parallel
@@ -44,4 +44,17 @@ test("dedupes rxcuis and tolerates a malformed/empty response", () => {
   ];
   assert.equal(flattenRxTerms(dup).length, 1);
   assert.deepEqual(flattenRxTerms([0, [], {}] as [number, string[], Record<string, string[][]>]), []);
+});
+
+test("dose and form searches filter actual RxCUIs before applying the result limit", async () => {
+  const fetcher: typeof fetch = async (input) => {
+    const url = new URL(String(input));
+    assert.equal(url.searchParams.get("terms"), "ondansetron");
+    return Response.json(ONDANSETRON);
+  };
+  assert.equal((await searchDrugs("ondansetron 8", fetcher, 1))[0].rxcui, "312086");
+  assert.equal((await searchDrugs("ondansetron 8mg tablet", fetcher, 1))[0].rxcui, "312086");
+  assert.deepEqual(await searchDrugs("ondansetron 80 mg", fetcher), []);
+  assert.deepEqual(await searchDrugs("ondansetron 8 mL", fetcher), []);
+  await assert.rejects(searchDrugs("ondansetron", async () => new Response(null, { status: 503 })), /unavailable/);
 });

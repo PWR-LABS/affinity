@@ -18,12 +18,34 @@ const RXTERMS = "https://clinicaltables.nlm.nih.gov/api/rxterms/v3/search";
 type RxTermsResponse = [number, string[], Record<string, string[][]>, ...unknown[]];
 
 export async function searchDrugs(q: string, fetchImpl: typeof fetch = fetch, limit = 20): Promise<DrugSuggestion[]> {
-  if (q.trim().length < 2) return [];
-  const url = `${RXTERMS}?terms=${encodeURIComponent(q.trim())}&ef=STRENGTHS_AND_FORMS,RXCUIS&maxList=30`;
+  const query = q.trim();
+  if (query.length < 2) return [];
+  // RxTerms searches the name field; strength and form come back in separate fields.
+  const [, name = query, qualifiers] = query.match(/^(.{2,}?)\s+(\d.*)$/) ?? [];
+  const url = `${RXTERMS}?terms=${encodeURIComponent(name)}&ef=STRENGTHS_AND_FORMS,RXCUIS&maxList=30`;
   const res = await fetchImpl(url, { headers: { accept: "application/json" } });
-  if (!res.ok) return [];
+  if (!res.ok) throw new Error("Drug lookup unavailable");
   const data = (await res.json()) as RxTermsResponse;
-  return flattenRxTerms(data, limit);
+  if (!qualifiers) return flattenRxTerms(data, limit);
+  const required = [...drugTokens(qualifiers)];
+  return flattenRxTerms(data, Infinity).filter(({ label }) => {
+    const tokens = drugTokens(label);
+    return required.every((token) => tokens.has(token));
+  }).slice(0, limit);
+}
+
+function drugTokens(text: string): Set<string> {
+  const tokens = text.toLowerCase().match(/\d+(?:\.\d+)?(?:\s*(?:mcg|mg|g|ml|units?)\b|\s*%)?|[a-z]+/g) ?? [];
+  const result = new Set<string>();
+  for (const raw of tokens) {
+    const token = raw.replace(/\s+/g, "");
+    if (/^(tabs?|tablets?)$/.test(token)) result.add("tab");
+    else if (/^(caps?|capsules?)$/.test(token)) result.add("cap");
+    else result.add(token);
+    const amount = /^\d+(?:\.\d+)?/.exec(token);
+    if (amount) result.add(amount[0]);
+  }
+  return result;
 }
 
 /** Flatten the parallel name/strength/rxcui arrays into one suggestion list, oral forms first. */

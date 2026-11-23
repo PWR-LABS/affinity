@@ -2,9 +2,33 @@ import { z } from 'zod';
 import { parseMarketplacePlanYear } from '../marketplace/states';
 import { ticSourceCurrent } from '../tic/freshness';
 import { STATE_MEDICAID_RESOURCES } from '../medicaid/states';
+import { PART_D_INDEX_YEAR } from '../partd/selection';
 
 export const STEPS = ['discover', 'coverage', 'compare', 'how'] as const;
 export type Step = typeof STEPS[number];
+export type GuidedTask = Step | 'plans' | 'medications' | 'part-d' | 'medicare' | 'privacy';
+export const GUIDED_HANDOFFS = {
+ medications: {
+  title:'Check prescription coverage',
+  reply:'Prescription coverage depends on the exact plan and medication. Use the Marketplace plan board for ACA plans, or the Part D checker if you have a Medicare drug plan.',
+  links:[['Compare Marketplace plans with medications','/plans'],['Check a Medicare Part D medication','/verify/medicare-drug']],
+ },
+ 'part-d': {
+  title:'Check a Medicare Part D medication',
+  reply:`Use the Part D checker to choose the exact ${PART_D_INDEX_YEAR} plan and medication. For another plan year, use Medicare Plan Compare.`,
+  links:[['Open the Part D medication checker','/verify/medicare-drug'],['Open Medicare Plan Compare','https://www.medicare.gov/plan-compare/']],
+ },
+ medicare: {
+  title:'Get Medicare enrollment guidance',
+  reply:'Use Medicare.gov to confirm enrollment, eligibility and plan options. [affinity.] can check a drug on a supported Part D plan.',
+  links:[['Go to Medicare.gov','https://www.medicare.gov/'],['Check a Medicare Part D medication','/verify/medicare-drug']],
+ },
+ privacy: {
+  title:'See how your answers are used',
+  reply:'The coverage workspace clears when you refresh or close this tab. When you enable connected guru, recent chat, confirmed inputs and relevant tool evidence are sent to OpenAI. See the privacy page for what is sent or retained.',
+  links:[['Read the privacy and data flow page','/privacy']],
+ },
+} as const;
 // The same supported registry drives app validation and the model's enum.
 // Empty means explicitly unknown/cleared; null is unchanged in model output.
 export const GURU_STATE_CODES=['',...STATE_MEDICAID_RESOURCES.map(s=>s.code)] as [string,...string[]];
@@ -59,17 +83,17 @@ export function missingQuestion(action:Action,c:GuruContext):string|null{
    :'Start with your ZIP code, then search for your doctor and choose the matching record.';
   return !c.planId?'What is your plan or employer’s name? We can help find the identifier, then you can confirm the matching option.':null;
  }
- if(action==='premium')return !c.employerPremium.trim()?'What is the other option’s premium contribution and how often would you pay it?':!c.marketplacePremium.trim()?'What Marketplace monthly premium have you been quoted?':c.premiumBasis==='unknown'?'Do both premium amounts cover just you, or the same household members?':null;
+ if(action==='premium')return !c.employerPremium.trim()?(c.comparison==='medicaid'?'What monthly premium has the state confirmed you would pay for Medicaid?':'What is the other option’s premium contribution and how often would you pay it?'):!c.marketplacePremium.trim()?'What Marketplace monthly premium have you been quoted?':c.premiumBasis==='unknown'?'Do both premium amounts cover just you, or the same household members?':null;
  if(!c.state)return 'Which state do you need coverage in?';
  if(c.employerOffer==='unknown')return 'Has an employer actually offered insurance to you or someone in your household, or is that still unknown?';
  if(c.employerOffer!=='none')return null;
  return !c.zip?'What is your ZIP code?':!c.age?'How old will you be in the coverage year?':c.income===''?'What annual household income do you expect for that coverage year?':null;
 }
 /** A useful route, without pretending an offer review is an eligibility verdict. */
-export function offerHandoff(c:GuruContext):Evidence|undefined{
+export function offerHandoff(c:GuruContext,action:'screen'|'plans'='screen'):Evidence|undefined{
  if(c.employerOffer==='none')return undefined;
  const unknown=c.employerOffer==='unknown';
- return {action:'screen',requestKey:requestKey('screen',c),observedAt:new Date().toISOString(),
+ return {action,requestKey:requestKey(action,c),observedAt:new Date().toISOString(),
   title:unknown?'Clarify the offer; keep your coverage routes open':'Keep Medicaid open and review the employer offer',
   facts:[{label:'Employer offer',value:contextValue('employerOffer',c.employerOffer)},{label:'Subsidized estimate',value:'Not calculated'},{label:'Source',value:'Official navigation and your stated situation'}],
   notes:[unknown?'Working does not establish an insurance offer. Confirm whether an offer exists, including through another household member.':'The official Marketplace can review the offer’s affordability and minimum value for each relevant household member.',
@@ -109,13 +133,30 @@ export function comparePremiums(c: GuruContext): Evidence {
       'This compares premiums only. Deductibles, out-of-pocket limits, care use, medications, employer contributions and network fit still need review.',
       'A Marketplace amount is not a confirmed subsidy. An employer offer can affect eligibility for savings; confirm with the official Marketplace.']};
 }
-export function suggestStep(message: string, fallback: Step = 'discover'): Step {
-  if(/doctor|network|drug|medication|medicare|coverage check/i.test(message))return 'coverage';
-  if(workTransition(message)&&!/compar/i.test(message))return 'discover';
-  if(/compar|premium|cost|paycheck|cheaper|how much/i.test(message))return 'compare';
-  if(/how|source|privacy|explain/i.test(message))return 'how';
-  if(/medicaid|marketplace|eligib|uninsured|coverage options|lost coverage/i.test(message))return 'discover';
+export function suggestTask(message:string,fallback:GuidedTask|null):GuidedTask|null{
+  const medications=/\b(?:prescriptions?|medications?|drugs?|formulary|pharmacy|insulin)\b/i.test(message);
+  if(/\bpart[ -]?d\b/i.test(message)||(medications&&/\bmedicare\b/i.test(message)))return 'part-d';
+  if(/\b(?:privacy|openai|data flow|data retention)\b|(?:store|save|keep|send|delete|retain|share).{0,30}\b(?:data|chat|answers|information|conversation)\b/i.test(message))return 'privacy';
+  if(/\bmedicare\b/i.test(message))return 'medicare';
+  if(medications)return 'medications';
+  if(/\b(?:doctor|doctors|provider|providers|physician|specialist|network|npi|hios|ein)\b/i.test(message)||/coverage check|(?:keep|cover).{0,24}\b(?:hospital|clinic)\b/i.test(message))return 'coverage';
+  if(/\b(?:compare|versus|vs\.?|cheaper|paycheck|biweekly|semimonthly)\b/i.test(message))return 'compare';
+  if(workTransition(message))return 'discover';
+  if(/\b(?:marketplace|aca|obamacare|exchange|healthcare\.gov)\b/i.test(message)&&/\b(?:plans?|prices?|premiums?|quotes?|estimates?|costs?|how much)\b/i.test(message)&&!/\b(?:eligibility|eligible|qualify|subsidy|savings)\b/i.test(message))return 'plans';
+  if(/\bconfirm\b.*\benroll\w*\b/i.test(message))return 'how';
+  if(/\b(?:medicaid|chip|marketplace|aca|obamacare|eligib\w*|uninsured|subsid\w*|insurance options|coverage options|lost coverage|no insurance|without insurance|health insurance|open enrollment|special enrollment|cobra|employer offer|employer insurance|affordability)\b/i.test(message))return 'discover';
+  if(/\b(?:premium|premiums|cost|costs|how much)\b/i.test(message))return 'compare';
+  if(/\b(?:sources?|evidence|enroll\w*|confirm\w*|verify|explain|guarantee)\b|how (?:it|this|guru) works|how does (?:this|guru) work/i.test(message))return 'how';
   return fallback;
+}
+export function taskStep(task:GuidedTask|null):Step{
+ if(task==='plans')return 'compare';
+ if(task==='medications'||task==='part-d'||task==='medicare')return 'coverage';
+ if(task==='privacy')return 'how';
+ return task??'discover';
+}
+export function suggestStep(message:string,fallback:Step='discover'):Step{
+ return taskStep(suggestTask(message,fallback));
 }
 export const STEP_REPLY: Record<Step,string> = {
   discover:'Let’s find your next coverage step. Confirm your situation on the right, including whether you actually have an employer offer. We can check Medicaid and Marketplace options without assuming that having a job rules either out.',
@@ -128,7 +169,12 @@ function workTransition(message:string){
 }
 /** Useful source-independent next step when a conversation service is absent.
  * A role change does not establish a coverage change or known premiums. */
-export function guidedReply(message:string,c:GuruContext,step:Step=suggestStep(message)){
+export function guidedReply(message:string,c:GuruContext,task:GuidedTask|null=suggestTask(message,'discover')){
+ const step=taskStep(task);
+ if(!task)return {step,reply:'I can help you find coverage, check a doctor or medication, compare costs, or find official enrollment guidance. What would you like to check?'};
+ if(task==='medications'||task==='part-d'||task==='medicare'||task==='privacy')return {step,reply:GUIDED_HANDOFFS[task].reply};
+ if(task==='plans')return {step,reply:missingQuestion('plans',c)??'Review your confirmed inputs in the workspace, then look up Marketplace premium estimates.'};
+ if(task==='compare'&&c.comparison!=='medicaid'&&/\bmedicaid\b/i.test(message))return {step,reply:'Choose Medicaid in the workspace, then enter the monthly premium the state confirmed and the Marketplace premium you were quoted.'};
  const reply=step==='discover'&&workTransition(message)
   ?'For a job or role transition, first ask your benefits administrator whether your insurance changes, when current coverage would end and when any new coverage would start. Keep dates, premiums and benefit terms unknown until confirmed. Has your benefits team confirmed whether the role change affects your insurance?'
   :step==='how'?STEP_REPLY.how:missingQuestion(step==='coverage'?'network':step==='compare'?'premium':'screen',c)??STEP_REPLY[step];
@@ -161,11 +207,15 @@ export function evidenceFrom(action: Exclude<Action,'premium'>,c: GuruContext,da
     notes.push('Source: HealthCare.gov Marketplace API when available; otherwise the official state directory. This is screening, not an eligibility determination.');
   } else {
     if(data.year!==c.year||!Array.isArray(data.plans))throw Error('The plan response did not match this request.');
-    title='Marketplace options for your confirmed inputs';add('Coverage year',data.year);add('County',data.county);add('Plans returned',data.totalPlans);
+    if(data.state!==c.state)throw Error('The ZIP code did not match your selected state. Correct the state or ZIP before comparing plans.');
+    title=data.plans.length?'Marketplace options for your confirmed inputs':'No Marketplace plans returned';
+    add('Coverage year',data.year);add('County',data.county);add('Plans returned',data.totalPlans);
     for(const raw of data.plans.slice(0,5))if(raw&&typeof raw==='object'){
       const p=raw as Record<string,unknown>;
       add(`Plan ${String(p.id??'identifier missing')}`,`${String(p.name??'Name unavailable')} · monthly net premium ${typeof p.netPremiumMonthly==='number'?usd(p.netPremiumMonthly):'unknown'}`);
     }
+    if(data.plans.length>5)notes.push('Showing the first five results. The full plan board lists more options.');
+    if(!data.plans.length)notes.push('Use the official Marketplace to check available plans for your exact inputs.');
     notes.push('Source: HealthCare.gov Marketplace API. Premiums are estimates, not full annual care spending. Use the full plan comparison to add doctors and medications.');
     if(Array.isArray(data.notes))notes.push(...data.notes.filter((x):x is string=>typeof x==='string'));
   }

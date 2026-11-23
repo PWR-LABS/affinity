@@ -52,6 +52,7 @@ test('conversation receives prior turns, confirmed context and evidence; replies
  }) as typeof fetch};
  const reply=await conversationTurn(options);assert.match(reply.reply,/doctor’s name/);assert.deepEqual(reply.changes,{});assert.equal(calls,1);
  await assert.rejects(conversationTurn({...options,fetcher:(async()=>Response.json(wire({...reply,evidenceIds:['invented-source']}))) as typeof fetch}),/Invented evidence/);
+ await assert.rejects(conversationTurn({...options,fetcher:(async()=>Response.json(wire({...reply,reply:'See this result [current-premium]',evidenceIds:[]}))) as typeof fetch}),/Inline evidence reference was not declared/);
 });
 test('conversation rejects oversize current evidence before reservation, and never retries a lost return',async()=>{
  let reservations=0,calls=0;const options={model:'gpt-6.1-terra',history:[{role:'you' as const,text:'Help me',superseded:false}],context:context(),evidence:[current()],key:'synthetic',now:new Date(reviewedPricingDate),reserve:async()=>{reservations++;},fetcher:(async()=>{calls++;throw Error('lost response');}) as typeof fetch};

@@ -1410,7 +1410,7 @@ body {
 
 .guru-heading {
   margin-bottom: 1.25rem;
-  padding: clamp(1.5rem, 4vw, 3.2rem);
+  padding: clamp(1.25rem, 3vw, 2.5rem) clamp(1.5rem, 4vw, 3.2rem);
   border-radius: var(--guru-panel-radius);
   background: radial-gradient(ellipse at 95% 5%, #27724d 0%, transparent 62%),
     linear-gradient(115deg, #123827, #184e36);
@@ -1430,7 +1430,7 @@ body {
   max-width: 25ch;
   margin-bottom: 0.65rem;
   color: #fff;
-  font-size: clamp(2.25rem, 5.1vw, 4.15rem);
+  font-size: clamp(2.05rem, 4.6vw, 3.7rem);
   font-weight: 700;
   letter-spacing: -0.055em;
   line-height: 1.04;

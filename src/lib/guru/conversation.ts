@@ -42,5 +42,8 @@ export function validateConversationReply(value:unknown,evidence:ReferencedEvide
  if(/\b(?:(?:I(?:['’]ve| have)?|we(?:['’]ve| have)?)\s+(?:now\s+)?(?:updated|applied|changed|saved|set)|(?:updated|changed|saved|set)\s+your)\b/i.test(reply.reply))throw Error('Premature context edit claim');
  const allowed=new Set(evidence.map(e=>e.id));
  if(reply.evidenceIds.some(id=>!allowed.has(id)))throw Error('Invented evidence reference');
+ for(const [,id] of reply.reply.matchAll(/\[((?:current|private)-(?:screen|plans|network|premium))\]/g)){
+  if(!reply.evidenceIds.includes(id))throw Error('Inline evidence reference was not declared');
+ }
  return reply;
 }

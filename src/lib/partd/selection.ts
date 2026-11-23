@@ -13,6 +13,7 @@ export interface PartDDrugSelection {
 }
 
 export const MAX_PARTD_DRUGS = 20;
+export const PART_D_INDEX_YEAR = 2026;
 
 export function addPartDDrugSelection(
   current: PartDDrugSelection[],

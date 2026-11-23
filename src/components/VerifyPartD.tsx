@@ -6,6 +6,7 @@ import { useGuruField, useGuruMemory } from './GuruContext';
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
 import {
   MAX_PARTD_DRUGS,
+  PART_D_INDEX_YEAR,
   addPartDDrugSelection,
   decodePartDPlanSelection,
   encodePartDPlanSelection,
@@ -310,11 +311,11 @@ export function VerifyPartD() {
 
   const fetchPlans = useCallback(
     async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
-      const params = new URLSearchParams({ q, year: "2026" });
+      const params = new URLSearchParams({ q, year: String(PART_D_INDEX_YEAR) });
       if (/^[A-Z]{2}$/.test(state)) params.set("state", state);
       const response = await fetch(`/api/partd/plans?${params}`, { signal });
-      const data = await response.json().catch(() => ({ items: [] }));
-      if (!response.ok) return [];
+      if (!response.ok) throw new Error("Part D plan search unavailable");
+      const data = await response.json();
       return (data.items ?? []).map((item: PartDPlanSelection) => ({
         key: encodePartDPlanSelection(item),
         label: item.planName,
@@ -334,8 +335,8 @@ export function VerifyPartD() {
     const response = await fetch("/api/drugs/autocomplete", {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q }), signal,
     });
-    const data = await response.json().catch(() => ({ items: [] }));
-    if (!response.ok) return [];
+    if (!response.ok) throw new Error("Medication search unavailable");
+    const data = await response.json();
     return (data.items ?? []).map((item: { rxcui: string; label: string }) => ({
       key: item.rxcui,
       label: item.label,
@@ -434,7 +435,7 @@ export function VerifyPartD() {
         body: JSON.stringify({
           state,
           rxcuis: drugs.map((drug) => drug.rxcui),
-          contractYear: 2026,
+          contractYear: PART_D_INDEX_YEAR,
         }),
       });
       const data = await response.json();

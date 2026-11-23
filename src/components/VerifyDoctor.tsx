@@ -46,6 +46,7 @@ export function VerifyDoctor() {
       const r = await fetch("/api/providers/autocomplete", {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, zip }), signal,
       });
+      if (!r.ok) throw new Error("Doctor search unavailable");
       const d = await r.json();
       return (d.items ?? []).map((p: { npi: string; name?: string; specialty?: string }) => ({
         key: p.npi,
@@ -58,8 +59,8 @@ export function VerifyDoctor() {
 
   const fetchPlans = useCallback(async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
     const r = await fetch(`/api/tic/plans?q=${encodeURIComponent(q)}`, { signal });
-    const d = await r.json().catch(() => ({ items: [] }));
-    if (!r.ok) return []; // index absent in this environment — verify via EIN still explains it clearly
+    if (!r.ok) throw new Error("Plan search unavailable");
+    const d = await r.json();
     return (d.items ?? []).map((p: { planIdType: string; planId: string; planName: string; issuer: string }) => ({
       key: `${p.planIdType}:${p.planId}:${p.planName}`,
       label: p.planName || `Plan name unavailable · ${p.planIdType.toUpperCase()} ${p.planId}`,
@@ -69,8 +70,8 @@ export function VerifyDoctor() {
 
   const fetchEmployers = useCallback(async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
     const r = await fetch(`/api/employers/search?q=${encodeURIComponent(q)}`, { signal });
-    const d = await r.json().catch(() => ({ items: [] }));
-    if (!r.ok) return [];
+    if (!r.ok) throw new Error("Employer search unavailable");
+    const d = await r.json();
     return (d.items ?? []).map((e: { ein: string; name: string; state?: string | null; planName?: string | null }) => {
       const bits = [e.state, `EIN ${e.ein}`].filter(Boolean);
       return {

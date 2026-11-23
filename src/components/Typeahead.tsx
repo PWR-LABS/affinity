@@ -25,6 +25,7 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
   const [items, setItems] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(-1);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const controller = useRef<AbortController | null>(null);
@@ -35,7 +36,7 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
     if (timer.current) clearTimeout(timer.current);
     controller.current?.abort();
     controller.current = null;
-    setItems([]);setOpen(false);setActive(-1);
+    setItems([]);setOpen(false);setActive(-1);setFailed(false);
     if (q.trim().length < 2) {
       setLoading(false);
       return;
@@ -57,6 +58,7 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
           setItems([]);
           setOpen(false);
           setActive(-1);
+          setFailed(true);
         }
       } finally {
         if (myReq === reqId.current) setLoading(false);
@@ -79,6 +81,11 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
+    if (open && e.key === "Escape") {
+      e.preventDefault();
+      setOpen(false);
+      return;
+    }
     if (!open || items.length === 0) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -89,8 +96,6 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (active >= 0) choose(items[active]);
-    } else if (e.key === "Escape") {
-      setOpen(false);
     }
   }
 
@@ -105,6 +110,7 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
           role="combobox"
           aria-expanded={open}
           aria-controls={listId}
+          aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
           aria-autocomplete="list"
           aria-describedby={describedBy}
           autoComplete="off"
@@ -117,11 +123,13 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
         />
         {loading && <span className="typeahead-spin" aria-hidden />}
       </div>
+      {failed && <p className="field-help" role="status">Search is temporarily unavailable. Try again in a moment.</p>}
       {open && (items.length > 0 || (!loading && q.trim().length >= 2)) && (
         <ul className="typeahead-menu" id={listId} role="listbox">
           {items.length > 0 ? (
             items.map((s, i) => (
               <li
+                id={`${listId}-${i}`}
                 key={s.key}
                 role="option"
                 aria-selected={i === active}
