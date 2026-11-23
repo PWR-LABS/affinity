@@ -80,6 +80,7 @@ export function PlanFinder({ initialYear }: { initialYear?: MarketplacePlanYear 
       const r = await fetch("/api/providers/autocomplete", {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, zip, year }), signal,
       });
+      if (!r.ok) throw new Error("Doctor search unavailable");
       const d = await r.json();
       return (d.items ?? []).map((p: { npi: string; name?: string; specialty?: string }) => ({
         key: p.npi, label: p.name ?? p.npi, sub: p.specialty,
@@ -91,6 +92,7 @@ export function PlanFinder({ initialYear }: { initialYear?: MarketplacePlanYear 
     const r = await fetch("/api/drugs/autocomplete", {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q }), signal,
     });
+    if (!r.ok) throw new Error("Medication search unavailable");
     const d = await r.json();
     return (d.items ?? []).map((x: { rxcui: string; label: string }) => ({ key: x.rxcui, label: x.label }));
   }, []);

@@ -7,7 +7,7 @@ import type {ReferencedEvidence} from './chat';
 /** Allowlisted read-only application tools. No arbitrary URLs or model-provided code. */
 export async function executeAction(action:Action,context:GuruContext):Promise<Evidence>{
  if(action==='premium')return comparePremiums(context);
- if(action==='screen'){const handoff=offerHandoff(context);if(handoff)return handoff;}
+ if((action==='screen'||action==='plans')&&context.state){const handoff=offerHandoff(context,action);if(handoff)return handoff;}
  const body=actionInput(action,context);
  const response=await({screen:eligibility,plans,network}[action])(new Request('http://guru.internal/tool',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}));
  const data=await response.json();

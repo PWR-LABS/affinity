@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { allowanceMessage, VISITOR_LIMITS } from '@/lib/guru/allowance';
 import { STATE_MEDICAID_RESOURCES, medicaidResourceByCode } from '@/lib/medicaid/states';
 import { DEFAULT_MARKETPLACE_PLAN_YEAR, SUPPORTED_MARKETPLACE_PLAN_YEARS, stateBasedMarketplace } from '@/lib/marketplace/states';
-import { actionInput, comparePremiums, evidenceFrom, initialContext, requestKey, suggestStep, guidedReply, missingQuestion, offerHandoff, CONTEXT_LABELS, contextValue, reconcileContext, type Action, type Evidence, type GuruContext, type Step } from '@/lib/guru/workspace';
+import { actionInput, comparePremiums, evidenceFrom, initialContext, requestKey, suggestTask, taskStep, guidedReply, missingQuestion, offerHandoff, CONTEXT_LABELS, GUIDED_HANDOFFS, contextValue, reconcileContext, type Action, type Evidence, type GuidedTask, type GuruContext, type Step } from '@/lib/guru/workspace';
 import { applyProposal, type Proposal } from '@/lib/guru/proposal';
 import { useGuruStore,useGuruMemory } from './GuruContext';
 import { Typeahead,type Suggestion } from './Typeahead';
@@ -35,7 +35,8 @@ export function GuruWorkspace(){
  if(!store)throw Error('Guru workspace requires its context provider');
  const {context,setContext}=store;
  const current=useRef(context);current.current=context;
- const [step,setStep]=useGuruMemory<Step|null>('step',null);
+ const [task,setTask]=useGuruMemory<GuidedTask|null>('step',null);
+ const handoff=task&&task in GUIDED_HANDOFFS?GUIDED_HANDOFFS[task as keyof typeof GUIDED_HANDOFFS]:null;
  const [draft,setDraft]=useState('');
  const [connected,setConnected]=useGuruMemory('connected',false);
  const [chatPending,setChatPending]=useState(false),[proposal,setProposal]=useState<Proposal|null>(null),[actionProposal,setActionProposal]=useState<Action|null>(null);
@@ -52,7 +53,7 @@ export function GuruWorkspace(){
  const [walkthrough,setWalkthrough]=useState(0);
  const answerRef=useRef<HTMLDivElement>(null);
  const workbenchRef=useRef<HTMLDivElement>(null);
- useEffect(()=>{if(workbenchRef.current)workbenchRef.current.scrollTop=0;},[step]);
+ useEffect(()=>{if(workbenchRef.current)workbenchRef.current.scrollTop=0;},[task]);
  function update<K extends keyof GuruContext>(key:K,value:GuruContext[K]){
   if(key==='planId'||key==='planIdType')store?.setMemory(old=>({...old,'network-plan':null}));
   const next=reconcileContext(current.current,{...current.current,[key]:value});current.current=next;setContext(next);
@@ -64,16 +65,22 @@ export function GuruWorkspace(){
  function say(text:string,bindings?:ChatMessage['bindings'],kind:ChatMessage['kind']='guided'){
   setMessages(old=>[...old.slice(-23),{role:'guru',text,bindings,kind}]);
  }
- async function respond(history:ChatMessage[],sourceEvidence:Evidence[],fallback:Step){
+ async function respond(history:ChatMessage[],sourceEvidence:Evidence[],fallback:GuidedTask|null){
   const id=++chatSequence.current;chatController.current?.abort();setProposal(null);setActionProposal(null);
   const snapshot={...current.current},snapshotKey=JSON.stringify(snapshot),abort=new AbortController();chatController.current=abort;setChatPending(true);
+  const latestQuestion=history.findLast(m=>m.role==='you')?.text??'';
+  function continueGuided(notice:string){
+   if(id!==chatSequence.current||snapshotKey!==JSON.stringify(current.current))return;
+   setAvailability('unavailable');setTask(fallback);
+   say(notice+' '+guidedReply(latestQuestion,snapshot,fallback).reply);
+  }
   try{
    const actions=sourceEvidence.filter(e=>e.requestKey===requestKey(e.action,snapshot)).map(e=>e.action).slice(0,3);
    const response=await fetch('/api/guru',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:crypto.randomUUID(),history:modelHistory(history,snapshot,sourceEvidence),context:snapshot,evidenceActions:actions}),signal:abort.signal});
    if(response.status===429){
     const limited=await response.json();
     if(limited.code==='guru_limit'&&['site','visitor','network'].includes(limited.scope)&&['minute','day','month'].includes(limited.window)){
-     if(id===chatSequence.current&&snapshotKey===JSON.stringify(current.current)){setAvailability('unavailable');say(allowanceMessage(limited.scope,limited.window));}
+     continueGuided(allowanceMessage(limited.scope,limited.window));
      return;
     }
    }
@@ -82,30 +89,32 @@ export function GuruWorkspace(){
    const fresh=referencedEvidenceSchema.array().parse(data.evidence??[]);
    if(fresh.some(e=>e.requestKey!==requestKey(e.action,snapshot))||next.evidenceIds.some(id=>!fresh.some(e=>e.id===id)))throw Error('Evidence mismatch');
    if(id!==chatSequence.current||snapshotKey!==JSON.stringify(current.current))return;
-   setAvailability('ready');setStep(next.step);
+   // Keep a specific estimate task when the model returns its broader comparison step.
+   setAvailability('ready');setTask(fallback==='plans'&&next.step==='compare'?'plans':next.step);
    if(Object.keys(next.changes).length)setProposal({step:next.step,changes:next.changes});
    if(next.proposedAction!=='none')setActionProposal(next.proposedAction);
    setEvidence(old=>[...fresh,...old.filter(e=>!fresh.some(n=>n.action===e.action))]);
-   say(next.reply,fresh.map(bindEvidence),'model');
-  }catch{if(id===chatSequence.current){setAvailability('unavailable');const guided=guidedReply(history.findLast(m=>m.role==='you')?.text??'',snapshot,fallback);setStep(guided.step);say('Connected guru is unavailable for this turn. Your context is still here. '+guided.reply);}}
+   say(next.reply,fresh.filter(e=>next.evidenceIds.includes(e.id)).map(bindEvidence),'model');
+  }catch{continueGuided('Connected guru is unavailable for this turn. Your context is still here.');}
   finally{if(id===chatSequence.current)setChatPending(false);}
  }
  async function ask(text:string){
   if(!text.trim())return;
-  const nextStep=suggestStep(text,step??'discover');
+  const nextTask=suggestTask(text,task);
+  chatSequence.current++;chatController.current?.abort();setChatPending(false);setProposal(null);setActionProposal(null);
   sequence.current++;controller.current?.abort();setPending(null);
   setDraft('');setError('');setWalkthrough(0);
   const history:ChatMessage[]=[...messages.slice(-23),{role:'you',text:text.trim().slice(0,1500)}];setMessages(history);
-  if(connected){await respond(history,evidence,nextStep);return;}
-  setStep(nextStep);
-  say(guidedReply(text,current.current,nextStep).reply);
+  if(connected&&!(nextTask&&nextTask in GUIDED_HANDOFFS)){await respond(history,evidence,nextTask);return;}
+  setTask(nextTask);
+  say(guidedReply(text,current.current,nextTask).reply);
  }
  async function run(action:Action){
   const snapshot={...current.current},id=++sequence.current;controller.current?.abort();
   chatSequence.current++;chatController.current?.abort();setChatPending(false);setProposal(null);setActionProposal(null);
   const abort=new AbortController();controller.current=abort;setPending(action);setError('');
   try{
-   const handoff=(action==='screen'||action==='plans')?offerHandoff(snapshot):undefined;
+   const handoff=(action==='screen'||action==='plans')&&snapshot.state?offerHandoff(snapshot,action):undefined;
    let result:Evidence;
    if(handoff)result=handoff;
    else{
@@ -116,7 +125,7 @@ export function GuruWorkspace(){
     else{
      const path={screen:'/api/eligibility',plans:'/api/plans',network:'/api/tic/verify'}[action];
      const response=await fetch(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(input),signal:abort.signal});
-     const raw:unknown=await response.json();
+     const raw:unknown=await response.json().catch(()=>null);
      if(!raw||typeof raw!=='object'||Array.isArray(raw))throw Error('The coverage service returned an unreadable result. Please try again.');
      const data=raw as Record<string,unknown>;
      if(!response.ok)throw Error(typeof data.error==='string'?data.error:'The coverage service is unavailable. Use the official handoff below.');
@@ -125,13 +134,17 @@ export function GuruWorkspace(){
    }
    if(id!==sequence.current||result.requestKey!==requestKey(result.action,current.current))return;
    const fresh=[result,...evidence.filter(e=>e.action!==result.action)];setEvidence(fresh);
-   const message:ChatMessage={role:'guru',text:result.title+'. '+(result.action==='screen'&&snapshot.employerOffer==='unknown'?missingQuestion('screen',snapshot):result.notes[0]??'Review the source and next step below.'),bindings:[bindEvidence(result)],kind:'tool'};
+   const note=(action==='screen'||action==='plans')&&snapshot.employerOffer==='unknown'?missingQuestion(action,snapshot):result.notes[0];
+   const message:ChatMessage={role:'guru',text:result.title.trim().replace(/[.!?]?$/,'.')+' '+(note??'Review the source and next step below.'),bindings:[bindEvidence(result)],kind:'tool'};
    const history=[...messages.slice(-23),message];setMessages(history);answerRef.current?.focus();
-   if(connected)await respond(history,fresh,step??'discover');
-  }catch(e){if(id===sequence.current)setError(e instanceof Error?e.message:'This check could not complete. Your answers are still here.');}
+   if(connected)await respond(history,fresh,task);
+  }catch(e){if(id===sequence.current){
+   setEvidence(old=>old.filter(item=>item.action!==action));
+   setError(e instanceof Error&&e.name!=='TypeError'?e.message:'The coverage service could not be reached. Try again or use the official resource.');
+  }}
   finally{if(id===sequence.current)setPending(null);}
  }
- function clear(){store?.setMemory({});sequence.current++;chatSequence.current++;controller.current?.abort();chatController.current?.abort();setProposal(null);setActionProposal(null);setAvailability('unknown');setChatPending(false);const next=initialContext(DEFAULT_MARKETPLACE_PLAN_YEAR);current.current=next;setContext(next);setEvidence([]);setPending(null);setError('');setDraft('');setStep(null);setWalkthrough(0);setMessages([{role:'guru',text:'This workspace is cleared. What would you like to work out next?'}]);}
+ function clear(){store?.setMemory({});sequence.current++;chatSequence.current++;controller.current?.abort();chatController.current?.abort();setProposal(null);setActionProposal(null);setAvailability('unknown');setChatPending(false);const next=initialContext(DEFAULT_MARKETPLACE_PLAN_YEAR);current.current=next;setContext(next);setEvidence([]);setPending(null);setError('');setDraft('');setTask(null);setWalkthrough(0);setMessages([{role:'guru',text:'This workspace is cleared. What would you like to work out next?'}]);}
  function confirmProposal(){if(!proposal)return;try{const next=applyProposal(current.current,proposal);store?.setMemory(old=>({...old,'network-plan':null}));sequence.current++;controller.current?.abort();current.current=next;setContext(next);setEvidence(old=>old.filter(e=>e.requestKey===requestKey(e.action,next)));setPending(null);setProposal(null);say('Your confirmed edits are applied. Run the relevant check to get evidence for this context.');}catch{setError('This suggestion contains unsupported inputs. Please enter the correction in the form.');setProposal(null);}}
  const field=(key:'zip'|'age'|'income'|'householdSize'|'npi'|'planId'|'employerPremium'|'marketplacePremium',label:string,hint?:string)=> <div className="field" key={key}>
   <label htmlFor={`guru-${key}`}>{label}</label><input id={`guru-${key}`} value={context[key]} inputMode={key==='planId'?'text':'decimal'} maxLength={{zip:5,age:3,income:12,householdSize:2,npi:10,planId:30,employerPremium:12,marketplacePremium:12}[key]} onChange={e=>update(key,e.target.value)} />
@@ -140,15 +153,16 @@ export function GuruWorkspace(){
  const fetchDoctorChoices=useCallback(async(q:string,signal?:AbortSignal):Promise<Suggestion[]>=>{
   if(!/^\d{5}$/.test(context.zip))return [];
   const r=await fetch('/api/providers/autocomplete',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({q,zip:context.zip,year:context.year}),signal});
-  if(!r.ok)return [];const data=await r.json();
+  if(!r.ok)throw Error('Doctor search unavailable');
+  const data=await r.json();
   return (data.items??[]).map((p:{npi:string;name?:string;specialty?:string})=>({key:p.npi,label:p.name??p.npi,sub:p.specialty}));
  },[context.zip,context.year]);
  const fetchEmployerChoices=useCallback(async(q:string,signal?:AbortSignal):Promise<Suggestion[]>=>{
-  const r=await fetch('/api/employers/search?q='+encodeURIComponent(q),{signal});if(!r.ok)return [];
+  const r=await fetch('/api/employers/search?q='+encodeURIComponent(q),{signal});if(!r.ok)throw Error('Employer search unavailable');
   const data=await r.json();return(data.items??[]).map((e:{ein:string;name:string;state?:string})=>({key:e.ein,label:e.name,sub:[e.state,'Employer identity—not an exact benefit option'].filter(Boolean).join(' · ')}));
  },[]);
  const fetchPlanChoices=useCallback(async(q:string,signal?:AbortSignal):Promise<Suggestion[]>=>{
-  const r=await fetch('/api/tic/plans?q='+encodeURIComponent(q),{signal});if(!r.ok)return [];
+  const r=await fetch('/api/tic/plans?q='+encodeURIComponent(q),{signal});if(!r.ok)throw Error('Plan search unavailable');
   const data=await r.json();return(data.items??[]).map((p:{planIdType:string;planId:string;planName:string;issuer:string})=>({key:JSON.stringify([p.planIdType,p.planId]),label:p.planName||'Plan name not supplied',sub:p.issuer}));
  },[]);
  function selected(text:string){
@@ -188,13 +202,13 @@ export function GuruWorkspace(){
       </div>;
      })}
     </div>
-    {!step&&!chatPending&&<div className="guru-suggestions">{['I lost Medicaid','Can I keep my doctor?','Compare my employer offer'].map(text=><button type="button" key={text} onClick={()=>{void ask(text);questionRef.current?.focus({preventScroll:true});}}>{text}</button>)}</div>}
+    {!task&&!chatPending&&<div className="guru-suggestions">{['I lost Medicaid','Can I keep my doctor?','Compare my employer offer'].map(text=><button type="button" key={text} onClick={()=>{void ask(text);questionRef.current?.focus({preventScroll:true});}}>{text}</button>)}</div>}
     <form className="guru-composer" onSubmit={e=>{e.preventDefault();ask(draft);}}>
      <label htmlFor="guru-question">What would you like to work out?</label>
      <textarea ref={questionRef} id="guru-question" value={draft} maxLength={1500} rows={2} onChange={e=>setDraft(e.target.value)} placeholder="I work part time. What are my coverage options?"/>
      <button className="primary" type="submit" disabled={!draft.trim()||chatPending}>{chatPending?'Thinking…':'Send to guru'}</button>
     </form>
-    {step&&<a className="guru-pane-link" href="#guru-workbench">Continue in the coverage workspace ↓</a>}
+    {task&&<a className="guru-pane-link" href="#guru-workbench">Continue in the coverage workspace ↓</a>}
     <div className="guru-conversation-footer">
      <div className="guru-conversation-controls">
       <label className="guru-ai-choice">
@@ -215,19 +229,23 @@ export function GuruWorkspace(){
     <h2 id="guru-workbench-title">Your coverage workspace</h2>
     <div ref={workbenchRef} className="guru-workbench-content" role="region" aria-label="Coverage guidance" tabIndex={0}>
     <a className="guru-pane-link" href="#guru-conversation">↑ Back to guru chat</a>
-    {step?<div className="guru-current-task"><h3>{WORKBENCH_TITLES[step]}</h3></div>:<div className="guru-current-task">
+    {task?<div className="guru-current-task"><h3>{handoff?.title??(task==='plans'?'Find Marketplace premium estimates':WORKBENCH_TITLES[taskStep(task)])}</h3></div>:<div className="guru-current-task">
      <h3>{chatPending?'Waiting for guru…':'Start with a question'}</h3>
      <p>Once you send a message, this workspace will show what to check, what information you need, and any results.</p>
     </div>}
     {proposal&&<aside className="guru-note"><h3>Review suggested context edits</h3><dl>{Object.entries(proposal.changes).map(([key,value])=><div key={key}><dt>{CONTEXT_LABELS[key as keyof GuruContext]}</dt><dd>{contextValue(key as keyof GuruContext,value)}</dd></div>)}</dl><button type="button" onClick={confirmProposal}>Confirm suggested edits</button><button type="button" onClick={()=>setProposal(null)}>Dismiss</button></aside>}
     {actionProposal&&<aside className="guru-note"><h3>Suggested check</h3><p>{ACTION_LABEL[actionProposal]}. No check has run from this suggestion.</p>{proposal?<p>Confirm or dismiss the context edits first.</p>:<button className="primary" type="button" disabled={pending!==null||chatPending} onClick={()=>run(actionProposal)}>Confirm and run: {ACTION_LABEL[actionProposal]}</button>}<button type="button" onClick={()=>setActionProposal(null)}>Dismiss check</button></aside>}
-    {step==='discover'&&<div className="guru-step-content">
+    {handoff&&<div className="guru-step-content">
+      <p>{handoff.reply}</p>
+      <div className="guru-actions">{handoff.links.map(([label,href])=>href.startsWith('/')?<Link key={href} href={href}>{label}</Link>:<a key={href} href={href}>{label}</a>)}</div>
+    </div>}
+    {task==='discover'&&<div className="guru-step-content">
      <p>Tell us where you need coverage and whether an employer actually offered you insurance. Then check which routes you can explore.</p>
      <div className="guru-fields">{routeFields}</div>
      {context.employerOffer!=='none'&&<p className="guru-note">You can still explore Medicaid and compare declared costs. The official Marketplace must review an offer’s affordability and minimum value before you rely on subsidized prices.</p>}
      {actionProposal!=='screen'&&<div className="guru-actions"><button className="primary" type="button" disabled={pending!==null} onClick={()=>run('screen')}>Check Medicaid / Marketplace routes</button></div>}
     </div>}
-    {step==='coverage'&&<div className="guru-step-content">
+    {task==='coverage'&&<div className="guru-step-content">
      <p>Enter a ZIP code to search for your doctor. Then choose the specific plan or employer you want to check.</p>
      <div className="guru-fields">{field('zip','ZIP code')}{yearField}</div>
      <div className="guru-fields">
@@ -236,7 +254,7 @@ export function GuruWorkspace(){
      <div><Typeahead key={`plan-${context.planQuery}`} label="Or find your plan by name" placeholder="Plan or network name" initialQuery={context.planQuery} onQueryChange={()=>{if(current.current.planId)update('planId','');}} fetchSuggestions={fetchPlanChoices} onSelect={s=>{const [type,id]=JSON.parse(s.key);update('planIdType',type);update('planId',id);store?.setMemory(old=>({...old,'selected-plan-label':{id:type+':'+id,label:s.label}}));selected(`${s.label}, identifier ${id}.`);}} />{context.planId&&<p className="field-help">Selected: {selectionLabel(store.memory['selected-plan-label'],context.planIdType+':'+context.planId,'your plan / employer')} · {context.planIdType.toUpperCase()} {context.planId}</p>}</div>
      </div>
      <details className="guru-task-details"><summary>Use exact identifiers instead</summary><div className="guru-fields">{field('npi','Doctor NPI','10 digits; look it up in the full coverage tool if needed.')}<div className="field"><label htmlFor="guru-plan-type">Identifier type</label><select id="guru-plan-type" value={context.planIdType} onChange={e=>update('planIdType',e.target.value as GuruContext['planIdType'])}><option value="ein">Employer EIN</option><option value="hios">HIOS plan identifier</option></select></div>{field('planId','Plan / employer identifier')}</div></details>
-     <p>An employer match identifies the employer. Confirm your exact benefit option with the insurer.</p>
+     <p>Coverage year is used for the doctor search. Confirm your exact benefit option and effective year with the insurer.</p>
      <div className="guru-actions">
       {actionProposal!=='network'&&<button className="primary" type="button" disabled={pending!==null} onClick={()=>run('network')}>Check issuer evidence</button>}
       <Link href="/verify">Find my doctor or employer</Link>
@@ -244,7 +262,7 @@ export function GuruWorkspace(){
      </div>
      <p className="field-help">Medicare eligibility and enrollment need an official review. The Part D tool checks an individual plan’s drug coverage.</p>
     </div>}
-    {step==='compare'&&<div className="guru-step-content">
+    {task==='compare'&&<div className="guru-step-content">
      <p>Use the amount you’d pay for each option. Confirm that both premiums cover the same people.</p>
      <div className="field"><label htmlFor="guru-comparison">Compare with Marketplace</label><select id="guru-comparison" value={context.comparison} onChange={e=>{update('comparison',e.target.value as GuruContext['comparison']);update('employerPremium','');}}><option value="employer">Employer offer</option><option value="medicaid">Medicaid</option></select></div>
      <div className="guru-fields">
@@ -264,11 +282,19 @@ export function GuruWorkspace(){
       </div>
      </details>
     </div>}
-    {step==='how'&&<div className="guru-step-content"><ol className="guru-walkthrough">{['Confirm the exact coverage option, people covered and effective year.','Check the insurer’s current network and formulary with your doctor and pharmacy.','Confirm eligibility, savings and enrollment deadlines with the official service before changing coverage.'].map((text,i)=><li key={text} aria-current={walkthrough===i?'step':undefined}>{text}</li>)}</ol><div className="guru-actions"><button type="button" onClick={()=>setWalkthrough((walkthrough+1)%3)}>{walkthrough===2?'Replay walkthrough':'Next confirmation'}</button><Link href="/how-it-works">Read how the evidence works</Link><Link href="/sources">Sources and freshness</Link></div><p>Missing evidence stays unknown. Conflicting or stale sources require confirmation; counting sources does not settle the conflict.</p></div>}
+    {task==='plans'&&<div className="guru-step-content">
+     <p>Use your coverage year, ZIP code and household details to check available Marketplace estimates.</p>
+     <div className="guru-fields">{routeFields}</div>
+     <div className="guru-actions">
+      {actionProposal!=='plans'&&<button className="primary" type="button" disabled={pending!==null} onClick={()=>run('plans')}>Find Marketplace estimates</button>}
+      <Link href="/plans">Full plan board with doctors and medications</Link>
+     </div>
+    </div>}
+    {task==='how'&&<div className="guru-step-content"><ol className="guru-walkthrough">{['Confirm the exact coverage option, people covered and effective year.','Check the insurer’s current network and formulary with your doctor and pharmacy.','Confirm eligibility, savings and enrollment deadlines with the official service before changing coverage.'].map((text,i)=><li key={text} aria-current={walkthrough===i?'step':undefined}>{text}</li>)}</ol><div className="guru-actions"><button type="button" onClick={()=>setWalkthrough((walkthrough+1)%3)}>{walkthrough===2?'Replay walkthrough':'Next confirmation'}</button><Link href="/how-it-works">Read how the evidence works</Link><Link href="/sources">Sources and freshness</Link></div><p>Missing evidence stays unknown. Conflicting or stale sources require confirmation; counting sources does not settle the conflict.</p></div>}
     {pending&&<p role="status">Checking {pending==='network'?'issuer evidence':'your coverage inputs'}…</p>}
     {error&&<p className="elig-error" role="alert">{error}</p>}
     <div ref={answerRef} tabIndex={-1} className="guru-evidence" aria-label="Evidence and next steps">{activeEvidence.map(e=><article key={e.action} id={`guru-evidence-${e.action}`}><p className="guru-eyebrow">{e.action==='premium'?'Your stated assumptions':'Tool result'}</p><h3>{e.title}</h3><dl>{e.facts.map((f,i)=><div key={i}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl><p className="field-help">Checked {new Date(e.observedAt).toLocaleString()}. This lookup time does not renew a source’s date.</p><ul>{e.notes.map((n,i)=><li key={i}>{n}</li>)}</ul></article>)}</div>
-    <aside className="guru-handoff"><h3>Official enrollment resources</h3><div className="guru-actions">{resource&&<a href={resource.applyUrl} target="_blank" rel="noreferrer">{resource.program}</a>}<a href={marketplace?.url??'https://www.healthcare.gov/'} target="_blank" rel="noreferrer">{marketplace?.name??'HealthCare.gov'}</a><a href="https://www.medicare.gov/" target="_blank" rel="noreferrer">Medicare.gov</a>{!resource&&<Link href="/medicaid">Find your state Medicaid program</Link>}</div></aside>
+    <aside className="guru-handoff"><h3>Official enrollment resources</h3><div className="guru-actions">{resource&&<a href={resource.applyUrl} target="_blank" rel="noreferrer">{resource.program}</a>}<a href={marketplace?`https://${marketplace.url}`:'https://www.healthcare.gov/'} target="_blank" rel="noreferrer">{marketplace?.name??'HealthCare.gov'}</a><a href="https://www.medicare.gov/" target="_blank" rel="noreferrer">Medicare.gov</a>{!resource&&<Link href="/medicaid">Find your state Medicaid program</Link>}</div></aside>
     </div>
    </section>
   </div>

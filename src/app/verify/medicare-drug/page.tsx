@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { CoverageTabs, CoverageUnavailable } from "@/components/CoverageTabs";
 import { VerifyPartD } from "@/components/VerifyPartD";
 import { getCoverageReadiness } from "@/lib/coverage-readiness";
+import { PART_D_INDEX_YEAR } from "@/lib/partd/selection";
 
 export const metadata: Metadata = {
   title: "Compare Medicare drug formularies",
@@ -20,8 +21,8 @@ export default async function VerifyMedicareDrug() {
       <div className="page-header">
         <h1 className="page-title">Find Medicare drug plans that list your medications</h1>
         <p className="page-subtitle">
-          Compare statewide standalone Part D formularies, or check a plan you already know. Every result
-          includes tiers and reported prior authorization, step therapy, and quantity limits.
+          Compare {PART_D_INDEX_YEAR} statewide standalone Part D formularies, or check a plan you already know.
+          For other plan years, use <a href="https://www.medicare.gov/plan-compare/">Medicare Plan Compare</a>.
         </p>
       </div>
 

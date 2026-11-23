@@ -25,7 +25,7 @@ Before enabling:
 
 Every turn first reserves **$0.05** in the shared PostgreSQL ledger under a transaction advisory lock. Both aggregate UTC calendar-day and calendar-month caps apply. Concurrent clients share the same rows; restarting the app cannot reset the allowance. A repeated UUID cannot dispatch again. Reservations are retained after successful responses, timeouts, refusals or missing responses; there are no automatic retries or refunds. The reservation is conservative, not an invoice or actual per-turn cost. Withholding after allowance exhaustion affects AI availability; guided tools remain available.
 
-The text-only request is bounded to 12,000 serialized UTF-8 bytes plus a 4,096-token framing allowance and 1,000 maximum conversational output tokens (800 for the earlier planner). At the reviewed most expensive candidate rates, including the 1.25× input cache-write allowance, the reservation exceeds the configured upper estimate. Public adapter pricing is pinned to November 15 and fails closed after seven days or before that date; review published rates before refreshing the code's pricing date. The full most recent accepted user message is preserved through the composer’s 1,500-character limit. Up to eight recent messages are carried, with older messages bounded to 750 characters each and omissions explicitly marked; oldest messages are trimmed further when needed to fit the conservative upper reservation. Confirmed context and current evidence are never silently trimmed. Extended cache retention, images and provider-side tools are not requested. Requests use `store:false`; this is not a provider zero-retention guarantee. [Official structured-output guide](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses).
+The text-only request is bounded to 12,000 serialized UTF-8 bytes plus a 4,096-token framing allowance and 1,000 maximum conversational output tokens (800 for the earlier planner). At the reviewed most expensive candidate rates, including the 1.25× input cache-write allowance, the reservation exceeds the configured upper estimate. Public adapter pricing is pinned in `src/lib/guru/planner.ts` and fails closed outside its seven-day review window; review published rates before refreshing that date. The full most recent accepted user message is preserved through the composer’s 1,500-character limit. Up to eight recent messages are carried, with older messages bounded to 750 characters each and omissions explicitly marked; oldest messages are trimmed further when needed to fit the conservative upper reservation. Confirmed context and current evidence are never silently trimmed. Extended cache retention, images and provider-side tools are not requested. Requests use `store:false`; this is not a provider zero-retention guarantee. [Official structured-output guide](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=responses).
 
 ## Verification
 
@@ -36,6 +36,8 @@ Run the ordinary application suite and typecheck/build with a client generated f
 AFFINITY_EVAL_APP_URL=http://127.0.0.1:3012 node scripts/eval-guru-browser.cjs
 
 AFFINITY_EVAL_APP_URL=http://127.0.0.1:3012 node scripts/eval-guru-conversation-browser.cjs
+
+AFFINITY_EVAL_APP_URL=http://127.0.0.1:3012 node scripts/eval-guru-journeys-browser.cjs
 
 # Fresh disposable database, never DATABASE_URL or a production connection.
 # Database name must match affinity_guru_e2e_<digits>; CREATE refuses an existing table.
