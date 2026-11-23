@@ -19,7 +19,7 @@ async function main(){
   passed.push('recognized full state name normalizes to its exact supported code, remains pending, and applies only on confirmation');
   mode='unavailable';
   await ask('Fictional scenario: I am changing internal roles. Benefit dates, terms and premiums are unknown. What should I verify first?');
-  await page.getByRole('log').getByText(/first ask your benefits administrator/).waitFor();assert.equal(await page.getByRole('button',{name:'1 Discover',exact:true}).getAttribute('aria-pressed'),'true');
+  await page.getByRole('log').getByText(/first ask your benefits administrator/).waitFor();await page.getByRole('heading',{name:'Find coverage options',exact:true}).waitFor();
   assert.equal(await page.getByRole('log').getByText(/Do both premium amounts cover/).count(),0);
   passed.push('unavailable connected turn provides transition/benefits guidance and keeps unknown amounts out of comparison');
   await ask('Compare the premiums for my new employer offer.');

@@ -53,7 +53,12 @@ export function contextValue(key:keyof GuruContext,value:unknown):string{
  return labels[String(value)]??String(value);
 }
 export function missingQuestion(action:Action,c:GuruContext):string|null{
- if(action==='network')return !/^\d{10}$/.test(c.npi)?'What is your doctor’s name, and what ZIP or location should we search? Choose the matching doctor so we check the right person.':!c.planId?'What is your plan or employer’s name? We can help find the identifier, then you can confirm the matching option.':null;
+ if(action==='network'){
+  if(!/^\d{10}$/.test(c.npi))return /^\d{5}$/.test(c.zip)
+   ?'What is your doctor’s name? Choose the matching record in the coverage workspace.'
+   :'Start with your ZIP code, then search for your doctor and choose the matching record.';
+  return !c.planId?'What is your plan or employer’s name? We can help find the identifier, then you can confirm the matching option.':null;
+ }
  if(action==='premium')return !c.employerPremium.trim()?'What is the other option’s premium contribution and how often would you pay it?':!c.marketplacePremium.trim()?'What Marketplace monthly premium have you been quoted?':c.premiumBasis==='unknown'?'Do both premium amounts cover just you, or the same household members?':null;
  if(!c.state)return 'Which state do you need coverage in?';
  if(c.employerOffer==='unknown')return 'Has an employer actually offered insurance to you or someone in your household, or is that still unknown?';
@@ -104,12 +109,13 @@ export function comparePremiums(c: GuruContext): Evidence {
       'This compares premiums only. Deductibles, out-of-pocket limits, care use, medications, employer contributions and network fit still need review.',
       'A Marketplace amount is not a confirmed subsidy. An employer offer can affect eligibility for savings; confirm with the official Marketplace.']};
 }
-export function suggestStep(message: string): Step {
+export function suggestStep(message: string, fallback: Step = 'discover'): Step {
   if(/doctor|network|drug|medication|medicare|coverage check/i.test(message))return 'coverage';
   if(workTransition(message)&&!/compar/i.test(message))return 'discover';
-  if(/compar|premium|cost|paycheck|cheaper/i.test(message))return 'compare';
+  if(/compar|premium|cost|paycheck|cheaper|how much/i.test(message))return 'compare';
   if(/how|source|privacy|explain/i.test(message))return 'how';
-  return 'discover';
+  if(/medicaid|marketplace|eligib|uninsured|coverage options|lost coverage/i.test(message))return 'discover';
+  return fallback;
 }
 export const STEP_REPLY: Record<Step,string> = {
   discover:'Let’s find your next coverage step. Confirm your situation on the right, including whether you actually have an employer offer. We can check Medicaid and Marketplace options without assuming that having a job rules either out.',
@@ -125,7 +131,7 @@ function workTransition(message:string){
 export function guidedReply(message:string,c:GuruContext,step:Step=suggestStep(message)){
  const reply=step==='discover'&&workTransition(message)
   ?'For a job or role transition, first ask your benefits administrator whether your insurance changes, when current coverage would end and when any new coverage would start. Keep dates, premiums and benefit terms unknown until confirmed. Has your benefits team confirmed whether the role change affects your insurance?'
-  :missingQuestion(step==='coverage'?'network':step==='compare'?'premium':'screen',c)??STEP_REPLY[step];
+  :step==='how'?STEP_REPLY.how:missingQuestion(step==='coverage'?'network':step==='compare'?'premium':'screen',c)??STEP_REPLY[step];
  return {step,reply};
 }
 /** Render only known server fields. Model prose never substitutes for tool evidence. */
