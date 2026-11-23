@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { PRICING_DATE as reviewedPricingDate } from '../src/lib/guru/planner';
+import { PRICING_DATE as reviewedPricingDate, TERRA_RESERVATION_MICRO } from '../src/lib/guru/planner';
 /** Disposable, synthetic, loopback-only gate. Never reads DATABASE_URL. */
 import assert from 'node:assert/strict';
 import { randomUUID, createHash, createHmac } from 'node:crypto';
@@ -8,6 +8,7 @@ import { PrismaClient } from '@prisma/client';
 import { reserveTurn as reserveWithIdentity, recordTurnUsage, GuruLimitError } from '../src/lib/guru/budget';
 import { planTurn } from '../src/lib/guru/planner';
 import { initialContext } from '../src/lib/guru/workspace';
+import { VISITOR_LIMITS, NETWORK_LIMITS } from '../src/lib/guru/allowance';
 
 const identity = (visitor:string,network=visitor) => ({visitorHash:createHash('sha256').update(visitor).digest('hex'),networkHash:createHash('sha256').update(network).digest('hex')});
 const reserveTurn = (db:PrismaClient,id:string,monthly:number,daily:number) => reserveWithIdentity(db,id,monthly,daily,identity('baseline'));
@@ -42,14 +43,29 @@ try{
   const spent=await reconnected.$queryRaw<Array<{micro:bigint}>>`SELECT sum("reservedMicro") AS micro FROM "GuruReservation"`;
   assert.equal(Number(spent[0].micro),150000);
   await assert.rejects(reserveTurn(reconnected,id,200000,200000),/already reserved/);
+  await verifyMixedReservations(reconnected,second);
   await fairUse(reconnected,second);
   await verifyUsageExport(reconnected,url);
-  console.log(JSON.stringify({state:'passed',checks:['two independent clients share the hard cap','concurrent reservations serialize','duplicate request identity is never redispatched','reservations survive disconnect/reconnect','ambiguous provider failure retains its reservation with no retry','concurrent visitor and network quotas','daily and monthly quotas','cookie reset backstop','historical accounting and pseudonym cleanup','numeric usage survives replay and exports through month-scoped authentication'],externalModelCalls:0}));
+  console.log(JSON.stringify({state:'passed',checks:['two independent clients share the hard cap','concurrent reservations serialize','duplicate request identity is never redispatched','reservations survive disconnect/reconnect','ambiguous provider failure retains its reservation with no retry','mixed Terra and historical reservation amounts enforce both dollar caps','concurrent visitor and network quotas','40th browser and 80th network attempts succeed; the next attempts are denied','monthly quotas and cookie reset backstop','historical accounting and pseudonym cleanup','numeric usage survives replay and exports through month-scoped authentication'],externalModelCalls:0}));
  }finally{await reconnected.$disconnect();}
 }finally{await db.$disconnect();await second.$disconnect();}
 
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
+
+async function verifyMixedReservations(db:PrismaClient,second:PrismaClient) {
+ const who=identity('terra-mixed');
+ const reserve=(client:PrismaClient,monthly:number,daily:number)=>
+  reserveWithIdentity(client,randomUUID(),monthly,daily,who,TERRA_RESERVATION_MICRO);
+ const results=await Promise.allSettled([db,second,db].map(client=>reserve(client,240000,210000)));
+ assert.equal(results.filter(r=>r.status==='fulfilled').length,2);
+ const denied=results.find(r=>r.status==='rejected');
+ assert.ok(denied?.reason instanceof GuruLimitError);
+ assert.equal(denied.reason.window,'day');
+ await assert.rejects(reserve(db,210000,200000),e=>e instanceof GuruLimitError&&e.window==='month');
+ const amounts=await db.$queryRaw<Array<{reservedMicro:number}>>`SELECT "reservedMicro" FROM "GuruReservation"`;
+ assert.deepEqual(amounts.map(row=>row.reservedMicro).sort((a,b)=>a-b),[30000,30000,50000,50000,50000]);
+}
 
 async function verifyUsageExport(db:PrismaClient,url:URL) {
  const id=randomUUID();
@@ -106,7 +122,8 @@ async function fairUse(db:PrismaClient,second:PrismaClient){
  };
  const [{now}]=await db.$queryRaw<Array<{now:Date}>>`SELECT clock_timestamp() AS now`;
  const earlierToday=new Date(Math.max(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()),now.getTime()-120000));
- const dayUser=identity('day-user');await seed(dayUser,10,earlierToday);
+ const dayUser=identity('day-user');await seed(dayUser,VISITOR_LIMITS.day-1,earlierToday);
+ await reserve(dayUser);
  await assert.rejects(reserve(dayUser),limit('visitor','day'));
  const oldDay=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),1));
  const monthUser=identity('month-user');await seed(monthUser,50,oldDay);
@@ -115,7 +132,8 @@ async function fairUse(db:PrismaClient,second:PrismaClient){
  const networkBurst=await Promise.allSettled(Array.from({length:18},(_,i)=>reserve(identity('new-cookie-'+i,'shared-burst'),i%2?db:second)));
  assert.equal(networkBurst.filter(r=>r.status==='fulfilled').length,10);
  await assert.rejects(reserve(identity('reset-cookie','shared-burst')),limit('network','minute'));
- const networkDay=identity('network-day-seed','network-day');await seed(networkDay,30,earlierToday);
+ const networkDay=identity('network-day-seed','network-day');await seed(networkDay,NETWORK_LIMITS.day-1,earlierToday);
+ await reserve(identity('last-cookie','network-day'));
  await assert.rejects(reserve(identity('new-cookie','network-day')),limit('network','day'));
  // Avoid the site daily cap while seeding a network's historical monthly use.
  const networkMonth=identity('network-month-seed','network-month');await seed(networkMonth,150,oldDay);

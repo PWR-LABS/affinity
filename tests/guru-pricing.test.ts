@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { dispatchModel } from '@/lib/guru/planner';
+import { dispatchModel, RESERVATION_MICRO, TERRA_RESERVATION_MICRO } from '@/lib/guru/planner';
 import { createPublicPricingCheck, MODEL_IDS, PRICING_DATE } from '@/lib/guru/pricing';
 
 const DAY = 86_400_000;
@@ -86,4 +86,36 @@ test('an increased or removed Standard rate prevents dispatch before reservation
   }
   assert.equal(reservations, 0);
   assert.equal(dispatches, 0);
+});
+
+test('public Terra uses the smaller reservation before a full-size turn dispatches', async () => {
+  const checkPricing = createPublicPricingCheck(async () => published(), () => PIN + 8 * DAY);
+  for (const [model, expected, priceCheck] of [
+    ['gpt-6.1-terra', TERRA_RESERVATION_MICRO, checkPricing],
+    ['gpt-6.1-sol', RESERVATION_MICRO, checkPricing],
+    ['gpt-6.1-terra', RESERVATION_MICRO, undefined],
+  ] as const) {
+    const events: Array<string | number> = [];
+    const body = { model, max_output_tokens: 1000, input: 'x'.repeat(11_800) };
+    await dispatchModel({
+      model, body, key: 'synthetic', now: new Date(PIN), checkPricing: priceCheck,
+      reserve: async (amount) => { events.push(amount); },
+      fetcher: async () => { events.push('dispatched'); return Response.json({ model }); },
+    });
+    assert.deepEqual(events, [expected, 'dispatched']);
+  }
+});
+
+test('a priced turn that would exceed the smaller reservation is refused before reserving', async () => {
+  const check = createPublicPricingCheck(async () => published(), () => PIN + 8 * DAY);
+  const model = 'gpt-6.1-terra';
+  await assert.rejects(dispatchModel({
+    model, body: { model, max_output_tokens: 1000 }, key: 'synthetic',
+    checkPricing: async (id) => {
+      const receipt = await check(id);
+      return { ...receipt, rates: { ...receipt.rates, output: 30 } };
+    },
+    reserve: async () => assert.fail('must not reserve'),
+    fetcher: async () => assert.fail('must not dispatch'),
+  }), /exceeds its upper reservation/);
 });
