@@ -14,12 +14,13 @@ interface TypeaheadProps {
   fetchSuggestions: (q: string, signal?: AbortSignal) => Promise<Suggestion[]>;
   onSelect: (s: Suggestion) => void;
   describedBy?: string;
+  disabled?: boolean;
   initialQuery?:string;
   onQueryChange?:()=>void;
 }
 
 /** Accessible combobox: debounced server lookup, keyboard nav, ARIA listbox. Clears after select. */
-export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, describedBy,initialQuery='',onQueryChange }: TypeaheadProps) {
+export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, describedBy, disabled = false, initialQuery='',onQueryChange }: TypeaheadProps) {
   const id = useId();
   const [q, setQ] = useState(initialQuery);
   const [items, setItems] = useState<Suggestion[]>([]);
@@ -37,7 +38,7 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
     controller.current?.abort();
     controller.current = null;
     setItems([]);setOpen(false);setActive(-1);setFailed(false);
-    if (q.trim().length < 2) {
+    if (disabled || q.trim().length < 2) {
       setLoading(false);
       return;
     }
@@ -70,7 +71,7 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
       controller.current = null;
       if(myReq===reqId.current)reqId.current++;
     };
-  }, [q, fetchSuggestions]);
+  }, [q, fetchSuggestions, disabled]);
 
   function choose(s: Suggestion) {
     onSelect(s);
@@ -113,6 +114,7 @@ export function Typeahead({ label, placeholder, fetchSuggestions, onSelect, desc
           aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
           aria-autocomplete="list"
           aria-describedby={describedBy}
+          disabled={disabled}
           autoComplete="off"
           placeholder={placeholder}
           value={q}

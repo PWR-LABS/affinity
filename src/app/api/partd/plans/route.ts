@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { pdpRegionCodeForState } from "@/lib/partd/shortlist";
+import { PART_D_STATE_ERROR, pdpRegionCodeForState } from "@/lib/partd/regions";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -10,15 +10,15 @@ export async function GET(req: Request) {
   const q = params.get("q")?.trim() ?? "";
   const state = params.get("state")?.trim().toUpperCase() ?? "";
   const contractYear = Number(params.get("year") ?? "2026");
+  const pdpRegionCode = state ? pdpRegionCodeForState(state) : null;
 
+  if (state && !pdpRegionCode) return NextResponse.json({ items: [], error: PART_D_STATE_ERROR }, { status: 400 });
   if (q.length < 2) return NextResponse.json({ items: [] });
-  if (state && !/^[A-Z]{2}$/.test(state)) return NextResponse.json({ items: [], error: "Enter a valid state." }, { status: 400 });
   if (!Number.isInteger(contractYear) || contractYear < 2020 || contractYear > 2030) {
     return NextResponse.json({ items: [], error: "Enter a valid contract year." }, { status: 400 });
   }
 
   try {
-    const pdpRegionCode = state ? pdpRegionCodeForState(state) : null;
     const plans = await prisma.partDPlan.findMany({
       where: {
         contractYear,

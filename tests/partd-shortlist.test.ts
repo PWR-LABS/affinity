@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { GET as getPartDPlans } from "@/app/api/partd/plans/route";
+import { POST as postPartDShortlist } from "@/app/api/partd/shortlist/route";
+import { PART_D_STATE_ERROR, pdpRegionCodeForState } from "@/lib/partd/regions";
 import {
   isStandalonePartDContract,
-  pdpRegionCodeForState,
   rankPartDShortlist,
   type PartDShortlistDrugInput,
   type PartDShortlistPlanInput,
@@ -118,6 +120,26 @@ test("CMS PDP regions map states and territories to the correct service area", (
   assert.equal(pdpRegionCodeForState("dc"), "5");
   assert.equal(pdpRegionCodeForState("PR"), "38");
   assert.equal(pdpRegionCodeForState("XX"), null);
+});
+
+test("Part D endpoints reject invalid state codes instead of reporting zero results", async () => {
+  for (const state of ["ZZ", "O", "12"]) {
+    const response = await getPartDPlans(new Request(`https://example.test/api/partd/plans?q=S5810&state=${state}`));
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { items: [], error: PART_D_STATE_ERROR });
+  }
+  for (const state of ["ZZ", "", ["OH"]]) {
+    const response = await postPartDShortlist(new Request("https://example.test/api/partd/shortlist", {
+      method: "POST",
+      body: JSON.stringify({ state, rxcuis: ["123"] }),
+    }));
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: PART_D_STATE_ERROR });
+  }
+  for (const state of ["", "oh", "PR"]) {
+    const response = await getPartDPlans(new Request(`https://example.test/api/partd/plans?q=S&state=${state}`));
+    assert.equal(response.status, 200);
+  }
 });
 
 test("Part D shortlist ranks coverage first, then restriction burden, then average tier", () => {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { MAX_PARTD_DRUGS } from "@/lib/partd/selection";
+import { PART_D_STATE_ERROR, pdpRegionCodeForState } from "@/lib/partd/regions";
 import { queryPartDShortlist } from "@/lib/partd/shortlist";
 
 export const dynamic = "force-dynamic";
@@ -14,13 +15,13 @@ export async function POST(req: Request) {
   }
 
   const b = (body ?? {}) as Record<string, unknown>;
-  const state = String(b.state ?? "").trim().toUpperCase();
+  const state = typeof b.state === "string" ? b.state.trim().toUpperCase() : "";
   const contractYear = Number(b.contractYear ?? 2026);
   const rawRxcuis = Array.isArray(b.rxcuis) ? b.rxcuis : [];
   const rxcuis = [...new Set(rawRxcuis.map((value) => String(value).trim()))];
 
-  if (!/^[A-Z]{2}$/.test(state)) {
-    return NextResponse.json({ error: "Enter a valid two-letter state." }, { status: 400 });
+  if (!pdpRegionCodeForState(state)) {
+    return NextResponse.json({ error: PART_D_STATE_ERROR }, { status: 400 });
   }
   if (!Number.isInteger(contractYear) || contractYear < 2020 || contractYear > 2030) {
     return NextResponse.json({ error: "Enter a valid contract year." }, { status: 400 });
