@@ -250,7 +250,20 @@ export async function queryPartDShortlist(args: {
         },
       })
     : [];
-  const ranked = rankPartDShortlist({ plans, formularyDrugs, rxcuis });
+  const indexed = new Set(formularyDrugs.map((row) => row.formularyId));
+  // A zero match can mean that only the plan metadata is present.
+  await Promise.all(formularyIds.filter((id) => !indexed.has(id)).map(async (formularyId) => {
+    const row = await db.partDFormularyDrug.findFirst({
+      where: { formularyId, contractYear: args.contractYear },
+      select: { id: true },
+    });
+    if (row) indexed.add(formularyId);
+  }));
+  const ranked = rankPartDShortlist({
+    plans: plans.filter((plan) => indexed.has(plan.formularyId)),
+    formularyDrugs,
+    rxcuis,
+  });
 
   return {
     state,

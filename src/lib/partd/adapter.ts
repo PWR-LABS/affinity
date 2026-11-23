@@ -93,10 +93,15 @@ export async function queryPartDAnswer(args: {
     where: { formularyId_contractYear_rxcui: { formularyId: plan.formularyId, contractYear: args.contractYear, rxcui: args.rxcui } },
     select: { tier: true, priorAuthorization: true, stepTherapy: true, quantityLimit: true },
   });
+  // A plan record can be loaded before any rows for its formulary.
+  const formularyIndexed = row !== null || Boolean(await db.partDFormularyDrug.findFirst({
+    where: { formularyId: plan.formularyId, contractYear: args.contractYear },
+    select: { id: true },
+  }));
 
   return buildPartDAnswer({
     rxcui: args.rxcui,
-    formularyIndexed: true,
+    formularyIndexed,
     drug: row
       ? {
           tier: row.tier ?? undefined,

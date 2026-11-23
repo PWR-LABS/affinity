@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useGuruField, useGuruMemory } from './GuruContext';
 
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
@@ -82,7 +82,7 @@ type PartDMode = "find" | "check";
 const VERDICT: Record<PartDResult["value"], { tag: string; key: string }> = {
   yes: { tag: "Listed on formulary", key: "covered" },
   no: { tag: "Not listed on formulary", key: "not-covered" },
-  unknown: { tag: "Unknown - plan not indexed", key: "unknown" },
+  unknown: { tag: "Coverage unknown", key: "unknown" },
 };
 
 function requirementLabel(value: boolean | undefined): string {
@@ -97,7 +97,7 @@ function resultHeadline(result: PartDResult, drugLabel: string | undefined): str
     return `${label} appears on this plan's formulary${result.formularyTier ? ` at tier ${result.formularyTier}` : ""}.`;
   }
   if (result.value === "no") return `${label} does not appear on this plan's formulary.`;
-  return `We could not verify ${label} because this plan is not in the loaded index.`;
+  return `We could not verify ${label} using the loaded plan and formulary data.`;
 }
 
 function restrictionSummary(drug: PartDShortlistDrug): string {
@@ -109,7 +109,7 @@ function restrictionSummary(drug: PartDShortlistDrug): string {
   return restrictions.length ? restrictions.join(" · ") : "No reported restrictions";
 }
 
-function ExactPlanResults({ rows }: { rows: PartDResultRow[] }) {
+function ExactPlanResults({ rows, plan }: { rows: PartDResultRow[]; plan: PartDPlanSelection }) {
   if (rows.length === 0) return null;
   const completedResults = rows.flatMap((row) => (row.result ? [row.result] : []));
   const listedCount = completedResults.filter((result) => result.value === "yes").length;
@@ -120,10 +120,14 @@ function ExactPlanResults({ rows }: { rows: PartDResultRow[] }) {
     <section className="partd-results" role="status" aria-live="polite" aria-label="Medication coverage results">
       <div className="partd-results-head">
         <div>
-          <p className="partd-results-kicker">Coverage results</p>
+          <p className="partd-results-kicker">{plan.contractYear} coverage results</p>
           <h2>
             {rows.length} medication{rows.length === 1 ? "" : "s"} checked
           </h2>
+          <p className="partd-results-summary">
+            {plan.planName} · {plan.contractId}-{plan.planId}
+            {!/^0+$/.test(plan.segmentId) ? ` · segment ${plan.segmentId}` : ""}
+          </p>
         </div>
         <p className="partd-results-summary">
           {listedCount} listed · {notListedCount} not listed
@@ -176,7 +180,7 @@ function ExactPlanResults({ rows }: { rows: PartDResultRow[] }) {
               )}
               <p className="verdict-note">
                 {row.result.value === "unknown"
-                  ? "This plan isn't in the loaded CMS index, so we don't infer a no. Confirm the contract and plan ID on your Medicare card."
+                  ? "Confirm the contract, plan ID, and formulary with Medicare.gov or the plan."
                   : "Formularies can change during the year. Confirm the drug, dose, tier, and restrictions with Medicare.gov or the plan before making a coverage decision."}
               </p>
             </article>
@@ -206,11 +210,11 @@ function ShortlistResults({
     <section className="partd-results" role="status" aria-live="polite" aria-label="Part D plan shortlist">
       <div className="partd-results-head">
         <div>
-          <p className="partd-results-kicker">Formulary-fit shortlist</p>
+          <p className="partd-results-kicker">{shortlist.contractYear} formulary-fit shortlist</p>
           <h2>
             {shortlist.plans.length
               ? `${shortlist.plans.length} matching indexed standalone plans in ${shortlist.state}`
-              : `No standalone plans found for ${shortlist.state}`}
+              : `No indexed standalone plans found for ${shortlist.state}`}
           </h2>
         </div>
         <p className="partd-results-summary">
@@ -308,6 +312,8 @@ export function VerifyPartD() {
   const [error, setError] = useState<string | null>(null);
   const [resultRows, setResultRows] = useState<PartDResultRow[]>([]);
   const [shortlist, setShortlist] = useState<PartDShortlist | null>(null);
+  const activeRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => activeRequest.current?.abort(), []);
 
   const fetchPlans = useCallback(
     async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
@@ -345,6 +351,9 @@ export function VerifyPartD() {
   }, []);
 
   function clearResults() {
+    activeRequest.current?.abort();
+    activeRequest.current = null;
+    setLoading(false);
     setError(null);
     setResultRows([]);
     setShortlist(null);
@@ -385,75 +394,81 @@ export function VerifyPartD() {
     clearResults();
   }
 
-  async function onCheckPlan() {
-    if (!plan || drugs.length === 0) return;
-    clearResults();
-    setLoading(true);
-
-    try {
-      const rows = await Promise.all(
-        drugs.map(async (drug): Promise<PartDResultRow> => {
-          try {
-            const response = await fetch("/api/partd/verify", {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({
-                rxcui: drug.rxcui,
-                contractId: plan.contractId,
-                planId: plan.planId,
-                segmentId: plan.segmentId,
-                contractYear: plan.contractYear,
-                label: drug.label,
-              }),
-            });
-            const data = await response.json();
-            return response.ok
-              ? { drug, result: data as PartDResult }
-              : { drug, error: data.error ?? "Coverage could not be checked." };
-          } catch {
-            return { drug, error: "The coverage service could not be reached." };
+  async function checkPlan(plan: PartDPlanSelection, signal: AbortSignal) {
+    const rows = await Promise.all(
+      drugs.map(async (drug): Promise<PartDResultRow> => {
+        try {
+          const response = await fetch("/api/partd/verify", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            signal,
+            body: JSON.stringify({
+              rxcui: drug.rxcui,
+              contractId: plan.contractId,
+              planId: plan.planId,
+              segmentId: plan.segmentId,
+              contractYear: plan.contractYear,
+              label: drug.label,
+            }),
+          });
+          const data = await response.json();
+          if (!response.ok) return { drug, error: data.error ?? "Coverage could not be checked." };
+          const result = data as PartDResult;
+          if (result.rxcui !== drug.rxcui || result.plan?.contractId !== plan.contractId ||
+              result.plan.planId !== plan.planId || result.plan.segmentId !== plan.segmentId ||
+              result.plan.contractYear !== plan.contractYear) {
+            return { drug, error: "The result did not match this plan, year, and medication." };
           }
-        }),
-      );
-      setResultRows(rows);
-    } catch {
-      setError("We couldn't complete the batch check. Try again.");
-    } finally {
-      setLoading(false);
-    }
+          return { drug, result };
+        } catch {
+          return { drug, error: "The coverage service could not be reached." };
+        }
+      }),
+    );
+    if (!signal.aborted) setResultRows(rows);
   }
 
-  async function onFindPlans() {
-    if (!/^[A-Z]{2}$/.test(state) || drugs.length === 0) return;
-    clearResults();
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/partd/shortlist", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          state,
-          rxcuis: drugs.map((drug) => drug.rxcui),
-          contractYear: PART_D_INDEX_YEAR,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error ?? "Plans could not be compared.");
-        return;
-      }
-      setShortlist(data as PartDShortlist);
-    } catch {
-      setError("The Medicare Part D index could not be reached.");
-    } finally {
-      setLoading(false);
+  async function findPlans(signal: AbortSignal) {
+    const response = await fetch("/api/partd/shortlist", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      signal,
+      body: JSON.stringify({
+        state,
+        rxcuis: drugs.map((drug) => drug.rxcui),
+        contractYear: PART_D_INDEX_YEAR,
+      }),
+    });
+    const data = await response.json();
+    if (signal.aborted) return;
+    if (!response.ok) {
+      setError(data.error ?? "Plans could not be compared.");
+      return;
     }
+    if (data.state !== state || data.contractYear !== PART_D_INDEX_YEAR || data.medicationCount !== drugs.length) {
+      setError("The shortlist did not match your state, plan year, and medication list.");
+      return;
+    }
+    setShortlist(data as PartDShortlist);
   }
 
   async function onSubmit() {
-    if (mode === "find") await onFindPlans();
-    else await onCheckPlan();
+    if (!canSubmit || activeRequest.current) return;
+    clearResults();
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    setLoading(true);
+    try {
+      if (mode === "find") await findPlans(controller.signal);
+      else if (plan) await checkPlan(plan, controller.signal);
+    } catch {
+      if (!controller.signal.aborted) setError("The Medicare Part D index could not be reached.");
+    } finally {
+      if (activeRequest.current === controller) {
+        activeRequest.current = null;
+        setLoading(false);
+      }
+    }
   }
 
   const medicationCountLabel = `${drugs.length} medication${drugs.length === 1 ? "" : "s"}`;
@@ -595,7 +610,7 @@ export function VerifyPartD() {
         </p>
       )}
 
-      <ExactPlanResults rows={resultRows} />
+      {plan && <ExactPlanResults rows={resultRows} plan={plan} />}
       <ShortlistResults shortlist={shortlist} drugLabelByRxcui={drugLabelByRxcui} />
     </div>
   );

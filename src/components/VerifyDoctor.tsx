@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useGuruField, useGuruMemory, useGuruStore } from './GuruContext';
 
 import { Typeahead, type Suggestion } from "@/components/Typeahead";
+import { DEFAULT_MARKETPLACE_PLAN_YEAR } from "@/lib/marketplace/states";
 
 interface VerifyResult {
   npi: string;
@@ -25,6 +26,7 @@ const VERDICT: Record<VerifyResult["value"], { tag: string; key: string }> = {
 
 export function VerifyDoctor() {
   const [zip, setZip] = useGuruField('zip',"");
+  const [year] = useGuruField('year', DEFAULT_MARKETPLACE_PLAN_YEAR);
   const shared=useGuruStore();
   const [doctor, setDoctor] = useState<{ npi: string; label: string } | null>(null);
   const [npiDirect, setNpiDirect] = useGuruField('npi','');
@@ -44,7 +46,7 @@ export function VerifyDoctor() {
     async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {
       if (!/^\d{5}$/.test(zip)) return [];
       const r = await fetch("/api/providers/autocomplete", {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, zip }), signal,
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q, zip, year }), signal,
       });
       if (!r.ok) throw new Error("Doctor search unavailable");
       const d = await r.json();
@@ -54,7 +56,7 @@ export function VerifyDoctor() {
         sub: p.specialty,
       }));
     },
-    [zip],
+    [zip, year],
   );
 
   const fetchPlans = useCallback(async (q: string, signal?: AbortSignal): Promise<Suggestion[]> => {

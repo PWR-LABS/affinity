@@ -7,6 +7,7 @@ import { Typeahead, type Suggestion } from "@/components/Typeahead";
 import { DEFAULT_MARKETPLACE_PLAN_YEAR, parseMarketplacePlanYear, SUPPORTED_MARKETPLACE_PLAN_YEARS, type MarketplacePlanYear } from "@/lib/marketplace/states";
 
 interface SubjectStatus { key: string; label?: string; covered: boolean | null; priorAuth?: boolean }
+interface DoctorSelection { npi: string; label: string }
 interface PlanRow {
   id: string; name: string; metal?: string; type?: string;
   premiumMonthly?: number; netPremiumMonthly?: number; netPremiumAnnual?: number; deductible?: number; oopMax?: number;
@@ -39,7 +40,8 @@ export function PlanFinder({ initialYear }: { initialYear?: MarketplacePlanYear 
   const [income, setIncome] = useGuruField('income',"");
   const [age, setAge] = useGuruField('age',"");
   const [householdSize, setHouseholdSize] = useGuruField('householdSize',"1");
-  const [doctors, setDoctors] = useGuruMemory<Array<{ npi: string; label: string }>>('plan-doctors',[]);
+  const [doctorSelection, setDoctorSelection] = useGuruMemory<{ year: MarketplacePlanYear; items: DoctorSelection[] } | null>('plan-doctors-by-year', null);
+  const doctors = doctorSelection?.year === year ? doctorSelection.items : [];
   const [drugs, setDrugs] = useGuruMemory<Array<{ rxcui: string; label: string }>>('drugs',[]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +68,7 @@ export function PlanFinder({ initialYear }: { initialYear?: MarketplacePlanYear 
     inFlight.current = false;
     setYear(next);
     setBoard(null);
-    setDoctors([]);
+    setDoctorSelection(null);
     setError(null);
     setCountyHandoff(false);
     setStaleHandoff(false);
@@ -188,14 +190,18 @@ export function PlanFinder({ initialYear }: { initialYear?: MarketplacePlanYear 
               label="Add your doctors"
               placeholder={/^\d{5}$/.test(zip) ? "Search by name, e.g. Smith" : "Enter your ZIP above first"}
               fetchSuggestions={fetchDoctors}
-              onSelect={(s) => setDoctors((cur) => (cur.some((d) => d.npi === s.key) ? cur : [...cur, { npi: s.key, label: s.label }]))}
+              onSelect={(s) => {
+                if (!doctors.some((doctor) => doctor.npi === s.key)) {
+                  setDoctorSelection({ year, items: [...doctors, { npi: s.key, label: s.label }] });
+                }
+              }}
             />
             {doctors.length > 0 && (
               <ul className="chips" aria-label="Selected doctors">
                 {doctors.map((d) => (
                   <li key={d.npi} className="chip">
                     <span>{d.label}</span>
-                    <button type="button" aria-label={`Remove ${d.label}`} onClick={() => setDoctors((c) => c.filter((x) => x.npi !== d.npi))}>×</button>
+                    <button type="button" aria-label={`Remove ${d.label}`} onClick={() => setDoctorSelection({ year, items: doctors.filter((item) => item.npi !== d.npi) })}>×</button>
                   </li>
                 ))}
               </ul>
