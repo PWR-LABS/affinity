@@ -1,5 +1,9 @@
 # [affinity.] — build log / changelog
 
+## Node.js runtime security update (2026-11-24)
+
+- Pin Render to Node.js 24.22.3 and align the minimum supported Node version with that security release. No application runtime behavior or dependency versions changed.
+
 ## SSD-backed issuer processing (2026-11-04)
 
 - Moved scheduled provider-reference extraction to bounded SQLite scratch on Mini's verified SSD, with streamed archives up to 2 GB. Render's existing plan, 5 GB allocation and disabled autoscaling remain unchanged; compact publication still has its existing per-source and database limits.
