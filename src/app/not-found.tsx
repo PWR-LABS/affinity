@@ -5,7 +5,7 @@ export const metadata = { title: "Page not found" };
 /** Branded 404 — renders inside the site shell, so the header/footer/skip-link stay intact. */
 export default function NotFound() {
   return (
-    <div className="notice-page">
+    <div className="page-panel">
       <p className="notice-eyebrow">404 — page not found</p>
       <h1 className="page-title">This page wandered off.</h1>
       <p className="page-subtitle">

@@ -526,7 +526,7 @@ export function VerifyPartD() {
 
         <div className="verify-section">
           {mode === "find" ? (
-            <div className="field partd-state-field">
+            <div className="field">
               <label htmlFor="partd-state">State code for standalone Part D plans</label>
               <input
                 id="partd-state"
