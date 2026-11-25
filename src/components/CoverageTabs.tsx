@@ -34,7 +34,7 @@ export function CoverageTabs({ active, readiness }: CoverageTabsProps) {
 
 export function CoverageUnavailable({ children, title = "Source index not loaded here yet." }: { children: React.ReactNode; title?: string }) {
   return (
-    <div className="coverage-unavailable" role="status">
+    <div className="page-panel coverage-unavailable" role="status">
       <strong>{title}</strong>
       <p>{children}</p>
     </div>

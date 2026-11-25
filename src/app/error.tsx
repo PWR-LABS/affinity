@@ -11,7 +11,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   }, [error]);
 
   return (
-    <div className="notice-page">
+    <div className="page-panel">
       <p className="notice-eyebrow">Something went wrong</p>
       <h1 className="page-title">That didn&rsquo;t work — but your data is safe.</h1>
       <p className="page-subtitle">
