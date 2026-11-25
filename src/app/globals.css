@@ -90,7 +90,7 @@ body {
 }
 .site-header-inner,
 .site-main,
-.site-footer p {
+.site-footer-inner {
   width: 100%;
   max-width: var(--site-width);
   margin: 0 auto;
@@ -130,9 +130,20 @@ body {
   box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--accent) 74%, transparent);
 }
 .site-main { flex: 1; padding-block: 2.15rem 3rem; }
-.site-footer { border-top: 1px solid var(--divider); margin-top: 1.5rem; }
-.site-footer p { padding-block: 1.2rem 2rem; font-size: 0.8rem; line-height: 1.55; color: var(--muted); }
-.site-footer a { color: var(--accent); font-weight: 500; }
+.site-footer { border-top: 1px solid var(--divider); font-size: 0.8rem; line-height: 1.5; color: var(--muted); }
+.site-footer-inner { display: grid; gap: 0.45rem; padding-block: 0.85rem 1rem; }
+.site-footer-meta { display: flex; flex-wrap: wrap; align-items: center; column-gap: 1.1rem; row-gap: 0.25rem; }
+.site-footer p { margin: 0; }
+.site-footer-meta > p { flex: 1 1 22rem; }
+.site-footer a { color: var(--accent); font-weight: 500; text-underline-offset: 0.15em; }
+.site-footer a:hover { text-decoration: underline; }
+.site-footer-brand { display: inline-flex; align-items: center; min-height: 1.75rem; }
+.site-footer-brand img { display: block; width: 7.125rem; height: auto; }
+.site-footer-links { display: flex; flex-wrap: wrap; gap: 0.25rem 0.9rem; margin-inline-start: auto; }
+.site-footer-links a { display: inline-flex; align-items: center; min-height: 1.5rem; }
+@media (max-width: 900px) {
+  .site-footer-links { width: 100%; margin-inline-start: 0; }
+}
 
 /* ---- Friendlier page headers + soft cards ----------------------------------- */
 .page-header { margin: 0; max-width: none; }
@@ -1327,7 +1338,6 @@ body {
     white-space: nowrap;
   }
   .site-main { padding-block: 1.65rem 2.6rem; }
-  .site-footer p { padding-block: 1.25rem 2rem; }
   .page-title { font-size: 1.65rem; line-height: 1.22; }
   .page-subtitle { font-size: 0.98rem; line-height: 1.55; }
   .page-panel { padding: 1.1rem; }

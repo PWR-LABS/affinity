@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -44,12 +45,22 @@ export function SiteShell({ children, freshness }: { children: ReactNode; freshn
       </main>
 
       <footer className="site-footer">
-        <p>Marketplace year and routing checks: {new Date(freshness.checkedAt).toLocaleDateString("en-US", { timeZone: "UTC", year: "numeric", month: "long", day: "numeric" })}. <Link href="/sources">Sources and freshness</Link>.</p>
-        <p>
-          Free and neutral—no commissions, no ads, no accounts. We do not save your household answers. This is decision
-          support, not insurance advice; the final word belongs to your state Medicaid office and the official
-          Marketplace. <Link href="/how-it-works">How it works</Link>. <Link href="/privacy">Privacy and data flow</Link>.
-        </p>
+        <div className="site-footer-inner">
+          <div className="site-footer-meta">
+            <a className="site-footer-brand" href="https://pwr-labs.ai/">
+              <Image src="/pwr-labs-wordmark.svg" alt="[PWR] LABS studio" width={114} height={21} unoptimized />
+            </a>
+            <p>Marketplace year and routing checks: {new Date(freshness.checkedAt).toLocaleDateString("en-US", { timeZone: "UTC", year: "numeric", month: "long", day: "numeric" })}. <Link href="/sources">Sources and freshness</Link>.</p>
+            <nav className="site-footer-links" aria-label="Footer">
+              <Link href="/how-it-works">How it works</Link>
+              <Link href="/privacy">Privacy and data flow</Link>
+            </nav>
+          </div>
+          <p>
+            Free and neutral—no commissions, no ads, no accounts. We do not save your household answers. This is decision
+            support, not insurance advice; the final word belongs to your state Medicaid office and the official Marketplace.
+          </p>
+        </div>
       </footer>
     </div>
     </GuruContextProvider>
