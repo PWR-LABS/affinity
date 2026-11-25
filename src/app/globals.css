@@ -486,10 +486,7 @@ body {
   top: 0.5rem;
 }
 
-/* ---- Eligibility check (home) ----------------------------------------------- */
-.elig {
-  max-width: 56rem;
-}
+/* ---- Eligibility check (discover) ------------------------------------------- */
 .elig-form {
   margin: 0 0 1.2rem;
   overflow: visible;
@@ -707,7 +704,6 @@ body {
 }
 
 /* ---- Plan finder: typeahead pickers + chips + board ------------------------- */
-.finder { max-width: 48rem; }
 .picker-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -721,7 +717,6 @@ body {
   .picker-grid { grid-template-columns: 1fr 1fr; }
 }
 
-.verify { max-width: 56rem; }
 .verify-section {
   margin-top: 1.35rem;
   padding-top: 1.35rem;
@@ -1204,10 +1199,7 @@ body {
 .pa-note { margin-left: 0.3rem; font-size: 0.68rem; font-weight: 700; color: var(--warn); white-space: nowrap; }
 
 /* ---- Prose (how-it-works) ---------------------------------------------------- */
-.prose {
-  max-width: 54rem;
-  line-height: 1.6;
-}
+.prose { line-height: 1.6; }
 .prose p { max-width: 72ch; color: var(--text); margin: 0 0 1rem; }
 .prose h2 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; margin: 1.5rem 0 0.5rem; color: var(--guru-deep); }
 .prose h2:first-child { margin-top: 0; }
@@ -1442,7 +1434,7 @@ body {
 
 .guru-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem;
 }
 
