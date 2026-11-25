@@ -2,12 +2,21 @@ import { PRICING_DATE as reviewedPricingDate } from '../src/lib/guru/planner';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initialContext,comparePremiums,reconcileContext,offerHandoff,missingQuestion,requestKey} from '../src/lib/guru/workspace';
-import {applyProposal} from '../src/lib/guru/proposal';
+import {applyProposal,changedProposalFields,proposalSchema} from '../src/lib/guru/proposal';
 import {bindEvidence,evidenceFingerprint,modelHistory,superseded,type ChatMessage,type ReferencedEvidence} from '../src/lib/guru/chat';
 import {conversationBody,conversationTurn} from '../src/lib/guru/conversation';
 const context=()=>({...initialContext(2027),state:'OH',zip:'44113',employerPremium:'100',employerFrequency:'biweekly' as const,marketplacePremium:'200',premiumBasis:'self' as const});
 const current=():ReferencedEvidence=>({...comparePremiums(context()),id:'current-premium'});
 const wire=(value:unknown)=>({model:'gpt-6.1-terra',status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(value)}]}]});
+
+test('only genuine edits remain when a reply repeats confirmed coverage inputs',()=>{
+ const confirmed={...context(),age:'34',income:'32450',employerOffer:'none' as const};
+ const repeated=proposalSchema.parse({step:'discover',changes:{state:'Ohio',zip:'44113',age:'34',income:'32450.00',year:2027,householdSize:'1',employerOffer:'none'}}).changes;
+ assert.deepEqual(changedProposalFields(confirmed,repeated),{});
+ assert.deepEqual(changedProposalFields(confirmed,{...repeated,householdSize:'2',income:'0',zip:''}),{householdSize:'2',income:'0',zip:''});
+ assert.deepEqual(changedProposalFields({...confirmed,income:''},{income:'0'}),{income:'0'});
+ assert.equal(confirmed.income,'32450');
+});
 
 test('chat and model history supersede changed inputs and same-input changed evidence, not retrieval time',()=>{
  const c=context(),e=current(),message:ChatMessage={role:'guru',text:'The employer premium is $2,600/year.',bindings:[bindEvidence(e)],kind:'model'};

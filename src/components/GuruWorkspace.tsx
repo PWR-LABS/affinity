@@ -6,7 +6,7 @@ import { allowanceMessage, VISITOR_LIMITS } from '@/lib/guru/allowance';
 import { STATE_MEDICAID_RESOURCES, medicaidResourceByCode } from '@/lib/medicaid/states';
 import { DEFAULT_MARKETPLACE_PLAN_YEAR, SUPPORTED_MARKETPLACE_PLAN_YEARS, stateBasedMarketplace } from '@/lib/marketplace/states';
 import { actionInput, comparePremiums, evidenceFrom, hasMarketplacePlanOptions, initialContext, requestKey, suggestTask, taskStep, guidedReply, missingQuestion, offerHandoff, CONTEXT_LABELS, GUIDED_HANDOFFS, contextValue, reconcileContext, type Action, type Evidence, type GuidedTask, type GuruContext, type Step } from '@/lib/guru/workspace';
-import { applyProposal, type Proposal } from '@/lib/guru/proposal';
+import { applyProposal, changedProposalFields, type Proposal } from '@/lib/guru/proposal';
 import { guidedContext } from '@/lib/guru/guided-intake';
 import { useGuruStore,useGuruMemory } from './GuruContext';
 import { Typeahead,type Suggestion } from './Typeahead';
@@ -108,7 +108,8 @@ export function GuruWorkspace(){
    if(id!==chatSequence.current||snapshotKey!==JSON.stringify(current.current))return;
    // Keep a specific estimate task when the model returns its broader comparison step.
    setAvailability('ready');setTask(fallback==='plans'&&next.step==='compare'?'plans':next.step);
-   if(Object.keys(next.changes).length)setProposal({step:next.step,changes:next.changes});
+   const changes=changedProposalFields(snapshot,next.changes);
+   if(Object.keys(changes).length)setProposal({step:next.step,changes});
    if(next.proposedAction!=='none')setActionProposal(next.proposedAction);
    setEvidence(old=>[...fresh,...old.filter(e=>!fresh.some(n=>n.action===e.action))]);
    say(next.reply,fresh.filter(e=>next.evidenceIds.includes(e.id)).map(bindEvidence),'model');

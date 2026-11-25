@@ -20,8 +20,8 @@ async function main(){
    const replies={
     1:{step:'discover',reply:'Which state do you need coverage in?'},
     2:{step:'discover',reply:'Please confirm these details, then I can check your routes.',changes:{state:'OH',zip:'44113',age:'35',income:'30000',employerOffer:'none'},proposedAction:'screen'},
-    3:{step:'coverage',reply:'The screening suggests a Marketplace route, with official eligibility still to confirm. What is your doctor’s name?',evidenceIds:['current-screen']},
-    4:{step:'coverage',reply:'Confirm the doctor search name, then choose the matching record.',changes:{doctorQuery:'Dr Morgan Sample'}},
+    3:{step:'coverage',reply:'The screening suggests a Marketplace route, with official eligibility still to confirm. Would you like to compare plans?',evidenceIds:['current-screen'],changes:{state:'Ohio',zip:'44113',age:'35',income:'30000.00',year:b.context.year,householdSize:'1',employerOffer:'none'},proposedAction:'plans'},
+    4:{step:'coverage',reply:'Confirm the doctor search name, then choose the matching record.',changes:{doctorQuery:'Dr Morgan Sample',year:b.context.year,zip:'44113'}},
     5:{step:'coverage',reply:'Dr Morgan Sample is selected. What is the plan or employer’s name?'},
     6:{step:'coverage',reply:'The doctor and plan are selected. Shall I check this pair?',proposedAction:'network'},
     7:{step:'coverage',reply:'The dated issuer fixture lists this doctor. Confirm the exact benefit option and effective year before relying on that listing. [current-network]',evidenceIds:['current-network']},
@@ -38,10 +38,17 @@ async function main(){
   await page.getByRole('button',{name:'Confirm suggested edits',exact:true}).waitFor();assert.equal(await page.getByLabel('State',{exact:true}).inputValue(),'');
   await page.getByRole('button',{name:'Confirm suggested edits',exact:true}).click();
   await page.getByRole('button',{name:'Confirm and run: Check coverage routes',exact:true}).click();
-  await page.getByText('The screening suggests a Marketplace route, with official eligibility still to confirm. What is your doctor’s name?',{exact:true}).waitFor();
+  await page.getByText('The screening suggests a Marketplace route, with official eligibility still to confirm. Would you like to compare plans?',{exact:true}).waitFor();
+  const confirmEdits=page.getByRole('button',{name:'Confirm suggested edits',exact:true});
+  assert.equal(await confirmEdits.count(),0);
+  assert.equal(await page.getByRole('button',{name:'Confirm and run: Find Marketplace estimates',exact:true}).isEnabled(),true);
   assert.equal(requests[2].context.zip,'44113');assert.ok(requests[2].history.some(m=>m.text.includes('Ohio')));assert.deepEqual(requests[2].evidenceActions,['screen']);
   passed.push('initial free text → one missing-field question → confirmed context → confirmed real tool handler → sourced explanation');
-  await ask('My doctor is Dr Morgan Sample.');await page.getByRole('button',{name:'Confirm suggested edits',exact:true}).click();
+  passed.push('repeated confirmed answers do not interrupt the proposed Marketplace check');
+  await ask('My doctor is Dr Morgan Sample.');
+  const editCard=page.locator('.guru-note').filter({has:page.getByRole('heading',{name:'Review suggested context edits'})});
+  assert.deepEqual(await editCard.locator('dt').allTextContents(),['Doctor name to search']);
+  await confirmEdits.click();
   await page.getByRole('option').filter({hasText:'Dr Morgan Sample'}).click();
   await page.getByText('Dr Morgan Sample is selected. What is the plan or employer’s name?',{exact:true}).waitFor();
   await page.getByRole('combobox',{name:'Or find your plan by name',exact:true}).fill('Example');await page.getByRole('option').filter({hasText:'Synthetic Example Plan'}).click();

@@ -16,6 +16,20 @@ const changesSchema=z.preprocess((value,ctx)=>{
 },contextSchema.partial());
 export const proposalSchema=z.object({step:z.enum(STEPS),changes:changesSchema}).strict();
 export type Proposal=z.infer<typeof proposalSchema>;
+
+const numericFields = new Set<string>(['age', 'income', 'householdSize', 'employerPremium', 'marketplacePremium']);
+const numericInput = /^\d+(?:\.\d+)?$/;
+
+export function changedProposalFields(context: GuruContext, changes: Proposal['changes']): Proposal['changes'] {
+ return Object.fromEntries(Object.entries(changes).filter(([key, value]) => {
+  const confirmed = context[key as keyof GuruContext];
+  if (value === undefined || value === confirmed) return false;
+  if (numericFields.has(key) && typeof value === 'string' && typeof confirmed === 'string' &&
+      numericInput.test(value) && numericInput.test(confirmed)) return Number(value) !== Number(confirmed);
+  return true;
+ }));
+}
+
 export function applyProposal(context:GuruContext,proposal:Proposal){
  const next=contextSchema.parse({...context,...proposalSchema.parse(proposal).changes});
  if((next.state&&!medicaidResourceByCode(next.state))||(next.zip&&!/^\d{5}$/.test(next.zip))||parseMarketplacePlanYear(next.year)===undefined)throw Error('Unsupported context suggestion');
