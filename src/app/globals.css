@@ -1637,23 +1637,6 @@ body {
   background: var(--control-bg);
   font-size: 1rem;
 }
-.guru-workbench select,
-.site :is(.elig-form, .medicaid-state-picker) select {
-  appearance: none;
-  padding-inline-end: 2.4rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3 6 5 5 5-5' fill='none' stroke='%23252a26' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.85rem center;
-  background-size: 1rem;
-}
-@media (forced-colors: active) {
-  .guru-workbench select,
-  .site :is(.elig-form, .medicaid-state-picker) select {
-    appearance: auto;
-    background-image: none;
-    padding-inline-end: 0.65rem;
-  }
-}
 .guru-actions { gap: 0.55rem 0.85rem; margin: 0.95rem 0 0; font-size: 0.88rem; }
 .guru-workspace .guru-note {
   margin-top: 0.8rem;
@@ -1719,3 +1702,30 @@ body {
   .guru-suggestions button:not(.primary) { padding-inline: 0.6rem; }
   .guru-evidence dl div { grid-template-columns: minmax(0, 1fr); gap: 0.15rem; }
 }
+
+/* For single-value dropdowns, the text and the outside edge of the caret share one inset. */
+select:not([multiple]):is(:not([size]), [size="0"], [size="1"]) {
+  --caret-inset: var(--select-inset, 12px);
+  appearance: none !important;
+  padding-inline: var(--caret-inset) calc(var(--caret-inset) + 12px + 8px) !important;
+  text-overflow: ellipsis;
+  /* Two 6px strokes use the text color and work in offline reports with images disabled. */
+  background-image:
+    linear-gradient(45deg, transparent 39%, currentColor 42% 58%, transparent 61%),
+    linear-gradient(-45deg, transparent 39%, currentColor 42% 58%, transparent 61%) !important;
+  background-origin: padding-box !important;
+  background-size: 6px 6px !important;
+  background-repeat: no-repeat !important;
+  background-position: right calc(var(--caret-inset) + 6px) center, right var(--caret-inset) center !important;
+}
+select:not([multiple]):is(:not([size]), [size="0"], [size="1"]):dir(rtl) {
+  background-position: left var(--caret-inset) center, left calc(var(--caret-inset) + 6px) center !important;
+}
+@media (forced-colors: active) {
+  select:not([multiple]):is(:not([size]), [size="0"], [size="1"]) {
+    appearance: auto !important;
+    background-image: none !important;
+    padding-inline-end: var(--caret-inset) !important;
+  }
+}
+/* End single-value dropdown geometry. */
