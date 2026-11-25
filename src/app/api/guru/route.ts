@@ -10,6 +10,7 @@ import { currentEvidence } from '@/lib/guru/tools';
 import { publicCaps, recordTurnUsage, reserveTurn, GuruLimitError } from '@/lib/guru/budget';
 
 import { visitorIdentity } from '@/lib/guru/visitor';
+import { testBrowserIdentity } from '@/lib/guru/test-browser';
 import { allowanceMessage } from '@/lib/guru/allowance';
 import { guruOriginAllowed } from '@/lib/guru/origin';
 
@@ -27,6 +28,7 @@ export async function POST(req:Request){
   const {monthly,daily}=publicCaps(process.env);
   const visitor=visitorIdentity(req,process.env.AFFINITY_GURU_VISITOR_SECRET,process.env.AFFINITY_GURU_CLIENT_IP_HEADER);
   cookie=visitor.cookie;
+  const tester=testBrowserIdentity(visitor.identity,process.env.AFFINITY_GURU_TEST_BROWSER);
   const model=z.enum(MODEL_IDS).parse(process.env.AFFINITY_GURU_MODEL);
   const reader=req.body?.getReader();if(!reader)return unavailable();
   const chunks:Uint8Array[]=[];let size=0;
@@ -38,7 +40,7 @@ export async function POST(req:Request){
   const reply=await conversationTurn({
    model,history:body.history,context:body.context,evidence,key:process.env.AFFINITY_OPENAI_API_KEY,
    checkPricing:assertPublicPricing,
-   reserve:(reservedMicro)=>reserveTurn(prisma,body.id,monthly,daily,visitor.identity,reservedMicro),
+   reserve:(reservedMicro)=>reserveTurn(prisma,body.id,monthly,daily,tester??visitor.identity,reservedMicro,Boolean(tester)),
    recordUsage:(usage)=>recordTurnUsage(prisma,body.id,usage),
   });
   return withCookie(NextResponse.json({mode:'connected',reply,evidence},{headers:{'Cache-Control':'no-store'}}));

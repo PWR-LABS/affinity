@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { RESERVATION_MICRO, TERRA_RESERVATION_MICRO, type ReservationMicro } from './planner';
-import { PUBLIC_MONTHLY_USD, PUBLIC_DAILY_USD, VISITOR_LIMITS, NETWORK_LIMITS } from './allowance';
+import { PUBLIC_MONTHLY_USD, PUBLIC_DAILY_USD, VISITOR_LIMITS, NETWORK_LIMITS, TEST_BROWSER_LIMITS } from './allowance';
 import type { GuruIdentity } from './visitor';
 import type { AttemptUsage } from './usage';
 
@@ -22,7 +22,7 @@ export class GuruLimitError extends Error {
  }
 }
 /** All checks and insertion share one durable lock across workers and restarts. */
-export async function reserveTurn(db:PrismaClient,id:string,monthly:number,daily:number,identity:GuruIdentity,reservedMicro:ReservationMicro=RESERVATION_MICRO){
+export async function reserveTurn(db:PrismaClient,id:string,monthly:number,daily:number,identity:GuruIdentity,reservedMicro:ReservationMicro=RESERVATION_MICRO,testBrowser=false){
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))throw Error('Invalid request identity');
  id=id.toLowerCase();
  if(reservedMicro!==RESERVATION_MICRO&&reservedMicro!==TERRA_RESERVATION_MICRO)throw Error('Invalid guru reservation');
@@ -49,7 +49,8 @@ export async function reserveTurn(db:PrismaClient,id:string,monthly:number,daily
    SELECT 'network' AS scope,count(*) FILTER (WHERE "createdAt">=${month}) AS month,count(*) FILTER (WHERE "createdAt">=${day}) AS day,count(*) FILTER (WHERE "createdAt">=${minute}) AS minute
    FROM "GuruReservation" WHERE "networkHash"=${identity.networkHash} AND "createdAt">=LEAST(${month},${minute})`;
   for(const row of counts){
-   const scope=row.scope as 'visitor'|'network',limits=scope==='visitor'?VISITOR_LIMITS:NETWORK_LIMITS;
+   const scope=row.scope as 'visitor'|'network';
+   const limits=testBrowser?TEST_BROWSER_LIMITS:scope==='visitor'?VISITOR_LIMITS:NETWORK_LIMITS;
    for(const window of ['month','day','minute'] as const)if(Number(row[window])>=limits[window])throw new GuruLimitError(scope,window,retry(window));
   }
   await tx.$executeRaw`INSERT INTO "GuruReservation" (id,"reservedMicro","createdAt","visitorHash","networkHash") VALUES (${id},${reservedMicro},${now},${identity.visitorHash},${identity.networkHash})`;

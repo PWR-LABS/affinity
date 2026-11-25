@@ -8,7 +8,8 @@ import { PrismaClient } from '@prisma/client';
 import { reserveTurn as reserveWithIdentity, recordTurnUsage, GuruLimitError } from '../src/lib/guru/budget';
 import { planTurn } from '../src/lib/guru/planner';
 import { initialContext } from '../src/lib/guru/workspace';
-import { VISITOR_LIMITS, NETWORK_LIMITS } from '../src/lib/guru/allowance';
+import { VISITOR_LIMITS, NETWORK_LIMITS, TEST_BROWSER_LIMITS } from '../src/lib/guru/allowance';
+import { testBrowserFingerprint, testBrowserIdentity } from '../src/lib/guru/test-browser';
 
 const identity = (visitor:string,network=visitor) => ({visitorHash:createHash('sha256').update(visitor).digest('hex'),networkHash:createHash('sha256').update(network).digest('hex')});
 const reserveTurn = (db:PrismaClient,id:string,monthly:number,daily:number) => reserveWithIdentity(db,id,monthly,daily,identity('baseline'));
@@ -44,9 +45,10 @@ try{
   assert.equal(Number(spent[0].micro),150000);
   await assert.rejects(reserveTurn(reconnected,id,200000,200000),/already reserved/);
   await verifyMixedReservations(reconnected,second);
+  await verifyTestAllowance(reconnected);
   await fairUse(reconnected,second);
   await verifyUsageExport(reconnected,url);
-  console.log(JSON.stringify({state:'passed',checks:['two independent clients share the hard cap','concurrent reservations serialize','duplicate request identity is never redispatched','reservations survive disconnect/reconnect','ambiguous provider failure retains its reservation with no retry','mixed Terra and historical reservation amounts enforce both dollar caps','concurrent visitor and network quotas','40th browser and 80th network attempts succeed; the next attempts are denied','monthly quotas and cookie reset backstop','historical accounting and pseudonym cleanup','numeric usage survives replay and exports through month-scoped authentication'],externalModelCalls:0}));
+  console.log(JSON.stringify({state:'passed',checks:['two independent clients share the hard cap','concurrent reservations serialize','duplicate request identity is never redispatched','reservations survive disconnect/reconnect','ambiguous provider failure retains its reservation with no retry','mixed Terra and historical reservation amounts enforce both dollar caps','registered browser uses separate test quotas with the same site cap','concurrent visitor and network quotas','40th browser and 80th network attempts succeed; the next attempts are denied','monthly quotas and cookie reset backstop','historical accounting and pseudonym cleanup','numeric usage survives replay and exports through month-scoped authentication'],externalModelCalls:0}));
  }finally{await reconnected.$disconnect();}
 }finally{await db.$disconnect();await second.$disconnect();}
 
@@ -65,6 +67,20 @@ async function verifyMixedReservations(db:PrismaClient,second:PrismaClient) {
  await assert.rejects(reserve(db,210000,200000),e=>e instanceof GuruLimitError&&e.window==='month');
  const amounts=await db.$queryRaw<Array<{reservedMicro:number}>>`SELECT "reservedMicro" FROM "GuruReservation"`;
  assert.deepEqual(amounts.map(row=>row.reservedMicro).sort((a,b)=>a-b),[30000,30000,50000,50000,50000]);
+}
+
+async function verifyTestAllowance(db:PrismaClient) {
+ const visitor=identity('registered-test','shared-test-network');
+ const grant=testBrowserFingerprint(visitor)+'.'+(Math.floor(Date.now()/1000)+3600);
+ const tester=testBrowserIdentity(visitor,grant);
+ assert.ok(tester);
+ const reserve=(who:ReturnType<typeof identity>,testBrowser=false,daily=5e6)=>
+  reserveWithIdentity(db,randomUUID(),100e6,daily,who,TERRA_RESERVATION_MICRO,testBrowser);
+ for(let i=0;i<TEST_BROWSER_LIMITS.minute;i++)await reserve(tester,true);
+ await assert.rejects(reserve(tester,true),e=>e instanceof GuruLimitError&&e.scope==='visitor'&&e.window==='minute');
+ await reserve(visitor);
+ const [total]=await db.$queryRaw<Array<{micro:bigint}>>`SELECT sum("reservedMicro") AS micro FROM "GuruReservation"`;
+ await assert.rejects(reserve(tester,true,Number(total.micro)),e=>e instanceof GuruLimitError&&e.scope==='site'&&e.window==='day');
 }
 
 async function verifyUsageExport(db:PrismaClient,url:URL) {

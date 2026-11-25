@@ -28,7 +28,7 @@ export default function MedicaidPage() {
           your state&rsquo;s official Medicaid site. Follow your state notice for renewal steps.
         </p>
         <div className="medicaid-hero-actions">
-          <Link className="cta" href="/#coverage-check">Check likely eligibility</Link>
+          <Link className="cta" href="/discover#coverage-check">Check likely eligibility</Link>
           <a className="notice-link" href="#state-watch">See state updates</a>
         </div>
       </div>

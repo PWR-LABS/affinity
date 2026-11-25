@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { visitorIdentity, networkAddress, VISITOR_COOKIE } from '../src/lib/guru/visitor';
 import { publicCaps, capMicro, reserveTurn } from '../src/lib/guru/budget';
 import { VISITOR_LIMITS } from '../src/lib/guru/allowance';
+import { testBrowserFingerprint, testBrowserIdentity } from '../src/lib/guru/test-browser';
 
 const secret='ab'.repeat(32),now=Date.parse(reviewedPricingDate+'T12:00:00Z');
 const request=(ip='203.0.113.12',cookie='')=>new Request('https://affinity.example/api/guru',{headers:{'cf-connecting-ip':ip,cookie}});
@@ -43,6 +44,23 @@ test('equivalent IPv6 spellings, /64 rotation and mapped IPv4 cannot split netwo
 });
 test('identity is mandatory before database or model work',async()=>{
  await assert.rejects(reserveTurn({} as never,'00000000-0000-0000-0000-000000000000',100e6,5e6,undefined as never),/identity required/);
+});
+
+test('testing access requires the same verified browser and network and expires',()=>{
+ const first=visitorIdentity(request(),secret,'cf-connecting-ip',now);
+ const cookie=first.cookie.split(';')[0];
+ const identity=first.identity;
+ const expires=Math.floor(now/1000)+3600;
+ const grant=testBrowserFingerprint(identity)+'.'+expires;
+ const tester=testBrowserIdentity(identity,grant,now);
+ assert.ok(tester);
+ assert.notEqual(tester.visitorHash,identity.visitorHash);
+ assert.notEqual(tester.networkHash,identity.networkHash);
+ assert.deepEqual(testBrowserIdentity(visitorIdentity(request(undefined,cookie),secret,'cf-connecting-ip',now).identity,grant,now),tester);
+ assert.equal(testBrowserIdentity(visitorIdentity(request(),secret,'cf-connecting-ip',now).identity,grant,now),null);
+ assert.equal(testBrowserIdentity(visitorIdentity(request('203.0.113.13',cookie),secret,'cf-connecting-ip',now).identity,grant,now),null);
+ assert.equal(testBrowserIdentity(identity,grant,expires*1000),null);
+ assert.equal(testBrowserIdentity(identity,undefined,now),null);
 });
 
 test('public route returns 429 and a signed cookie without provider dispatch; unsafe config is unavailable',async()=>{

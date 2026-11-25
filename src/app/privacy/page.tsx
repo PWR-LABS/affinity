@@ -12,7 +12,7 @@ export default function PrivacyPage() {
         <h1 className="page-title">Privacy and data flow</h1>
         <p className="page-subtitle">What happens to the information you enter into [affinity.].</p>
       </div>
-      <div className="prose">
+      <div className="prose page-panel">
         <h2>Your answers</h2>
         <p>
           We do not ask you to create an account or save a household profile. Your browser sends the ZIP code,

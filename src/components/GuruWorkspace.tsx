@@ -7,6 +7,7 @@ import { STATE_MEDICAID_RESOURCES, medicaidResourceByCode } from '@/lib/medicaid
 import { DEFAULT_MARKETPLACE_PLAN_YEAR, SUPPORTED_MARKETPLACE_PLAN_YEARS, stateBasedMarketplace } from '@/lib/marketplace/states';
 import { actionInput, comparePremiums, evidenceFrom, initialContext, requestKey, suggestTask, taskStep, guidedReply, missingQuestion, offerHandoff, CONTEXT_LABELS, GUIDED_HANDOFFS, contextValue, reconcileContext, type Action, type Evidence, type GuidedTask, type GuruContext, type Step } from '@/lib/guru/workspace';
 import { applyProposal, type Proposal } from '@/lib/guru/proposal';
+import { guidedContext } from '@/lib/guru/guided-intake';
 import { useGuruStore,useGuruMemory } from './GuruContext';
 import { Typeahead,type Suggestion } from './Typeahead';
 import { conversationSchema,referencedEvidenceSchema,modelHistory,superseded,bindEvidence,type ChatMessage } from '@/lib/guru/chat';
@@ -65,14 +66,30 @@ export function GuruWorkspace(){
  function say(text:string,bindings?:ChatMessage['bindings'],kind:ChatMessage['kind']='guided'){
   setMessages(old=>[...old.slice(-23),{role:'guru',text,bindings,kind}]);
  }
+ function continueInGuidedMode(history:ChatMessage[],nextTask:GuidedTask|null,notice=''){
+  const latest=history.at(-1);
+  const question=history.slice(0,-1).findLast(message=>message.role==='guru')?.text??'';
+  const previous=current.current;
+  const next=latest?.role==='you'?guidedContext(previous,latest.text,question):previous;
+  if(next!==previous){
+   if(next.planId!==previous.planId||next.planQuery!==previous.planQuery){
+    store?.setMemory(old=>({...old,'network-plan':null}));
+   }
+   current.current=next;setContext(next);
+   sequence.current++;controller.current?.abort();setPending(null);
+   setEvidence(old=>old.filter(item=>item.requestKey===requestKey(item.action,next)));
+  }
+  const task=nextTask??(next!==previous?'discover':null);
+  setTask(task);
+  say(notice+guidedReply(latest?.role==='you'?latest.text:'',next,task).reply);
+ }
  async function respond(history:ChatMessage[],sourceEvidence:Evidence[],fallback:GuidedTask|null){
   const id=++chatSequence.current;chatController.current?.abort();setProposal(null);setActionProposal(null);
   const snapshot={...current.current},snapshotKey=JSON.stringify(snapshot),abort=new AbortController();chatController.current=abort;setChatPending(true);
-  const latestQuestion=history.findLast(m=>m.role==='you')?.text??'';
   function continueGuided(notice:string){
    if(id!==chatSequence.current||snapshotKey!==JSON.stringify(current.current))return;
-   setAvailability('unavailable');setTask(fallback);
-   say(notice+' '+guidedReply(latestQuestion,snapshot,fallback).reply);
+   setAvailability('unavailable');
+   continueInGuidedMode(history,fallback,notice+' ');
   }
   try{
    const actions=sourceEvidence.filter(e=>e.requestKey===requestKey(e.action,snapshot)).map(e=>e.action).slice(0,3);
@@ -106,8 +123,7 @@ export function GuruWorkspace(){
   setDraft('');setError('');setWalkthrough(0);
   const history:ChatMessage[]=[...messages.slice(-23),{role:'you',text:text.trim().slice(0,1500)}];setMessages(history);
   if(connected&&!(nextTask&&nextTask in GUIDED_HANDOFFS)){await respond(history,evidence,nextTask);return;}
-  setTask(nextTask);
-  say(guidedReply(text,current.current,nextTask).reply);
+  continueInGuidedMode(history,nextTask);
  }
  async function run(action:Action){
   const snapshot={...current.current},id=++sequence.current;controller.current?.abort();

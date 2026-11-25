@@ -19,7 +19,7 @@ export default function HowItWorks() {
         </p>
       </div>
 
-      <div className="prose">
+      <div className="prose page-panel">
         <h2>1. First: Medicaid or Marketplace?</h2>
         <p>
           Some people losing Medicaid still qualify for it — or qualify for a subsidized plan. So the home
