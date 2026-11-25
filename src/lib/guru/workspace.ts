@@ -6,8 +6,13 @@ import { PART_D_INDEX_YEAR } from '../partd/selection';
 
 export const STEPS = ['discover', 'coverage', 'compare', 'how'] as const;
 export type Step = typeof STEPS[number];
-export type GuidedTask = Step | 'plans' | 'medications' | 'part-d' | 'medicare' | 'privacy';
+export type GuidedTask = Step | 'plans' | keyof typeof GUIDED_HANDOFFS;
 export const GUIDED_HANDOFFS = {
+ 'marketplace-care': {
+  title:'Check doctors and medications on Marketplace plans',
+  reply:'Open Marketplace Compare to add your doctor and the exact medication, strength, and form. Your confirmed coverage year and household details will carry over. Confirm each listing with the plan and provider before enrolling.',
+  links:[['Open Marketplace Compare','/plans']],
+ },
  medications: {
   title:'Check prescription coverage',
   reply:'Prescription coverage depends on the exact plan and medication. Use the Marketplace plan board for ACA plans, or the Part D checker if you have a Medicare drug plan.',
@@ -133,16 +138,20 @@ export function comparePremiums(c: GuruContext): Evidence {
       'This compares premiums only. Deductibles, out-of-pocket limits, care use, medications, employer contributions and network fit still need review.',
       'A Marketplace amount is not a confirmed subsidy. An employer offer can affect eligibility for savings; confirm with the official Marketplace.']};
 }
-export function suggestTask(message:string,fallback:GuidedTask|null):GuidedTask|null{
-  const medications=/\b(?:prescriptions?|medications?|drugs?|formulary|pharmacy|insulin)\b/i.test(message);
+export function suggestTask(message:string,fallback:GuidedTask|null,hasMarketplacePlans=false):GuidedTask|null{
+  const medications=/\b(?:prescriptions?|medications?|meds|drugs?|formular(?:y|ies)|pharmacy|insulin)\b/i.test(message);
+  const coverageLookup=/\b(?:doctor|doctors|provider|providers|physician|specialist|network|npi|hios|ein)\b/i.test(message)||/coverage check|(?:keep|cover).{0,24}\b(?:hospital|clinic)\b/i.test(message);
+  const marketplace=/\b(?:marketplace|aca|obamacare|exchange|healthcare\.gov)\b/i.test(message);
   if(/\bpart[ -]?d\b/i.test(message)||(medications&&/\bmedicare\b/i.test(message)))return 'part-d';
   if(/\b(?:privacy|openai|data flow|data retention)\b|(?:store|save|keep|send|delete|retain|share).{0,30}\b(?:data|chat|answers|information|conversation)\b/i.test(message))return 'privacy';
   if(/\bmedicare\b/i.test(message))return 'medicare';
+  const employerCoverage=/\b(?:employer(?:-sponsored)?|job-based|workplace)\s+(?:(?:health|insurance)\s+)?(?:plans?|coverage|offer|network|insurance)\b|\b(?:through|from) (?:my|our|an) (?:employer|job)\b|\bein\b/i.test(message);
+  if(!employerCoverage&&(marketplace||hasMarketplacePlans||fallback==='marketplace-care')&&(medications||coverageLookup||/\b\d+(?:\.\d+)?\s*(?:mg|mcg)\b/i.test(message)))return 'marketplace-care';
   if(medications)return 'medications';
-  if(/\b(?:doctor|doctors|provider|providers|physician|specialist|network|npi|hios|ein)\b/i.test(message)||/coverage check|(?:keep|cover).{0,24}\b(?:hospital|clinic)\b/i.test(message))return 'coverage';
+  if(coverageLookup)return 'coverage';
   if(/\b(?:compare|versus|vs\.?|cheaper|paycheck|biweekly|semimonthly)\b/i.test(message))return 'compare';
   if(workTransition(message))return 'discover';
-  if(/\b(?:marketplace|aca|obamacare|exchange|healthcare\.gov)\b/i.test(message)&&/\b(?:plans?|prices?|premiums?|quotes?|estimates?|costs?|how much)\b/i.test(message)&&!/\b(?:eligibility|eligible|qualify|subsidy|savings)\b/i.test(message))return 'plans';
+  if(marketplace&&/\b(?:plans?|prices?|premiums?|quotes?|estimates?|costs?|how much)\b/i.test(message)&&!/\b(?:eligibility|eligible|qualify|subsidy|savings)\b/i.test(message))return 'plans';
   if(/\bconfirm\b.*\benroll\w*\b/i.test(message))return 'how';
   if(/\b(?:medicaid|chip|marketplace|aca|obamacare|eligib\w*|uninsured|subsid\w*|insurance options|coverage options|lost coverage|no insurance|without insurance|health insurance|open enrollment|special enrollment|cobra|employer offer|employer insurance|affordability)\b/i.test(message))return 'discover';
   if(/\b(?:premium|premiums|cost|costs|how much)\b/i.test(message))return 'compare';
@@ -151,7 +160,7 @@ export function suggestTask(message:string,fallback:GuidedTask|null):GuidedTask|
 }
 export function taskStep(task:GuidedTask|null):Step{
  if(task==='plans')return 'compare';
- if(task==='medications'||task==='part-d'||task==='medicare')return 'coverage';
+ if(task==='marketplace-care'||task==='medications'||task==='part-d'||task==='medicare')return 'coverage';
  if(task==='privacy')return 'how';
  return task??'discover';
 }
@@ -172,13 +181,16 @@ function workTransition(message:string){
 export function guidedReply(message:string,c:GuruContext,task:GuidedTask|null=suggestTask(message,'discover')){
  const step=taskStep(task);
  if(!task)return {step,reply:'I can help you find coverage, check a doctor or medication, compare costs, or find official enrollment guidance. What would you like to check?'};
- if(task==='medications'||task==='part-d'||task==='medicare'||task==='privacy')return {step,reply:GUIDED_HANDOFFS[task].reply};
+ if(task in GUIDED_HANDOFFS)return {step,reply:GUIDED_HANDOFFS[task as keyof typeof GUIDED_HANDOFFS].reply};
  if(task==='plans')return {step,reply:missingQuestion('plans',c)??'Review your confirmed inputs in the workspace, then look up Marketplace premium estimates.'};
  if(task==='compare'&&c.comparison!=='medicaid'&&/\bmedicaid\b/i.test(message))return {step,reply:'Choose Medicaid in the workspace, then enter the monthly premium the state confirmed and the Marketplace premium you were quoted.'};
  const reply=step==='discover'&&workTransition(message)
   ?'For a job or role transition, first ask your benefits administrator whether your insurance changes, when current coverage would end and when any new coverage would start. Keep dates, premiums and benefit terms unknown until confirmed. Has your benefits team confirmed whether the role change affects your insurance?'
   :step==='how'?STEP_REPLY.how:missingQuestion(step==='coverage'?'network':step==='compare'?'premium':'screen',c)??STEP_REPLY[step];
  return {step,reply};
+}
+export function hasMarketplacePlanOptions(evidence:Evidence){
+ return evidence.action==='plans'&&evidence.facts.some(fact=>fact.label==='Plans returned'&&Number(fact.value)>0);
 }
 /** Render only known server fields. Model prose never substitutes for tool evidence. */
 export function evidenceFrom(action: Exclude<Action,'premium'>,c: GuruContext,data: Record<string,unknown>): Evidence {

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { allowanceMessage, VISITOR_LIMITS } from '@/lib/guru/allowance';
 import { STATE_MEDICAID_RESOURCES, medicaidResourceByCode } from '@/lib/medicaid/states';
 import { DEFAULT_MARKETPLACE_PLAN_YEAR, SUPPORTED_MARKETPLACE_PLAN_YEARS, stateBasedMarketplace } from '@/lib/marketplace/states';
-import { actionInput, comparePremiums, evidenceFrom, initialContext, requestKey, suggestTask, taskStep, guidedReply, missingQuestion, offerHandoff, CONTEXT_LABELS, GUIDED_HANDOFFS, contextValue, reconcileContext, type Action, type Evidence, type GuidedTask, type GuruContext, type Step } from '@/lib/guru/workspace';
+import { actionInput, comparePremiums, evidenceFrom, hasMarketplacePlanOptions, initialContext, requestKey, suggestTask, taskStep, guidedReply, missingQuestion, offerHandoff, CONTEXT_LABELS, GUIDED_HANDOFFS, contextValue, reconcileContext, type Action, type Evidence, type GuidedTask, type GuruContext, type Step } from '@/lib/guru/workspace';
 import { applyProposal, type Proposal } from '@/lib/guru/proposal';
 import { guidedContext } from '@/lib/guru/guided-intake';
 import { useGuruStore,useGuruMemory } from './GuruContext';
@@ -14,7 +14,7 @@ import { conversationSchema,referencedEvidenceSchema,modelHistory,superseded,bin
 
 const ACTION_LABEL:Record<Action,string>={screen:'Check coverage routes',network:'Check this doctor and plan',plans:'Find Marketplace estimates',premium:'Compare these declared premiums'};
 function selectionLabel(value:unknown,id:string,fallback:string){return value&&typeof value==='object'&&'id'in value&&'label'in value&&value.id===id?String(value.label):fallback;}
-const LABEL:Record<Step,string>={discover:'Discover',coverage:'Coverage',compare:'Compare',how:'How'};
+const RESULT_LABEL:Record<Action,string>={screen:'Coverage screening',plans:'Marketplace estimates',network:'Issuer evidence',premium:'Premium comparison'};
 const CITATION_LABEL:Record<Action,string>={screen:'coverage routes',plans:'plan estimates',network:'issuer evidence',premium:'premium assumptions'};
 const WORKBENCH_TITLES: Record<Step,string> = {
  discover:'Find coverage options',
@@ -117,7 +117,7 @@ export function GuruWorkspace(){
  }
  async function ask(text:string){
   if(!text.trim())return;
-  const nextTask=suggestTask(text,task);
+  const nextTask=suggestTask(text,task,activeEvidence.some(hasMarketplacePlanOptions));
   chatSequence.current++;chatController.current?.abort();setChatPending(false);setProposal(null);setActionProposal(null);
   sequence.current++;controller.current?.abort();setPending(null);
   setDraft('');setError('');setWalkthrough(0);
@@ -187,6 +187,8 @@ export function GuruWorkspace(){
  }
  const resource=medicaidResourceByCode(context.state);
  const marketplace=stateBasedMarketplace(context.state,context.year);
+ const marketplacePlansHref=`/plans?year=${context.year}`;
+ const officialMarketplacePlansHref=marketplace?`https://${marketplace.url}`:'https://www.healthcare.gov/see-plans/';
  const activeEvidence=evidence.filter(e=>e.requestKey===requestKey(e.action,context));
  const canSearchDoctor=/^\d{5}$/.test(context.zip);
  const yearField=<div className="field"><label htmlFor="guru-year">Coverage year</label><select id="guru-year" value={context.year} onChange={e=>update('year',Number(e.target.value))}>{SUPPORTED_MARKETPLACE_PLAN_YEARS.map(y=><option key={y}>{y}</option>)}</select></div>;
@@ -214,7 +216,7 @@ export function GuruWorkspace(){
        <strong className="guru-message-speaker">{speaker}</strong>
        <p className="guru-message-body">{conversationText(message,isOld)}</p>
        {isOld&&<p className="field-help">Earlier context—this answer is superseded. The inputs or current source evidence changed. Review the latest result or run a new check.</p>}
-       {!isOld&&!!message.bindings?.length&&<p className="field-help">Evidence: {message.bindings.map(b=><a key={b.action} href={`#guru-evidence-${b.action}`} data-evidence-id={`current-${b.action}`}>{LABEL[b.action==='network'?'coverage':b.action==='premium'?'compare':'discover']} · current result </a>)}</p>}
+       {!isOld&&!!message.bindings?.length&&<p className="field-help">Evidence: {message.bindings.map(b=><a key={b.action} href={`#guru-evidence-${b.action}`} data-evidence-id={`current-${b.action}`}>{RESULT_LABEL[b.action]} · current result </a>)}</p>}
       </div>;
      })}
     </div>
@@ -253,7 +255,7 @@ export function GuruWorkspace(){
     {actionProposal&&<aside className="guru-note"><h3>Suggested check</h3><p>{ACTION_LABEL[actionProposal]}. No check has run from this suggestion.</p>{proposal?<p>Confirm or dismiss the context edits first.</p>:<button className="primary" type="button" disabled={pending!==null||chatPending} onClick={()=>run(actionProposal)}>Confirm and run: {ACTION_LABEL[actionProposal]}</button>}<button type="button" onClick={()=>setActionProposal(null)}>Dismiss check</button></aside>}
     {handoff&&<div className="guru-step-content">
       <p>{handoff.reply}</p>
-      <div className="guru-actions">{handoff.links.map(([label,href])=>href.startsWith('/')?<Link key={href} href={href}>{label}</Link>:<a key={href} href={href}>{label}</a>)}</div>
+      <div className="guru-actions">{handoff.links.map(([label,href])=>href.startsWith('/')?<Link key={href} href={href==='/plans'?marketplacePlansHref:href}>{label}</Link>:<a key={href} href={href}>{label}</a>)}</div>
     </div>}
     {task==='discover'&&<div className="guru-step-content">
      <p>Tell us where you need coverage and whether an employer actually offered you insurance. Then check which routes you can explore.</p>
@@ -294,7 +296,7 @@ export function GuruWorkspace(){
       <div className="guru-fields">{routeFields}</div>
       <div className="guru-actions">
        {actionProposal!=='plans'&&<button type="button" disabled={pending!==null} onClick={()=>run('plans')}>Find Marketplace estimates</button>}
-       <Link href="/plans">Full plan board with doctors and medications</Link>
+       <Link href={marketplacePlansHref}>Full plan board with doctors and medications</Link>
       </div>
      </details>
     </div>}
@@ -303,13 +305,15 @@ export function GuruWorkspace(){
      <div className="guru-fields">{routeFields}</div>
      <div className="guru-actions">
       {actionProposal!=='plans'&&<button className="primary" type="button" disabled={pending!==null} onClick={()=>run('plans')}>Find Marketplace estimates</button>}
-      <Link href="/plans">Full plan board with doctors and medications</Link>
+      <Link href={marketplacePlansHref}>Full plan board with doctors and medications</Link>
      </div>
     </div>}
     {task==='how'&&<div className="guru-step-content"><ol className="guru-walkthrough">{['Confirm the exact coverage option, people covered and effective year.','Check the insurer’s current network and formulary with your doctor and pharmacy.','Confirm eligibility, savings and enrollment deadlines with the official service before changing coverage.'].map((text,i)=><li key={text} aria-current={walkthrough===i?'step':undefined}>{text}</li>)}</ol><div className="guru-actions"><button type="button" onClick={()=>setWalkthrough((walkthrough+1)%3)}>{walkthrough===2?'Replay walkthrough':'Next confirmation'}</button><Link href="/how-it-works">Read how the evidence works</Link><Link href="/sources">Sources and freshness</Link></div><p>Missing evidence stays unknown. Conflicting or stale sources require confirmation; counting sources does not settle the conflict.</p></div>}
     {pending&&<p role="status">Checking {pending==='network'?'issuer evidence':'your coverage inputs'}…</p>}
     {error&&<p className="elig-error" role="alert">{error}</p>}
-    <div ref={answerRef} tabIndex={-1} className="guru-evidence" aria-label="Evidence and next steps">{activeEvidence.map(e=><article key={e.action} id={`guru-evidence-${e.action}`}><p className="guru-eyebrow">{e.action==='premium'?'Your stated assumptions':'Tool result'}</p><h3>{e.title}</h3><dl>{e.facts.map((f,i)=><div key={i}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl><p className="field-help">Checked {new Date(e.observedAt).toLocaleString()}. This lookup time does not renew a source’s date.</p><ul>{e.notes.map((n,i)=><li key={i}>{n}</li>)}</ul></article>)}</div>
+    <div ref={answerRef} tabIndex={-1} className="guru-evidence" aria-label="Evidence and next steps">{activeEvidence.map(e=><article key={e.action} id={`guru-evidence-${e.action}`}><p className="guru-eyebrow">{e.action==='premium'?'Your stated assumptions':'Tool result'}</p><h3>{e.title}</h3><dl>{e.facts.map((f,i)=><div key={i}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl><p className="field-help">Checked {new Date(e.observedAt).toLocaleString()}. This lookup time does not renew a source’s date.</p><ul>{e.notes.map((n,i)=><li key={i}>{n}</li>)}</ul>
+      {hasMarketplacePlanOptions(e)&&<div className="guru-actions"><Link href={marketplacePlansHref}>Compare these plans with doctors and medications</Link><a href={officialMarketplacePlansHref} target="_blank" rel="noreferrer">See official Marketplace plans</a></div>}
+    </article>)}</div>
     <aside className="guru-handoff"><h3>Official enrollment resources</h3><div className="guru-actions">{resource&&<a href={resource.applyUrl} target="_blank" rel="noreferrer">{resource.program}</a>}<a href={marketplace?`https://${marketplace.url}`:'https://www.healthcare.gov/'} target="_blank" rel="noreferrer">{marketplace?.name??'HealthCare.gov'}</a><a href="https://www.medicare.gov/" target="_blank" rel="noreferrer">Medicare.gov</a>{!resource&&<Link href="/medicaid">Find your state Medicaid program</Link>}</div></aside>
     </div>
    </section>

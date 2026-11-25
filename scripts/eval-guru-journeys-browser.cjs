@@ -29,8 +29,10 @@ const questions = {
     'Find my 2027 Part D drug coverage',
   ],
   'Check prescription coverage': [
-    'Is my prescription covered on Marketplace plans?', 'Will this plan cover my medication?',
-    'Can I compare ACA formularies for insulin?',
+    'Will this plan cover my medication?',
+  ],
+  'Check doctors and medications on Marketplace plans': [
+    'Is my prescription covered on Marketplace plans?', 'Can I compare ACA formularies for insulin?',
   ],
   'Get Medicare enrollment guidance': [
     'How do I sign up for Medicare?', 'Can I get Medicare at 65 if I still work?',
@@ -163,6 +165,21 @@ async function main() {
     assert.equal(calls.at(-1).input.year,2027);
     await coverage.getByText(/Showing the first five results/).waitFor();
     assert.equal(await coverage.getByText('Synthetic Marketplace plan 5', { exact: false }).count(), 0);
+    const planEvidence = coverage.locator('#guru-evidence-plans');
+    assert.equal(await planEvidence.getByRole('link',{name:'Compare these plans with doctors and medications'}).getAttribute('href'),'/plans?year=2027');
+    assert.equal(await planEvidence.getByRole('link',{name:'See official Marketplace plans'}).getAttribute('href'),'https://www.healthcare.gov/see-plans/');
+    await log.getByRole('link',{name:'Marketplace estimates · current result'}).waitFor();
+    const beforeCareHandoff = calls.length;
+    await label('Use connected guru').check();
+    await ask('Yes, I want to check my doctor and metformin 500 mg tablets before I enroll in one of these 2027 Marketplace plans. Where do I do that?','Check doctors and medications on Marketplace plans');
+    await log.getByText(/Open Marketplace Compare to add your doctor/).waitFor();
+    assert.equal(await coverage.getByRole('link',{name:'Open Marketplace Compare',exact:true}).getAttribute('href'),'/plans?year=2027');
+    assert.equal(await coverage.getByRole('button',{name:'Check issuer evidence'}).count(),0);
+    await ask('Will one of these plans list my doctor?','Check doctors and medications on Marketplace plans');
+    assert.equal(calls.length,beforeCareHandoff);
+    await label('Use connected guru').uncheck();
+    await ask('Find 2027 Marketplace plans','Find Marketplace premium estimates');
+    passed.push('Marketplace care questions and follow-ups use the year-specific comparison even in connected mode');
     await label('Coverage year').selectOption('2026');
     assert.equal(await heading('Marketplace options for your confirmed inputs').count(),0);
     await button('Find Marketplace estimates').click();
