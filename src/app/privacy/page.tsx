@@ -45,6 +45,14 @@ export default function PrivacyPage() {
           National Library of Medicine&apos;s RxTerms service, which receives the search term. These services have
           their own request handling and retention practices. We do not control their logs.
         </p>
+        <h2>Optional insurer connection</h2>
+        <p>
+          When a direct connection is available, you sign in on the insurer’s site and decide whether to share your
+          coverage information. The connection requests coverage records. We show the plan, reported status, and dates
+          when available. We don’t send those records to guru or OpenAI, and we don’t save them to our database.
+          Clear the results in Coverage or close the page when you’re done. You can manage your sharing permissions
+          in your insurer’s member portal.
+        </p>
         <h2>Site infrastructure</h2>
         <p>
           Our hosting and delivery providers process ordinary connection metadata, such as IP address, browser
