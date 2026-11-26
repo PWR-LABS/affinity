@@ -3,12 +3,13 @@ import Link from "next/link";
 import type { CoverageReadiness } from "@/lib/coverage-readiness";
 
 interface CoverageTabsProps {
-  active: "employer" | "partd";
+  active: "mine" | "employer" | "partd";
   readiness: CoverageReadiness;
 }
 
 export function CoverageTabs({ active, readiness }: CoverageTabsProps) {
   const tabs = [
+    { key: "mine" as const, href: "/verify/my-coverage", label: "My insurance", ready: null },
     { key: "employer" as const, href: "/verify", label: "Employer doctor", ready: readiness.employer },
     { key: "partd" as const, href: "/verify/medicare-drug", label: "Medicare drug", ready: readiness.partD },
   ];
@@ -23,9 +24,11 @@ export function CoverageTabs({ active, readiness }: CoverageTabsProps) {
           aria-current={active === tab.key ? "page" : undefined}
         >
           <span>{tab.label}</span>
-          <span className="coverage-tab-status" data-ready={tab.ready ? "true" : "false"}>
-            {tab.key === "employer" ? (tab.ready ? "Recent listings" : "Recent sources unavailable") : (tab.ready ? "Loaded" : "Index pending")}
-          </span>
+          {tab.ready !== null && (
+            <span className="coverage-tab-status" data-ready={tab.ready ? "true" : "false"}>
+              {tab.key === "employer" ? (tab.ready ? "Recent listings" : "Recent sources unavailable") : (tab.ready ? "Loaded" : "Index pending")}
+            </span>
+          )}
         </Link>
       ))}
     </nav>
