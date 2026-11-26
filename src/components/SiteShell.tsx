@@ -9,7 +9,7 @@ import { GuruContextProvider } from './GuruContext';
 const NAV = [
   { href: "/", label: "guru", match: (p: string) => p === "/" },
   { href: "/discover", label: "Discover", match: (p: string) => p.startsWith("/discover") || p.startsWith("/medicaid") },
-  { href: "/verify", label: "Coverage", match: (p: string) => p.startsWith("/verify") },
+  { href: "/verify/my-coverage", label: "Coverage", match: (p: string) => p.startsWith("/verify") },
   { href: "/plans", label: "Compare", match: (p: string) => p.startsWith("/plans") },
   { href: "/how-it-works", label: "How", match: (p: string) => p.startsWith("/how-it-works") },
 ];
