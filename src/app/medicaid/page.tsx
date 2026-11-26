@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { MedicaidStateGuide } from "@/components/MedicaidStateGuide";
 import { FEDERAL_MEDICAID_CHANGES, MEDICAID_GUIDANCE_REVIEWED, medicaidGuidanceCurrent } from "@/lib/medicaid/federal";
+import { OHIO_MEDICAID_CHANGE_PATH } from "@/lib/medicaid/ohio-changes";
 import {
   FEATURED_MEDICAID_CHANGES,
   medicaidChangeUrl,
@@ -84,6 +85,7 @@ export default function MedicaidPage() {
                 </ul>
                 <p className="medicaid-action"><strong>Do now:</strong> {change.action}</p></> : null}
                 <div className="medicaid-card-links">
+                  {change.code === "OH" && <Link href={OHIO_MEDICAID_CHANGE_PATH}>Will this change affect me?</Link>}
                   <a href={resource.applyUrl} target="_blank" rel="noreferrer">Open {resource.state} official site ↗</a>
                   {change.sources.map((source) => (
                     <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>{source.label} ↗</a>
