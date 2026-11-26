@@ -8,7 +8,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { sourceIdentity } from './issuer-discovery';
 import {downloadOwnedFile,type DownloadJournal} from './download-staging';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { inspectVolume,EXPECTED_UUID } = require('./refresh-volume-guard.cjs');
+const { inspectVolume, EXPECTED_UUID, SSD_FREE_FLOOR_BYTES } = require('./refresh-volume-guard.cjs');
 export const stateRoot = join(homedir(), 'Library/Application Support/affinity/refresh');
 export const archiveRoot = '/Volumes/dev/affinity-data';
 export const downloadJournal:DownloadJournal={directory:join(stateRoot,'download-staging'),archiveRoot,volumeUUID:EXPECTED_UUID};
@@ -23,7 +23,7 @@ export function volumeSessionGuard() {
   return () => {
     try {
       const space=statfsSync(archiveRoot);
-      if(space.bavail*space.bsize<150e9)throw new Deferred('ssd_free_space_floor');
+      if(space.bavail*space.bsize<SSD_FREE_FLOOR_BYTES)throw new Deferred('ssd_free_space_floor');
       if (statSync(archiveRoot).dev !== device || realpathSync(archiveRoot) !== archiveRoot) throw new Error();
     } catch(e) { if(e instanceof Deferred)throw e; throw new Deferred('ssd_disconnected'); }
   };
@@ -48,7 +48,7 @@ export async function atomicJson(path: string, value: unknown) {
 export async function storageBudget(extra = 0) {
   requireVolume();
   const space=statfsSync(archiveRoot);
-  if(space.bavail*space.bsize-extra<150e9)throw new Deferred('ssd_free_space_reservation');
+  if(space.bavail*space.bsize-extra<SSD_FREE_FLOOR_BYTES)throw new Deferred('ssd_free_space_reservation');
   const bytes = Number(execFileSync('/usr/bin/du', ['-sk', archiveRoot], { encoding: 'utf8', timeout: 60000 }).split(/\s/)[0]) * 1024;
   if (!Number.isFinite(bytes) || bytes + extra > 100e9) throw new Deferred('ssd_task_budget');
 }

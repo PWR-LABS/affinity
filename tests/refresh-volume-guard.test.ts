@@ -14,8 +14,8 @@ test('same mount name with wrong disk and correct disk at wrong path both defer'
   assert.equal(assessVolume({ ...good, WritableVolume: false }, 0).reason, 'ssd_read_only');
 });
 test('low or unknown capacity defers, restored valid SSD becomes ready', () => {
-  for (const bytes of [149e9, NaN, Infinity]) assert.equal(assessVolume(good, bytes).state, 'deferred');
-  assert.equal(assessVolume(good, 150e9).state, 'ready');
+  for (const bytes of [50e9 - 1, NaN, Infinity]) assert.equal(assessVolume(good, bytes).reason, 'ssd_free_space_floor');
+  assert.equal(assessVolume(good, 50e9).state, 'ready');
 });
 
 test('read-only volume defers', () => {
